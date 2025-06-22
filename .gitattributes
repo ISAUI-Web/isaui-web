@@ -1,0 +1,19 @@
+# Deja que Git maneje los finales de línea de los archivos de texto
+* text=auto
+
+# Forzar que ciertos tipos de archivo siempre usen LF en el repo
+*.sh text eol=lf
+*.js text eol=lf
+*.ts text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.md text eol=lf
+
+# Archivos binarios no deben ser modificados
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
