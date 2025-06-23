@@ -332,27 +332,28 @@ export default function MultiStepForm() {
         if (!formData.nivelMedioProvincia) newErrors.nivelMedioProvincia = "La provincia es requerida"
         if (!formData.nivelMedioTitulo) newErrors.nivelMedioTitulo = "El título es requerido"
       }
+
+      if (!formData.nivelSuperior) newErrors.nivelSuperior = "Debe indicar si completó el nivel superior"
+      if (formData.nivelSuperior === "COMPLETO") {
+        if (!formData.nivelSuperiorCarrera) newErrors.nivelSuperiorCarrera = "La carrera es requerida"
+        if (!formData.nivelSuperiorInstitucion) newErrors.nivelSuperiorInstitucion = "La institución es requerida"
+        if (!formData.nivelSuperiorProvincia) newErrors.nivelSuperiorProvincia = "La provincia es requerida"
+        if (!formData.nivelSuperiorAnoIngreso) newErrors.nivelSuperiorAnoIngreso = "El año de ingreso es requerido"
+        if (!formData.nivelSuperiorAnoEgreso) newErrors.nivelSuperiorAnoEgreso = "El año de egreso es requerido"
+      }
+      if (formData.nivelSuperior === "EN_CURSO") {
+        if (!formData.nivelSuperiorCarrera) newErrors.nivelSuperiorCarrera = "La carrera es requerida"
+        if (!formData.nivelSuperiorInstitucion) newErrors.nivelSuperiorInstitucion = "La institución es requerida"
+        if (!formData.nivelSuperiorProvincia) newErrors.nivelSuperiorProvincia = "La provincia es requerida"
+        if (!formData.nivelSuperiorAnoIngreso) newErrors.nivelSuperiorAnoIngreso = "El año de ingreso es requerido"
+      }
+      if (!formData.trabaja) newErrors.trabaja = "Debe indicar si trabaja actualmente"
+      if (formData.trabaja === "SI") {
+        if (!formData.horasDiarias) newErrors.horasDiarias = "Las horas diarias son requeridas"
+        if (!formData.descripcionTrabajo) newErrors.descripcionTrabajo = "La descripción del trabajo es requerida"
+      }
+      if (!formData.tienePersonasACargo) newErrors.tienePersonasACargo = "Debe indicar si tiene personas a cargo"
     }
-    if (!formData.nivelSuperior) newErrors.nivelSuperior = "Debe indicar si completó el nivel superior"
-    if (formData.nivelSuperior === "COMPLETO") {
-      if (!formData.nivelSuperiorCarrera) newErrors.nivelSuperiorCarrera = "La carrera es requerida"
-      if (!formData.nivelSuperiorInstitucion) newErrors.nivelSuperiorInstitucion = "La institución es requerida"
-      if (!formData.nivelSuperiorProvincia) newErrors.nivelSuperiorProvincia = "La provincia es requerida"
-      if (!formData.nivelSuperiorAnoIngreso) newErrors.nivelSuperiorAnoIngreso = "El año de ingreso es requerido"
-      if (!formData.nivelSuperiorAnoEgreso) newErrors.nivelSuperiorAnoEgreso = "El año de egreso es requerido"
-    }
-    if (formData.nivelSuperior === "EN_CURSO") {
-      if (!formData.nivelSuperiorCarrera) newErrors.nivelSuperiorCarrera = "La carrera es requerida"
-      if (!formData.nivelSuperiorInstitucion) newErrors.nivelSuperiorInstitucion = "La institución es requerida"
-      if (!formData.nivelSuperiorProvincia) newErrors.nivelSuperiorProvincia = "La provincia es requerida"
-      if (!formData.nivelSuperiorAnoIngreso) newErrors.nivelSuperiorAnoIngreso = "El año de ingreso es requerido"
-    }
-    if (!formData.trabaja) newErrors.trabaja = "Debe indicar si trabaja actualmente"
-    if (formData.trabaja === "SI") {
-      if (!formData.horasDiarias) newErrors.horasDiarias = "Las horas diarias son requeridas"
-      if (!formData.descripcionTrabajo) newErrors.descripcionTrabajo = "La descripción del trabajo es requerida"
-    }
-    if (!formData.tienePersonasACargo) newErrors.tienePersonasACargo = "Debe indicar si tiene personas a cargo"
 
     if (step === 3) {
       if (!formData.dniFrente) newErrors.dniFrente = "La foto del frente del DNI es requerida"
