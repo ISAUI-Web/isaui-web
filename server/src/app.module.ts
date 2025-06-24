@@ -18,6 +18,7 @@ import { DocenteModule } from './docente/docente.module';
 import { LegajoEstudianteModule } from './legajo-estudiante/legajo-estudiante.module';
 import { LegajoDocenteModule } from './legajo-docente/legajo-docente.module';
 import { RequisitoModule } from './requisito/requisito.module';
+import { ConstanciaModule } from './constancia/constancia.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { RequisitoModule } from './requisito/requisito.module';
     LegajoEstudianteModule,
     LegajoDocenteModule,
     RequisitoModule,
+    ConstanciaModule,
 
     // CarreraModule, etc.
   ],
