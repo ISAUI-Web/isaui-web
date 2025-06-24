@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AppController } from './app.controller';
@@ -20,15 +21,22 @@ import { RequisitoModule } from './requisito/requisito.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: 'localhost',
-      port: 3306,
-      username: 'root',         // Reemplazar por tu usuario si es otro
-      password: 'G9r#2!xLp@V7zTqM',     // Reemplazar por tu contraseña
-      database: 'isaui_web',
-      autoLoadEntities: true,
-      synchronize: true,        // ⚠️ Solo usar en desarrollo. NO activar en producción
+    ConfigModule.forRoot({
+      isGlobal: true, // Permite que ConfigService esté disponible en toda la app sin reimportar
+    }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: 'mysql',
+        host: configService.get<string>('DB_HOST', 'localhost'),
+        port: Number(configService.get<string>('DB_PORT', '3306')),
+        username: configService.get<string>('DB_USERNAME', 'root'),
+        password: configService.get<string>('DB_PASSWORD', ''),
+        database: configService.get<string>('DB_NAME', 'isaui_web'),
+        autoLoadEntities: true,
+        synchronize: true, // ⚠️ Solo en desarrollo
+      }),
     }),
     CarreraModule,
     AspiranteModule,
