@@ -375,11 +375,34 @@ export default function MultiStepForm() {
   }
 
   const handleSubmit = async () => {
-    if (validateStep(currentStep)) {
-      console.log("Datos del formulario:", formData)
-      alert("Formulario enviado correctamente!")
+  if (validateStep(currentStep)) {
+    try {
+      const response = await fetch("http://localhost:3000/constancia/generar", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          nombre: formData.nombre,
+          apellido: formData.apellido,
+          dni: formData.dni,
+          carrera: formData.nivelSuperiorCarrera || "Tecnicatura en Programación", // o un valor fijo
+          fecha: new Date().toISOString().split("T")[0],
+          email: formData.email,
+        }),
+      });
+
+      if (response.ok) {
+        alert("Formulario enviado y constancia enviada correctamente");
+      } else {
+        alert("Error al enviar la constancia");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Error de red al enviar la constancia");
     }
   }
+};
 
   const renderPersonalData = () => (
     <div className="space-y-6">
@@ -777,6 +800,7 @@ export default function MultiStepForm() {
         return null
     }
   }
+
 
   return (
     <>

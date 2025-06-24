@@ -33,7 +33,7 @@ import { ConstanciaModule } from './constancia/constancia.module';
         host: configService.get<string>('DB_HOST', 'localhost'),
         port: Number(configService.get<string>('DB_PORT', '3306')),
         username: configService.get<string>('DB_USERNAME', 'root'),
-        password: configService.get<string>('DB_PASSWORD', ''),
+        password: configService.get<string>('DB_PASSWORD', 'isaui2025'),
         database: configService.get<string>('DB_NAME', 'isaui_web'),
         autoLoadEntities: true,
         synchronize: true, // ⚠️ Solo en desarrollo

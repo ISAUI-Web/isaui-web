@@ -1,0 +1,11 @@
+POST http://localhost:3000/constancia/generar
+Content-Type: application/json
+
+{
+  "nombre": "Juan",
+  "apellido": "Pérez",
+  "dni": "12345678",
+  "carrera": "Tecnicatura en Programación",
+  "fecha": "2025-06-24",
+  "email": "juanperez@example.com"
+}

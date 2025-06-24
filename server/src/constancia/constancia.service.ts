@@ -1,7 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import * as PDFDocument from 'pdfkit';
 import * as nodemailer from 'nodemailer';
-import { Readable } from 'stream';
 
 interface AspiranteData {
   nombre: string;
@@ -15,6 +14,20 @@ interface AspiranteData {
 
 @Injectable()
 export class ConstanciaService {
+  private transporter;
+
+  constructor() {
+    this.transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT) || 587,
+      secure: false, // true para puerto 465
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+  }
+
   async generarPDF(data: AspiranteData): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       try {
@@ -26,9 +39,6 @@ export class ConstanciaService {
           const pdfData = Buffer.concat(buffers);
           resolve(pdfData);
         });
-
-        // Logo o membrete (si tenés un archivo, podés usar doc.image)
-        // doc.image('ruta/logo.png', 50, 45, { width: 100 });
 
         // Título
         doc.fontSize(20).text('Constancia de Preinscripción', { align: 'center' });
@@ -61,17 +71,7 @@ export class ConstanciaService {
 
   async enviarEmailConPDF(pdfBuffer: Buffer, toEmail: string): Promise<void> {
     try {
-      const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: Number(process.env.SMTP_PORT) || 587,
-        secure: false, // true for 465, false for other ports
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
-        },
-      });
-
-      await transporter.sendMail({
+      await this.transporter.sendMail({
         from: `"Instituto ISAUI" <${process.env.SMTP_USER}>`,
         to: toEmail,
         subject: 'Constancia de Preinscripción',
@@ -89,3 +89,4 @@ export class ConstanciaService {
     }
   }
 }
+
