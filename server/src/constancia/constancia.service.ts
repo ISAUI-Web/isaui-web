@@ -6,7 +6,7 @@ interface AspiranteData {
   nombre: string;
   apellido: string;
   dni: string;
-  carrera: string;
+  // carrera: string;
   fechaPreinscripcion: string;
   numeroRegistro: string;
   email: string;
@@ -39,6 +39,9 @@ export class ConstanciaService {
           const pdfData = Buffer.concat(buffers);
           resolve(pdfData);
         });
+        // Header
+        doc.image('assets/logo.png', doc.page.width / 2 - 50, 40, { width: 100 });
+        doc.moveDown(5)
 
         // Título
         doc.fontSize(20).text('Constancia de Preinscripción', { align: 'center' });
@@ -48,19 +51,21 @@ export class ConstanciaService {
         doc.fontSize(12);
         doc.text(`Nombre: ${data.nombre} ${data.apellido}`);
         doc.text(`DNI: ${data.dni}`);
-        doc.text(`Carrera seleccionada: ${data.carrera}`);
+        // doc.text(`Carrera seleccionada: ${data.carrera}`);
         doc.text(`Fecha de Preinscripción: ${data.fechaPreinscripcion}`);
         doc.text(`Número de Registro: ${data.numeroRegistro}`);
 
         doc.moveDown();
         doc.text(
-          'Esta constancia certifica que el aspirante ha completado correctamente el proceso de preinscripción.',
+          'Su formulario de preinscripción ha sido enviado exitosamente. Nos pondremos en contacto con usted a la brevedad para brindarle más información.',
           { align: 'justify' },
         );
 
         // Pie de página
         doc.moveDown();
-        doc.text('Instituto Superior Arturo Umberto Illia', { align: 'center', italic: true });
+        doc.fontSize(20).text('Instituto Superior Arturo Umberto Illia', { align: 'center', italic: true });
+
+        
 
         doc.end();
       } catch (error) {

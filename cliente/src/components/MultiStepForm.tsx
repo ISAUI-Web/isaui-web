@@ -365,7 +365,8 @@ export default function MultiStepForm() {
   }
 
   const nextStep = () => {
-    if (validateStep(currentStep)) {
+    // if (validateStep(currentStep))
+    if (true) {
       setCurrentStep((prev) => Math.min(prev + 1, totalSteps))
     }
   }
@@ -374,8 +375,47 @@ export default function MultiStepForm() {
     setCurrentStep((prev) => Math.max(prev - 1, 1))
   }
 
-  const handleSubmit = async () => {
-  if (validateStep(currentStep)) {
+//  const handleSubmit = async () => {
+//   if (true) {
+//     try {
+//       const response = await fetch("http://localhost:3000/constancia/generar", {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify({
+//           nombre: formData.nombre,
+//           apellido: formData.apellido,
+//           dni: formData.dni,
+//           // carrera: formData.nivelSuperiorCarrera || "Tecnicatura en Programación",
+//           fechaPreinscripcion: new Date().toISOString().split("T")[0], // que coincida con el backend
+//           email: formData.email,
+//         }),
+//       });
+
+//       if (response.ok) {
+//         const blob = await response.blob();
+//         // Crear URL para descargar
+//         const url = window.URL.createObjectURL(blob);
+//         const a = document.createElement('a');
+//         a.href = url;
+//         a.download = `constancia_${formData.dni}.pdf`;
+//         document.body.appendChild(a);
+//         a.click();
+//         a.remove();
+//         window.URL.revokeObjectURL(url);
+
+//         alert("Constancia generada y descargada correctamente");
+//       } else {
+//         alert("Error al generar la constancia");
+//       }
+//     } catch (error) {
+//       console.error("Error en fetch:", error);
+//       alert("Error de red al enviar la constancia");
+//     }
+//   }
+// };
+
+ const handleSubmit = async () => {
+  if (true) {
     try {
       const response = await fetch("http://localhost:3000/constancia/generar", {
         method: "POST",
@@ -387,7 +427,7 @@ export default function MultiStepForm() {
           apellido: formData.apellido,
           dni: formData.dni,
           carrera: formData.nivelSuperiorCarrera || "Tecnicatura en Programación", // o un valor fijo
-          fecha: new Date().toISOString().split("T")[0],
+          fechaPreinscripcion: new Date().toISOString().split("T")[0],
           email: formData.email,
         }),
       });

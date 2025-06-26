@@ -6,7 +6,7 @@ interface AspiranteDto {
   nombre: string;
   apellido: string;
   dni: string;
-  carrera: string;
+  // carrera: string;
   fechaPreinscripcion: string;
   numeroRegistro: string;
   email: string;
@@ -26,14 +26,14 @@ export class ConstanciaController {
       await this.constanciaService.enviarEmailConPDF(pdfBuffer, aspirante.email);
 
       // También podés devolver el PDF directamente si querés:
-      // res.set({
-      //   'Content-Type': 'application/pdf',
-      //   'Content-Disposition': `attachment; filename=constancia_${aspirante.dni}.pdf`,
-      // });
-      // res.end(pdfBuffer);
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename=constancia_${aspirante.dni}.pdf`,
+      });
+      res.end(pdfBuffer);
 
       // Pero aquí devolvemos solo mensaje de éxito
-      res.status(HttpStatus.OK).json({ message: 'Constancia generada y enviada correctamente' });
+      // res.status(HttpStatus.OK).json({ message: 'Constancia generada y enviada correctamente' });
     } catch (error) {
       throw new HttpException(
         `Error al generar o enviar constancia: ${error.message}`,
