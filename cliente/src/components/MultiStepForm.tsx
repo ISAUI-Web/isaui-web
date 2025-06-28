@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Upload, User, GraduationCap, FileText, Arrow
 
 interface FormData {
    // Datos personales
+  carreras: string
   nombre: string
   apellido: string
   dni: string
@@ -14,7 +15,7 @@ interface FormData {
   telefono: string
   email: string
   fechaNacimiento: string
-  lugarNacimiento: string
+  ciudadNacimiento: string
   provinciaNacimiento: string
   sexo: string
 
@@ -43,7 +44,8 @@ interface FormData {
 }
 
 const initialFormData: FormData = {
-   nombre: "",
+  carreras: "",
+  nombre: "",
   apellido: "",
   dni: "",
   cuil_cuit: "",
@@ -51,7 +53,7 @@ const initialFormData: FormData = {
   email: "",
   telefono: "",
   fechaNacimiento: "",
-  lugarNacimiento: "",
+  ciudadNacimiento: "",
   provinciaNacimiento: "",
   barrio: "",
   codigoPostal: "",
@@ -75,6 +77,15 @@ const initialFormData: FormData = {
   dniFrente: null,
   dniDorso: null,
 }
+
+const carreras = [
+  "Tecnicatura Superior en Diseño de Espacios",
+  "Tecnicatura Superior en Desarrollo de Software",
+  "Tecnicatura Superior en Turismo y Hotelería",
+  "Tecnicatura Superior en Guía de Turismo",
+  "Tecnicatura Superior en Guía de Trekking y Guía de Montaña",
+  "Tecnicatura Superior en Enfermería",
+]
 
 const provincias = [
   "Buenos Aires",
@@ -319,8 +330,10 @@ export default function MultiStepForm() {
           newErrors.fechaNacimiento = "La fecha de nacimiento no puede ser hoy o en el futuro"
         }
       }
-      if (!formData.lugarNacimiento) newErrors.lugarNacimiento = "El lugar de nacimiento es requerido"
+      if (!formData.ciudadNacimiento) newErrors.lugarNacimiento = "La ciudad de nacimiento es requerida"
+      if (!formData.provinciaNacimiento) newErrors.provinciaNacimiento = "La provincia es requerida"
       if (!formData.sexo) newErrors.sexo = "El sexo es requerido"
+      if(!formData.carreras) newErrors.carreras = "La carrera es requerida"
 
     }
 
@@ -384,6 +397,24 @@ export default function MultiStepForm() {
   const renderPersonalData = () => (
     <div className="space-y-6">
       {/* Título de sección */}
+      <div className="bg-slate-800 rounded-lg p-4 text-center">
+        <h2 className="text-white text-xl font-semibold uppercase tracking-wider">ELECCIÓN DE CARRERA</h2>
+      </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <FormField
+          label="CARRERAS"
+          id="carreras"
+          value={formData.carreras}
+          onChange={(value) => handleInputChange("carreras", value)}
+          options={carreras}
+          placeholder="..."
+          error={errors.carreras}
+          required
+        />
+        </div>
+    
+
       <div className="bg-slate-800 rounded-lg p-4 text-center">
         <h2 className="text-white text-xl font-semibold uppercase tracking-wider">DATOS PERSONALES</h2>
       </div>
@@ -492,13 +523,24 @@ export default function MultiStepForm() {
         />
 
         <FormField
-          label="LUGAR DE NACIMIENTO"
-          id="lugarNacimiento"
-          value={formData.lugarNacimiento}
-          onChange={(value) => handleInputChange("lugarNacimiento", value)}
+          label="CIUDAD DE NACIMIENTO"
+          id="ciudadNacimiento"
+          value={formData.ciudadNacimiento}
+          onChange={(value) => handleInputChange("ciudadNacimiento", value)}
           error={errors.lugarNacimiento}
           required
         />
+
+         <FormField
+              label="PROVINCIA DE NACIMIENTO"
+              id="provinciaNacimiento"
+              value={formData.provinciaNacimiento}
+              onChange={(value) => handleInputChange("provinciaNacimiento", value)}
+              options={provincias}
+              placeholder="PROVINCIA..."
+              error={errors.provinciaNacimiento}
+              required
+            />
 
         <FormField
           label="SEXO"
