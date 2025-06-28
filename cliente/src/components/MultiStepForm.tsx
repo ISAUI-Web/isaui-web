@@ -400,8 +400,7 @@ export default function MultiStepForm() {
       <div className="bg-slate-800 rounded-lg p-4 text-center">
         <h2 className="text-white text-xl font-semibold uppercase tracking-wider">ELECCIÓN DE CARRERA</h2>
       </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="w-full mt-4">
         <FormField
           label="CARRERAS"
           id="carreras"
@@ -412,8 +411,7 @@ export default function MultiStepForm() {
           error={errors.carreras}
           required
         />
-        </div>
-    
+      </div>
 
       <div className="bg-slate-800 rounded-lg p-4 text-center">
         <h2 className="text-white text-xl font-semibold uppercase tracking-wider">DATOS PERSONALES</h2>
