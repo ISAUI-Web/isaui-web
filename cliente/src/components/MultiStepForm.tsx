@@ -18,6 +18,7 @@ interface FormData {
   ciudad_nacimiento: string
   provincia_nacimiento: string
   sexo: string
+  numeroRegistro: string
 
   // Estudios anteriores
   completo_nivel_medio: string 
@@ -62,6 +63,7 @@ const initialFormData: FormData = {
   codigo_postal: "",
   localidad: "",
   sexo: "",
+  numeroRegistro: "",
   completo_nivel_medio: "",
   anio_ingreso_medio: "",
   anio_egreso_medio: "",
@@ -863,6 +865,7 @@ export default function MultiStepForm() {
         return null
     }
   }
+
 
   return (
     <>
