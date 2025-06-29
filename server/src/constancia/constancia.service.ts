@@ -1,12 +1,14 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import * as PDFDocument from 'pdfkit';
 import * as nodemailer from 'nodemailer';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Aspirante } from '../aspirante/aspirante.entity'; // Ajustá la ruta según tu estructura
 
 interface AspiranteData {
   nombre: string;
   apellido: string;
   dni: string;
-  // carrera: string;
   fechaPreinscripcion: string;
   numeroRegistro: string;
   email: string;
@@ -16,16 +18,25 @@ interface AspiranteData {
 export class ConstanciaService {
   private transporter;
 
-  constructor() {
+  constructor(
+    @InjectRepository(Aspirante)
+    private aspiranteRepository: Repository<Aspirante>,
+  ) {
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT) || 587,
-      secure: false, // true para puerto 465
+      secure: false,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
     });
+  }
+
+  async obtenerNumeroRegistroPorDNI(dni: string): Promise<number> {
+    const aspirante = await this.aspiranteRepository.findOneBy({ dni });
+    if (!aspirante) throw new InternalServerErrorException('Aspirante no encontrado');
+    return aspirante.id;
   }
 
   async generarPDF(data: AspiranteData): Promise<Buffer> {
@@ -39,9 +50,10 @@ export class ConstanciaService {
           const pdfData = Buffer.concat(buffers);
           resolve(pdfData);
         });
-        // Header
-        doc.image('assets/logo.png', doc.page.width / 2 - 50, 40, { width: 100 });
-        doc.moveDown(5)
+
+        // Header (opcional, si tenés un logo)
+        // doc.image('assets/logo.png', doc.page.width / 2 - 50, 40, { width: 100 });
+        doc.moveDown(5);
 
         // Título
         doc.fontSize(20).text('Constancia de Preinscripción', { align: 'center' });
@@ -51,9 +63,8 @@ export class ConstanciaService {
         doc.fontSize(12);
         doc.text(`Nombre: ${data.nombre} ${data.apellido}`);
         doc.text(`DNI: ${data.dni}`);
-        // doc.text(`Carrera seleccionada: ${data.carrera}`);
-        doc.text(`Fecha de Preinscripción: ${data.fechaPreinscripcion}`);
         doc.text(`Número de Registro: ${data.numeroRegistro}`);
+        doc.text(`Fecha de Preinscripción: ${data.fechaPreinscripcion}`);
 
         doc.moveDown();
         doc.text(
@@ -64,8 +75,6 @@ export class ConstanciaService {
         // Pie de página
         doc.moveDown();
         doc.fontSize(20).text('Instituto Superior Arturo Umberto Illia', { align: 'center', italic: true });
-
-        
 
         doc.end();
       } catch (error) {
@@ -94,4 +103,3 @@ export class ConstanciaService {
     }
   }
 }
-
