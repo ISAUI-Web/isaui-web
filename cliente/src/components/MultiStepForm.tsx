@@ -18,6 +18,7 @@ interface FormData {
   ciudadNacimiento: string
   provinciaNacimiento: string
   sexo: string
+  numeroRegistro: string
 
   // Estudios anteriores
   nivelMedio: string 
@@ -59,6 +60,7 @@ const initialFormData: FormData = {
   codigoPostal: "",
   localidad: "",
   sexo: "",
+  numeroRegistro: "",
   nivelMedio: "",
   nivelMedioAnoIngreso: "",
   nivelMedioAnoEgreso: "",
@@ -387,12 +389,37 @@ export default function MultiStepForm() {
     setCurrentStep((prev) => Math.max(prev - 1, 1))
   }
 
-  const handleSubmit = async () => {
-    if (validateStep(currentStep)) {
-      console.log("Datos del formulario:", formData)
-      alert("Formulario enviado correctamente!")
+
+ const handleSubmit = async () => {
+  if (validateStep(currentStep)) {
+    try {
+      const response = await fetch("http://localhost:3000/constancia/generar", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          nombre: formData.nombre,
+          apellido: formData.apellido,
+          dni: formData.dni,
+          carrera: formData.nivelSuperiorCarrera || "Tecnicatura en Programación", // o un valor fijo
+          fechaPreinscripcion: new Date().toISOString().split("T")[0],
+          numeroRegistro: formData.numeroRegistro,
+          email: formData.email,
+        }),
+      });
+
+      if (response.ok) {
+        alert("Formulario enviado y constancia enviada correctamente");
+      } else {
+        alert("Error al enviar la constancia");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Error de red al enviar la constancia");
     }
   }
+};
 
   const renderPersonalData = () => (
     <div className="space-y-6">
@@ -817,6 +844,7 @@ export default function MultiStepForm() {
         return null
     }
   }
+
 
   return (
     <>

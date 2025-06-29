@@ -18,6 +18,7 @@ import { DocenteModule } from './docente/docente.module';
 import { LegajoEstudianteModule } from './legajo-estudiante/legajo-estudiante.module';
 import { LegajoDocenteModule } from './legajo-docente/legajo-docente.module';
 import { RequisitoModule } from './requisito/requisito.module';
+import { ConstanciaModule } from './constancia/constancia.module';
 
 @Module({
   imports: [
@@ -32,7 +33,7 @@ import { RequisitoModule } from './requisito/requisito.module';
         host: configService.get<string>('DB_HOST', 'localhost'),
         port: Number(configService.get<string>('DB_PORT', '3306')),
         username: configService.get<string>('DB_USERNAME', 'root'),
-        password: configService.get<string>('DB_PASSWORD', ''),
+        password: configService.get<string>('DB_PASSWORD', 'isaui2025'),
         database: configService.get<string>('DB_NAME', 'isaui_web'),
         autoLoadEntities: true,
         synchronize: true, // ⚠️ Solo en desarrollo
@@ -49,6 +50,7 @@ import { RequisitoModule } from './requisito/requisito.module';
     LegajoEstudianteModule,
     LegajoDocenteModule,
     RequisitoModule,
+    ConstanciaModule,
 
     // CarreraModule, etc.
   ],
