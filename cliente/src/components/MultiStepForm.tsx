@@ -367,8 +367,7 @@ export default function MultiStepForm() {
   }
 
   const nextStep = () => {
-    // if (validateStep(currentStep))
-    if (true) {
+    if (validateStep(currentStep)) {
       setCurrentStep((prev) => Math.min(prev + 1, totalSteps))
     }
   }
@@ -379,7 +378,7 @@ export default function MultiStepForm() {
 
 
  const handleSubmit = async () => {
-  if (true) {
+  if (validateStep(currentStep)) {
     try {
       const response = await fetch("http://localhost:3000/constancia/generar", {
         method: "POST",

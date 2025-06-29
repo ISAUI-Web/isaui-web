@@ -24,7 +24,6 @@ export class ConstanciaController {
     console.log('Datos recibidos del aspirante:', aspirante);
 
     try {
-      aspirante.numeroRegistro = aspirante.numeroRegistro || '12345';
       const pdfBuffer = await this.constanciaService.generarPDF(aspirante);
       console.log('PDF generado correctamente, tamaño:', pdfBuffer.length);
 
