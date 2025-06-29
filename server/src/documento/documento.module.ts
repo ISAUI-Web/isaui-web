@@ -7,9 +7,11 @@ import { LegajoEstudiante } from '../legajo-estudiante/legajo-estudiante.entity'
 import { LegajoDocente } from '../legajo-docente/legajo-docente.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Documento, LegajoEstudiante, LegajoDocente])],
+  imports: [
+    TypeOrmModule.forFeature([Documento, LegajoEstudiante, LegajoDocente]),
+  ],
   controllers: [DocumentoController],
   providers: [DocumentoService],
-  exports: [TypeOrmModule],
+  exports: [TypeOrmModule, DocumentoService],
 })
 export class DocumentoModule {}

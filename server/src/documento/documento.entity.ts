@@ -29,7 +29,7 @@ export class Documento {
   @Column()
   archivo_pdf: string;
 
-  @Column({type: 'timestamp',default: () => 'CURRENT_TIMESTAMP'})
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   fecha_subida: Date;
 
   @Column({ default: false })
@@ -54,9 +54,15 @@ export class Documento {
   @JoinColumn({ name: 'validador_id' })
   validador: Usuario;
 
-  @ManyToOne(() => LegajoEstudiante, (legajo) => legajo.documentos, { nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => LegajoEstudiante, (legajo) => legajo.documentos, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
   legajoEstudiante: LegajoEstudiante;
 
-  @ManyToOne(() => LegajoDocente, (legajo) => legajo.documentos, { nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => LegajoDocente, (legajo) => legajo.documentos, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
   legajoDocente: LegajoDocente;
 }

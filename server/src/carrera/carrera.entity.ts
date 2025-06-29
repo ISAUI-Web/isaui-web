@@ -9,8 +9,8 @@ export class Carrera {
   nombre: string;
 
   @Column({ name: 'cupo_maximo' })
-  cupoMaximo: number;
+  cupo_maximo: number;
 
   @Column({ name: 'cupo_actual' })
-  cupoActual: number;
+  cupo_actual: number;
 }

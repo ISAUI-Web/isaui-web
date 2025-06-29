@@ -60,11 +60,11 @@ export class Aspirante {
   @Column()
   completo_nivel_medio: boolean;
 
-  @Column()
-  año_ingreso_medio: number;
+  @Column({ name: 'año_ingreso_medio' })
+  anio_ingreso_medio: number;
 
-  @Column()
-  año_egreso_medio: number;
+  @Column({ name: 'año_egreso_medio' })
+  anio_egreso_medio: number;
 
   @Column()
   provincia_medio: string;
@@ -85,15 +85,18 @@ export class Aspirante {
   @Column({ nullable: true })
   provincia_superior: string;
 
-  @Column({ nullable: true })
-  año_ingreso_superior: number;
+  @Column({ nullable: true, name: 'año_ingreso_superior' })
+  anio_ingreso_superior: number;
 
-  @Column({ nullable: true })
-  año_egreso_superior: number;
+  @Column({ nullable: true, name: 'año_egreso_superior' })
+  anio_egreso_superior: number;
 
   // Trabajo y responsabilidades
   @Column()
   trabajo: boolean;
+
+  @Column({ nullable: true })
+  horas_diarias: number;
 
   @Column({ nullable: true })
   descripcion_trabajo: string;

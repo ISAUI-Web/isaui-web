@@ -3,78 +3,94 @@ import { ChevronLeft, ChevronRight, Upload, User, GraduationCap, FileText, Arrow
 
 interface FormData {
    // Datos personales
+  carrera: string
   nombre: string
   apellido: string
   dni: string
-  cuil_cuit: string
+  cuil: string
   domicilio: string
   localidad: string
   barrio: string
-  codigoPostal: string
+  codigo_postal: string
   telefono: string
   email: string
-  fechaNacimiento: string
-  lugarNacimiento: string
-  provinciaNacimiento: string
+  fecha_nacimiento: string
+  ciudad_nacimiento: string
+  provincia_nacimiento: string
   sexo: string
 
   // Estudios anteriores
-  nivelMedio: string 
-  nivelMedioAnoIngreso: string
-  nivelMedioAnoEgreso: string
-  nivelMedioProvincia: string
-  nivelMedioTitulo: string
-  nivelSuperior: string
-  nivelSuperiorCarrera: string
-  nivelSuperiorInstitucion: string
-  nivelSuperiorProvincia: string
-  nivelSuperiorAnoIngreso: string
-  nivelSuperiorAnoEgreso: string
+  completo_nivel_medio: string 
+  anio_ingreso_medio: string
+  anio_egreso_medio: string
+  provincia_medio: string
+  titulo_medio: string
+  completo_nivel_superior: string
+  carrera_superior: string
+  institucion_superior: string
+  provincia_superior: string
+  anio_ingreso_superior: string
+  anio_egreso_superior: string
   // Situación laboral
-  trabaja: string 
-  horasDiarias: string
-  descripcionTrabajo: string
+  trabajo: string 
+  horas_diarias: string
+  descripcion_trabajo: string
   // Responsabilidades
-  tienePersonasACargo: string 
+  personas_cargo: string 
   
   // Documentación
+  estado_preinscripcion: string
+  estado_matriculacion: string
   dniFrente: File | null
   dniDorso: File | null
 }
 
 const initialFormData: FormData = {
-   nombre: "",
+  
+  carrera: "",
+  nombre: "",
   apellido: "",
   dni: "",
-  cuil_cuit: "",
+  cuil: "",
   domicilio: "",
   email: "",
   telefono: "",
-  fechaNacimiento: "",
-  lugarNacimiento: "",
-  provinciaNacimiento: "",
+  fecha_nacimiento: "",
+  ciudad_nacimiento: "",
+  provincia_nacimiento: "",
   barrio: "",
-  codigoPostal: "",
+  codigo_postal: "",
   localidad: "",
   sexo: "",
-  nivelMedio: "",
-  nivelMedioAnoIngreso: "",
-  nivelMedioAnoEgreso: "",
-  nivelMedioProvincia: "",
-  nivelMedioTitulo: "",
-  nivelSuperior: "",
-  nivelSuperiorCarrera: "",
-  nivelSuperiorInstitucion: "",
-  nivelSuperiorProvincia: "",
-  nivelSuperiorAnoIngreso: "",
-  nivelSuperiorAnoEgreso: "",
-  trabaja: "",
-  horasDiarias: "",
-  descripcionTrabajo: "",
-  tienePersonasACargo: "",
+  completo_nivel_medio: "",
+  anio_ingreso_medio: "",
+  anio_egreso_medio: "",
+  provincia_medio: "",
+  titulo_medio: "",
+  completo_nivel_superior: "",
+  carrera_superior: "",
+  institucion_superior: "",
+  provincia_superior: "",
+  anio_ingreso_superior: "",
+  anio_egreso_superior: "",
+  trabajo: "",
+  horas_diarias: "",
+  descripcion_trabajo: "",
+  personas_cargo: "",
+  estado_preinscripcion: "pendiente",
+  estado_matriculacion: "no matriculado",
   dniFrente: null,
   dniDorso: null,
 }
+
+const carrera = [
+  "Tecnicatura Superior en Diseño de Espacios",
+  "Tecnicatura Superior en Desarrollo de Software",
+  "Tecnicatura Superior en Turismo y Hotelería",
+  "Tecnicatura Superior en Guía de Turismo",
+  "Tecnicatura Superior en Guía de Trekking y Guía de Montaña",
+  "Tecnicatura Superior en Enfermería",
+]
 
 const provincias = [
   "Buenos Aires",
@@ -229,24 +245,24 @@ export default function MultiStepForm() {
       const newData = { ...prev, [field]: value }
 
       // Limpiar campos relacionados cuando se cambia a "NO"
-      if (field === "nivelMedio" && value === "NO") {
-        newData.nivelMedioAnoIngreso = ""
-        newData.nivelMedioAnoEgreso = ""
-        newData.nivelMedioProvincia = ""
-        newData.nivelMedioTitulo = ""
+      if (field === "completo_nivel_medio" && value === "NO") {
+        newData.anio_ingreso_medio = ""
+        newData.anio_egreso_medio = ""
+        newData.provincia_medio = ""
+        newData.titulo_medio = ""
       }
 
-      if (field === "nivelSuperior" && value === "NO") {
-        newData.nivelSuperiorCarrera = ""
-        newData.nivelSuperiorInstitucion = ""
-        newData.nivelSuperiorProvincia = ""
-        newData.nivelSuperiorAnoIngreso = ""
-        newData.nivelSuperiorAnoEgreso = ""
+      if (field === "completo_nivel_superior" && value === "NO") {
+        newData.carrera_superior = ""
+        newData.institucion_superior = ""
+        newData.provincia_superior = ""
+        newData.anio_ingreso_superior = ""
+        newData.anio_egreso_superior = ""
       }
 
-      if (field === "trabaja" && value === "NO") {
-        newData.horasDiarias = ""
-        newData.descripcionTrabajo = ""
+      if (field === "trabajo" && value === "NO") {
+        newData.horas_diarias = ""
+        newData.descripcion_trabajo = ""
       }
 
       return newData
@@ -283,20 +299,20 @@ export default function MultiStepForm() {
       } else if (isNaN(Number(formData.dni))) {
         newErrors.dni = "El DNI debe ser un número"
       }
-      if (!formData.cuil_cuit) newErrors.cuil_cuit = "El CUIL/CUIT es requerido"
-      else if (!/^\d{11}$/.test(formData.cuil_cuit)) {
-        newErrors.cuil_cuit = "El CUIL/CUIT debe tener 11 digitos"
-      } else if (isNaN(Number(formData.cuil_cuit))) {
-        newErrors.cuil_cuit = "El CUIL/CUIT debe ser un número"
+      if (!formData.cuil) newErrors.cuil = "El CUIL/CUIT es requerido"
+      else if (!/^\d{11}$/.test(formData.cuil)) {
+        newErrors.cuil = "El CUIL/CUIT debe tener 11 digitos"
+      } else if (isNaN(Number(formData.cuil))) {
+        newErrors.cuil = "El CUIL/CUIT debe ser un número"
       }
       if (!formData.domicilio) newErrors.domicilio = "El domicilio es requerido"
       if (!formData.localidad) newErrors.localidad = "La localidad es requerida"
       if (!formData.barrio) newErrors.barrio = "El barrio es requerido"
-      if (!formData.codigoPostal) newErrors.codigoPostal = "El código postal es requerido"
-      else if (!/^\d{4}$/.test(formData.codigoPostal)) {
-        newErrors.codigoPostal = "El código postal debe tener 4 digitos"
-      } else if (isNaN(Number(formData.codigoPostal))) {
-        newErrors.codigoPostal = "El código postal debe ser un número"
+      if (!formData.codigo_postal) newErrors.codigo_postal = "El código postal es requerido"
+      else if (!/^\d{4}$/.test(formData.codigo_postal)) {
+        newErrors.codigo_postal = "El código postal debe tener 4 digitos"
+      } else if (isNaN(Number(formData.codigo_postal))) {
+        newErrors.codigo_postal = "El código postal debe ser un número"
       }
       if (!formData.telefono) newErrors.telefono = "El teléfono es requerido"
       else if (!/^\d{10,15}$/.test(formData.telefono)) {
@@ -311,48 +327,50 @@ export default function MultiStepForm() {
       ) {
         newErrors.email = "El email no es válido"
       }
-      if (!formData.fechaNacimiento) newErrors.fechaNacimiento = "La fecha de nacimiento es requerida"
+      if (!formData.fecha_nacimiento) newErrors.fecha_nacimiento = "La fecha de nacimiento es requerida"
       else {
         const today = new Date()
-        const birthDate = new Date(formData.fechaNacimiento)
+        const birthDate = new Date(formData.fecha_nacimiento)
         if (birthDate >= today) {
-          newErrors.fechaNacimiento = "La fecha de nacimiento no puede ser hoy o en el futuro"
+          newErrors.fecha_nacimiento = "La fecha de nacimiento no puede ser hoy o en el futuro"
         }
       }
-      if (!formData.lugarNacimiento) newErrors.lugarNacimiento = "El lugar de nacimiento es requerido"
+      if (!formData.ciudad_nacimiento) newErrors.ciudad_nacimiento = "La ciudad de nacimiento es requerida"
+      if (!formData.provincia_nacimiento) newErrors.provincia_nacimiento = "La provincia es requerida"
       if (!formData.sexo) newErrors.sexo = "El sexo es requerido"
+      if(!formData.carrera) newErrors.carrera = "La carrera es requerida"
 
     }
 
     if (step === 2) {
-      if (!formData.nivelMedio) newErrors.nivelMedio = "Debe indicar si completó el nivel medio"
-      if (formData.nivelMedio === "SI") {
-        if (!formData.nivelMedioAnoIngreso) newErrors.nivelMedioAnoIngreso = "El año de ingreso es requerido"
-        if (!formData.nivelMedioAnoEgreso) newErrors.nivelMedioAnoEgreso = "El año de egreso es requerido"
-        if (!formData.nivelMedioProvincia) newErrors.nivelMedioProvincia = "La provincia es requerida"
-        if (!formData.nivelMedioTitulo) newErrors.nivelMedioTitulo = "El título es requerido"
+      if (!formData.completo_nivel_medio) newErrors.completo_nivel_medio = "Debe indicar si completó el nivel medio"
+      if (formData.completo_nivel_medio === "SI") {
+        if (!formData.anio_ingreso_medio) newErrors.anio_ingreso_medio = "El año de ingreso es requerido"
+        if (!formData.anio_egreso_medio) newErrors.anio_egreso_medio = "El año de egreso es requerido"
+        if (!formData.provincia_medio) newErrors.provincia_medio = "La provincia es requerida"
+        if (!formData.titulo_medio) newErrors.titulo_medio = "El título es requerido"
       }
 
-      if (!formData.nivelSuperior) newErrors.nivelSuperior = "Debe indicar si completó el nivel superior"
-      if (formData.nivelSuperior === "COMPLETO") {
-        if (!formData.nivelSuperiorCarrera) newErrors.nivelSuperiorCarrera = "La carrera es requerida"
-        if (!formData.nivelSuperiorInstitucion) newErrors.nivelSuperiorInstitucion = "La institución es requerida"
-        if (!formData.nivelSuperiorProvincia) newErrors.nivelSuperiorProvincia = "La provincia es requerida"
-        if (!formData.nivelSuperiorAnoIngreso) newErrors.nivelSuperiorAnoIngreso = "El año de ingreso es requerido"
-        if (!formData.nivelSuperiorAnoEgreso) newErrors.nivelSuperiorAnoEgreso = "El año de egreso es requerido"
+      if (!formData.completo_nivel_superior) newErrors.completo_nivel_superior = "Debe indicar si completó el nivel superior"
+      if (formData.completo_nivel_superior === "COMPLETO") {
+        if (!formData.carrera_superior) newErrors.carrera_superior = "La carrera es requerida"
+        if (!formData.institucion_superior) newErrors.institucion_superior = "La institución es requerida"
+        if (!formData.provincia_superior) newErrors.provincia_superior = "La provincia es requerida"
+        if (!formData.anio_ingreso_superior) newErrors.anio_ingreso_superior = "El año de ingreso es requerido"
+        if (!formData.anio_egreso_superior) newErrors.anio_egreso_superior = "El año de egreso es requerido"
       }
-      if (formData.nivelSuperior === "EN_CURSO") {
-        if (!formData.nivelSuperiorCarrera) newErrors.nivelSuperiorCarrera = "La carrera es requerida"
-        if (!formData.nivelSuperiorInstitucion) newErrors.nivelSuperiorInstitucion = "La institución es requerida"
-        if (!formData.nivelSuperiorProvincia) newErrors.nivelSuperiorProvincia = "La provincia es requerida"
-        if (!formData.nivelSuperiorAnoIngreso) newErrors.nivelSuperiorAnoIngreso = "El año de ingreso es requerido"
+      if (formData.completo_nivel_superior === "EN_CURSO") {
+        if (!formData.carrera_superior) newErrors.carrera_superior = "La carrera es requerida"
+        if (!formData.institucion_superior) newErrors.institucion_superior = "La institución es requerida"
+        if (!formData.provincia_superior) newErrors.provincia_superior = "La provincia es requerida"
+        if (!formData.anio_ingreso_superior) newErrors.anio_ingreso_superior = "El año de ingreso es requerido"
       }
-      if (!formData.trabaja) newErrors.trabaja = "Debe indicar si trabaja actualmente"
-      if (formData.trabaja === "SI") {
-        if (!formData.horasDiarias) newErrors.horasDiarias = "Las horas diarias son requeridas"
-        if (!formData.descripcionTrabajo) newErrors.descripcionTrabajo = "La descripción del trabajo es requerida"
+      if (!formData.trabajo) newErrors.trabajo = "Debe indicar si trabajo actualmente"
+      if (formData.trabajo === "SI") {
+        if (!formData.horas_diarias) newErrors.horas_diarias = "Las horas diarias son requeridas"
+        if (!formData.descripcion_trabajo) newErrors.descripcion_trabajo = "La descripción del trabajo es requerida"
       }
-      if (!formData.tienePersonasACargo) newErrors.tienePersonasACargo = "Debe indicar si tiene personas a cargo"
+      if (!formData.personas_cargo) newErrors.personas_cargo = "Debe indicar si tiene personas a cargo"
     }
 
     if (step === 3) {
@@ -375,15 +393,71 @@ export default function MultiStepForm() {
   }
 
   const handleSubmit = async () => {
-    if (validateStep(currentStep)) {
-      console.log("Datos del formulario:", formData)
-      alert("Formulario enviado correctamente!")
+  if (!validateStep(currentStep)) return;
+
+  try {
+    const formPayload = new FormData(); // le doy un nombre distinto para q no dé error
+
+    for (const key in formData) {
+      const value = formData[key as keyof typeof formData];
+      if (
+        value !== null &&
+        value !== undefined &&
+        key !== 'dniFrente' &&
+        key !== 'dniDorso'
+      ) {
+        formPayload.append(key, value as string);
+      }
     }
+
+    if (formData.dniFrente) {
+      formPayload.append('dniFrente', formData.dniFrente);
+    }
+
+    if (formData.dniDorso) {
+      formPayload.append('dniDorso', formData.dniDorso);
+    }
+
+    const response = await fetch('http://localhost:3000/aspirante', {
+      method: 'POST',
+      body: formPayload,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      alert(errorData.mensaje || 'Hubo un error al enviar el formulario');
+      console.error('Error del servidor:', errorData);
+      return;
+    }
+
+    alert('Formulario enviado correctamente!');
+  } catch (error) {
+    console.error(error);
+    alert('Error inesperado al conectar con el servidor.');
   }
+};
+
 
   const renderPersonalData = () => (
     <div className="space-y-6">
       {/* Título de sección */}
+      <div className="bg-slate-800 rounded-lg p-4 text-center">
+        <h2 className="text-white text-xl font-semibold uppercase tracking-wider">ELECCIÓN DE CARRERA</h2>
+      </div>
+
+      <div className="w-full mt-4">
+        <FormField
+          label="CARRERAS"
+          id="carreras"
+          value={formData.carrera}
+          onChange={(value) => handleInputChange("carrera", value)}
+          options={carrera}
+          placeholder="..."
+          error={errors.carreras}
+          required
+        />
+      </div>
+
       <div className="bg-slate-800 rounded-lg p-4 text-center">
         <h2 className="text-white text-xl font-semibold uppercase tracking-wider">DATOS PERSONALES</h2>
       </div>
@@ -419,10 +493,10 @@ export default function MultiStepForm() {
 
         <FormField
           label="CUIL/CUIT"
-          id="cuil_cuit"
-          value={formData.cuil_cuit}
-          onChange={(value) => handleInputChange("cuil_cuit", value)}
-          error={errors.cuil_cuit}
+          id="cuil"
+          value={formData.cuil}
+          onChange={(value) => handleInputChange("cuil", value)}
+          error={errors.cuil}
           required
         />
 
@@ -455,10 +529,10 @@ export default function MultiStepForm() {
 
         <FormField
           label="CÓDIGO POSTAL"
-          id="codigoPostal"
-          value={formData.codigoPostal}
-          onChange={(value) => handleInputChange("codigoPostal", value)}
-          error={errors.codigoPostal}
+          id="codigo_postal"
+          value={formData.codigo_postal}
+          onChange={(value) => handleInputChange("codigo_postal", value)}
+          error={errors.codigo_postal}
           required
         />
 
@@ -483,22 +557,34 @@ export default function MultiStepForm() {
 
         <FormField
           label="FECHA DE NACIMIENTO"
-          id="fechaNacimiento"
+          id="fecha_nacimiento"
           type="date"
-          value={formData.fechaNacimiento}
-          onChange={(value) => handleInputChange("fechaNacimiento", value)}
-          error={errors.fechaNacimiento}
+          value={formData.fecha_nacimiento}
+          onChange={(value) => handleInputChange("fecha_nacimiento", value)}
+          error={errors.fecha_nacimiento}
           required
         />
 
         <FormField
-          label="LUGAR DE NACIMIENTO"
-          id="lugarNacimiento"
-          value={formData.lugarNacimiento}
-          onChange={(value) => handleInputChange("lugarNacimiento", value)}
-          error={errors.lugarNacimiento}
+          label="CIUDAD DE NACIMIENTO"
+          id="ciudad_nacimiento"
+          value={formData.ciudad_nacimiento}
+          onChange={(value) => handleInputChange("ciudad_nacimiento", value)}
+          error={errors.ciudad_nacimiento}
           required
         />
+
+        <FormField
+              label="PROVINCIA DE NACIMIENTO"
+              id="provincia_nacimiento"
+              value={formData.provincia_nacimiento}
+              onChange={(value) => handleInputChange("provincia_nacimiento", value)}
+              options={provincias}
+              placeholder="PROVINCIA..."
+              error={errors.provincia_nacimiento}
+              required
+        />
+
 
         <FormField
           label="SEXO"
@@ -514,9 +600,9 @@ export default function MultiStepForm() {
   )
 
   const renderEducationData = () => {
-    const nivelMedioEnabled = formData.nivelMedio === "SI"
-    const nivelSuperiorEnabled = formData.nivelSuperior === "COMPLETO" || formData.nivelSuperior === "EN_CURSO"
-    const trabajaEnabled = formData.trabaja === "SI"
+    const nivelMedioEnabled = formData.completo_nivel_medio === "SI"
+    const nivelSuperiorEnabled = formData.completo_nivel_superior === "COMPLETO" || formData.completo_nivel_superior === "EN_CURSO"
+    const trabajaEnabled = formData.trabajo === "SI"
 
     return (
       <div className="space-y-8">
@@ -529,37 +615,37 @@ export default function MultiStepForm() {
         <div>
           <RadioGroup
             label="NIVEL MEDIO:"
-            name="nivelMedio"
+            name="completo_nivel_medio"
             options={[
               { value: "SI", label: "SI" },
               { value: "NO", label: "NO" },
             ]}
-            value={formData.nivelMedio}
-            onChange={(value) => handleInputChange("nivelMedio", value)}
+            value={formData.completo_nivel_medio}
+            onChange={(value) => handleInputChange("completo_nivel_medio", value)}
           />
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <FormField
               label="AÑO DE INGRESO"
-              id="nivelMedioAnoIngreso"
-              value={formData.nivelMedioAnoIngreso}
-              onChange={(value) => handleInputChange("nivelMedioAnoIngreso", value)}
+              id="anio_ingreso_medio"
+              value={formData.anio_ingreso_medio}
+              onChange={(value) => handleInputChange("anio_ingreso_medio", value)}
               disabled={!nivelMedioEnabled}
               required
             />
             <FormField
               label="AÑO DE EGRESO"
-              id="nivelMedioAnoEgreso"
-              value={formData.nivelMedioAnoEgreso}
-              onChange={(value) => handleInputChange("nivelMedioAnoEgreso", value)}
+              id="anio_egreso_medio"
+              value={formData.anio_egreso_medio}
+              onChange={(value) => handleInputChange("anio_egreso_medio", value)}
               disabled={!nivelMedioEnabled}
               required
             />
             <FormField
               label="PROVINCIA"
-              id="nivelMedioProvincia"
-              value={formData.nivelMedioProvincia}
-              onChange={(value) => handleInputChange("nivelMedioProvincia", value)}
+              id="provincia_medio"
+              value={formData.provincia_medio}
+              onChange={(value) => handleInputChange("provincia_medio", value)}
               options={provincias}
               placeholder="PROVINCIA..."
               disabled={!nivelMedioEnabled}
@@ -567,9 +653,9 @@ export default function MultiStepForm() {
             />
             <FormField
               label="TÍTULO"
-              id="nivelMedioTitulo"
-              value={formData.nivelMedioTitulo}
-              onChange={(value) => handleInputChange("nivelMedioTitulo", value)}
+              id="titulo_medio"
+              value={formData.titulo_medio}
+              onChange={(value) => handleInputChange("titulo_medio", value)}
               disabled={!nivelMedioEnabled}
               required
             />
@@ -580,39 +666,39 @@ export default function MultiStepForm() {
         <div>
           <RadioGroup
             label="NIVEL SUPERIOR:"
-            name="nivelSuperior"
+            name="completo_nivel_superior"
             options={[
               { value: "COMPLETO", label: "COMPLETO" },
               { value: "NO", label: "NO" },
               { value: "EN_CURSO", label: "EN CURSO" },
             ]}
-            value={formData.nivelSuperior}
-            onChange={(value) => handleInputChange("nivelSuperior", value)}
+            value={formData.completo_nivel_superior}
+            onChange={(value) => handleInputChange("completo_nivel_superior", value)}
             
           />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <FormField
               label="CARRERA"
-              id="nivelSuperiorCarrera"
-              value={formData.nivelSuperiorCarrera}
-              onChange={(value) => handleInputChange("nivelSuperiorCarrera", value)}
+              id="carrera_superior"
+              value={formData.carrera_superior}
+              onChange={(value) => handleInputChange("carrera_superior", value)}
               disabled={!nivelSuperiorEnabled}
               required
             />
             <FormField
               label="INSTITUCIÓN"
-              id="nivelSuperiorInstitucion"
-              value={formData.nivelSuperiorInstitucion}
-              onChange={(value) => handleInputChange("nivelSuperiorInstitucion", value)}
+              id="institucion_superior"
+              value={formData.institucion_superior}
+              onChange={(value) => handleInputChange("institucion_superior", value)}
               disabled={!nivelSuperiorEnabled}
               required
             />
             <FormField
               label="PROVINCIA"
-              id="nivelSuperiorProvincia"
-              value={formData.nivelSuperiorProvincia}
-              onChange={(value) => handleInputChange("nivelSuperiorProvincia", value)}
+              id="provincia_superior"
+              value={formData.provincia_superior}
+              onChange={(value) => handleInputChange("provincia_superior", value)}
               options={provincias}
               placeholder="PROVINCIA..."
               disabled={!nivelSuperiorEnabled}
@@ -623,17 +709,17 @@ export default function MultiStepForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               label="AÑO DE INGRESO"
-              id="nivelSuperiorAnoIngreso"
-              value={formData.nivelSuperiorAnoIngreso}
-              onChange={(value) => handleInputChange("nivelSuperiorAnoIngreso", value)}
+              id="anio_ingreso_superior"
+              value={formData.anio_ingreso_superior}
+              onChange={(value) => handleInputChange("anio_ingreso_superior", value)}
               disabled={!nivelSuperiorEnabled}
               required
             />
             <FormField
               label="AÑO DE EGRESO"
-              id="nivelSuperiorAnoEgreso"
-              value={formData.nivelSuperiorAnoEgreso}
-              onChange={(value) => handleInputChange("nivelSuperiorAnoEgreso", value)}
+              id="anio_egreso_superior"
+              value={formData.anio_egreso_superior}
+              onChange={(value) => handleInputChange("anio_egreso_superior", value)}
               disabled={!nivelSuperiorEnabled}
               required
             />
@@ -649,31 +735,31 @@ export default function MultiStepForm() {
 
             <RadioGroup
               label="¿TRABAJA?:"
-              name="trabaja"
+              name="trabajo"
               options={[
                 { value: "SI", label: "SI" },
                 { value: "NO", label: "NO" },
               ]}
-              value={formData.trabaja}
-              onChange={(value) => handleInputChange("trabaja", value)}
+              value={formData.trabajo}
+              onChange={(value) => handleInputChange("trabajo", value)}
             />
 
             <div className="space-y-4">
               <FormField
                 label="HORAS DIARIAS"
-                id="horasDiarias"
-                value={formData.horasDiarias}
-                onChange={(value) => handleInputChange("horasDiarias", value)}
+                id="horas_diarias"
+                value={formData.horas_diarias}
+                onChange={(value) => handleInputChange("horas_diarias", value)}
                 disabled={!trabajaEnabled}
                 required  
               />
 
               <FormField
                 label="DESCRIPCIÓN DEL TRABAJO"
-                id="descripcionTrabajo"
+                id="descripcion_trabajo"
                 type="textarea"
-                value={formData.descripcionTrabajo}
-                onChange={(value) => handleInputChange("descripcionTrabajo", value)}
+                value={formData.descripcion_trabajo}
+                onChange={(value) => handleInputChange("descripcion_trabajo", value)}
                 disabled={!trabajaEnabled}
                 required
               />
@@ -688,13 +774,13 @@ export default function MultiStepForm() {
 
             <RadioGroup
               label="¿TIENE PERSONAS A CARGO?:"
-              name="tienePersonasACargo"
+              name="personas_cargo"
               options={[
                 { value: "SI", label: "SI" },
                 { value: "NO", label: "NO" },
               ]}
-              value={formData.tienePersonasACargo}
-              onChange={(value) => handleInputChange("tienePersonasACargo", value)}
+              value={formData.personas_cargo}
+              onChange={(value) => handleInputChange("personas_cargo", value)}
             />
           </div>
         </div>
@@ -715,7 +801,7 @@ export default function MultiStepForm() {
             <input
               id="dniFrente"
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png"
               onChange={(e) => handleFileChange("dniFrente", e.target.files?.[0] || null)}
               className="hidden"
             />
@@ -735,7 +821,7 @@ export default function MultiStepForm() {
             <input
               id="dniDorso"
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png"
               onChange={(e) => handleFileChange("dniDorso", e.target.files?.[0] || null)}
               className="hidden"
             />
