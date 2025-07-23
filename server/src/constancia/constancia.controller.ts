@@ -1,4 +1,11 @@
-import { Controller, Post, Body, Res, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Res,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { ConstanciaService } from './constancia.service';
 import { Response } from 'express';
 
@@ -27,7 +34,10 @@ export class ConstanciaController {
       const pdfBuffer = await this.constanciaService.generarPDF(aspirante);
       console.log('PDF generado correctamente, tamaño:', pdfBuffer.length);
 
-      await this.constanciaService.enviarEmailConPDF(pdfBuffer, aspirante.email);
+      await this.constanciaService.enviarEmailConPDF(
+        pdfBuffer,
+        aspirante.email,
+      );
       console.log('Email enviado correctamente a:', aspirante.email);
 
       res.set({
@@ -39,7 +49,7 @@ export class ConstanciaController {
     } catch (error) {
       console.error('Error al generar o enviar constancia:', error);
       throw new HttpException(
-        `Error al generar o enviar constancia: ${error.message}`,
+        `Error al generar o enviar constancia: ${error instanceof Error ? error.message : String(error)}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

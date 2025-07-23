@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Aspirante } from './aspirante.entity';
 import { CreateAspiranteDto } from './dto/create-aspirante.dto';
 import { DocumentoService } from '../documento/documento.service';
+import { PreinscripcionService } from '../preinscripcion/preinscripcion.service';
 
 @Injectable()
 export class AspiranteService {
@@ -11,6 +12,7 @@ export class AspiranteService {
     @InjectRepository(Aspirante)
     private readonly aspiranteRepository: Repository<Aspirante>,
     private readonly documentoService: DocumentoService,
+    private readonly preinscripcionService: PreinscripcionService,
   ) {}
 
   async create(
@@ -31,6 +33,11 @@ export class AspiranteService {
         archivos,
       );
     }
+
+    await this.preinscripcionService.create({
+      aspirante_id: savedAspirante.id,
+      carrera_id: dto.carrera_id,
+    });
 
     return savedAspirante;
   }

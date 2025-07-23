@@ -12,14 +12,10 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { AspiranteService } from './aspirante.service';
 import { CreateAspiranteDto } from './dto/create-aspirante.dto';
-import { DocumentoService } from 'src/documento/documento.service';
 
 @Controller('aspirante')
 export class AspiranteController {
-  constructor(
-    private readonly aspiranteService: AspiranteService,
-    private readonly documentoService: DocumentoService,
-  ) {}
+  constructor(private readonly aspiranteService: AspiranteService) {}
 
   @Post()
   @UseInterceptors(
@@ -78,9 +74,13 @@ export class AspiranteController {
         throw new BadRequestException('Se requieren ambas imágenes del DNI.');
       }
 
-      const aspirante = await this.aspiranteService.create(createAspiranteDto);
-
-      await this.documentoService.guardarDocumentosAspirante(aspirante, files);
+      // Centralizamos la lógica en el servicio.
+      // El método `create` del servicio ahora se encarga de crear el aspirante,
+      // guardar los documentos y crear la preinscripción en un solo paso.
+      const aspirante = await this.aspiranteService.create(
+        createAspiranteDto,
+        files,
+      );
 
       return {
         aspirante,

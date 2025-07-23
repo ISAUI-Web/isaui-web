@@ -6,7 +6,7 @@ import { Aspirante } from '../aspirante/aspirante.entity'; // ajustá la ruta si
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Aspirante]),  // Esto importa el repositorio de Aspirante
+    TypeOrmModule.forFeature([Aspirante]), // Esto importa el repositorio de Aspirante
   ],
   controllers: [ConstanciaController],
   providers: [ConstanciaService],

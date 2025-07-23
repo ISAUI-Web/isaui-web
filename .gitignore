@@ -63,4 +63,5 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 *.seed
 *.pid
 
-uploads/documentos/
+# Server-specific uploads
+/server/uploads/

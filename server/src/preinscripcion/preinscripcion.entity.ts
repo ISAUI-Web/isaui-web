@@ -19,14 +19,25 @@ export class Preinscripcion {
   @Column()
   estado: string;
 
-  @Column()
-  constancia_pdf: string;
-
-  @ManyToOne(() => Aspirante)
+  // Relación con Aspirante
+  @ManyToOne(() => Aspirante, (aspirante) => aspirante.preinscripciones, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
   @JoinColumn({ name: 'aspirante_id' })
   aspirante: Aspirante;
 
-  @ManyToOne(() => Carrera)
+  @Column({ nullable: true })
+  aspirante_id: number;
+
+  // Relación con Carrera
+  @ManyToOne(() => Carrera, (carrera) => carrera.preinscripciones, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
   @JoinColumn({ name: 'carrera_id' })
   carrera: Carrera;
+
+  @Column({ nullable: true })
+  carrera_id: number;
 }

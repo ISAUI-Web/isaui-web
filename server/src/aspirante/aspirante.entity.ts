@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Preinscripcion } from '../preinscripcion/preinscripcion.entity';
 
 @Entity()
 export class Aspirante {
@@ -40,9 +41,6 @@ export class Aspirante {
 
   @Column({ type: 'date' })
   fecha_nacimiento: Date;
-
-  @Column()
-  lugar_nacimiento: string;
 
   @Column()
   provincia_nacimiento: string;
@@ -103,4 +101,7 @@ export class Aspirante {
 
   @Column()
   personas_cargo: boolean;
+
+  @OneToMany(() => Preinscripcion, (preinscripcion) => preinscripcion.aspirante)
+  preinscripciones: Preinscripcion[];
 }

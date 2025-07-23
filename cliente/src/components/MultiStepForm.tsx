@@ -44,6 +44,7 @@ interface FormData {
   estado_matriculacion: string
   dniFrente: File | null
   dniDorso: File | null
+  carrera_id: string
 }
 
 const initialFormData: FormData = {
@@ -83,16 +84,22 @@ const initialFormData: FormData = {
   estado_matriculacion: "no matriculado",
   dniFrente: null,
   dniDorso: null,
+  carrera_id: "",
 }
 
-const carrera = [
-  "Tecnicatura Superior en Diseño de Espacios",
-  "Tecnicatura Superior en Desarrollo de Software",
-  "Tecnicatura Superior en Turismo y Hotelería",
-  "Tecnicatura Superior en Guía de Turismo",
-  "Tecnicatura Superior en Guía de Trekking y Guía de Montaña",
-  "Tecnicatura Superior en Enfermería",
-]
+const carreras = [
+  { id: 1, nombre: "Tecnicatura Superior en Diseño de Espacios" },
+  { id: 2, nombre: "Tecnicatura Superior en Desarrollo de Software" },
+  { id: 3, nombre: "Tecnicatura Superior en Turismo y Hotelería" },
+  { id: 4, nombre: "Tecnicatura Superior en Guía de Turismo" },
+  { id: 5, nombre: "Tecnicatura Superior en Guía de Trekking y Guía de Montaña" },
+  { id: 6, nombre: "Tecnicatura Superior en Enfermería" },
+];
+
+const carrerasOptions: UnifiedOption[] = carreras.map((c) => ({
+  value: c.id.toString(),
+  label: c.nombre,
+}));
 
 const provincias = [
   "Buenos Aires",
@@ -155,78 +162,102 @@ const RadioGroup = ({
   </div>
 )
 
+type UnifiedOption = {
+  value: string;
+  label: string;
+};
+
+type FormFieldProps = {
+  label: string;
+  id: string;
+  type?: string;
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+  placeholder?: string;
+  options?: string[] | UnifiedOption[] | null;
+  required?: boolean;
+  disabled?: boolean;
+};
+
 const FormField = ({
-    label,
-    id,
-    type = "text",
-    value,
-    onChange,
-    error,
-    placeholder = "...",
-    options = null,
-    required = false,
-    disabled = false,
-  }: {
-    label: string
-    id: string
-    type?: string
-    value: string
-    onChange: (value: string) => void
-    error?: string
-    placeholder?: string
-    options?: string[] | null
-    required?: boolean
-    disabled?: boolean
-  }) => (
-    <div className="bg-slate-700 rounded-lg p-4">
-      <label htmlFor={id} className="block text-white text-sm font-medium mb-3 uppercase tracking-wide">
-        {label} {required && "*"}
-      </label>
-      {options ? (
-        <select
-          id={id}
-          className={`w-full px-4 py-3 rounded-md bg-white text-gray-900 border-0 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-            error ? "ring-2 ring-red-500" : ""
-          }`}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          disabled={disabled}
-        >
-          <option value="">{placeholder}</option>
-          {options.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-      ) : type === "textarea" ? (
-        <textarea
-          id={id}
-          rows={4}
-          className={`w-full px-4 py-3 rounded-md bg-white text-gray-900 border-0 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none ${
-            error ? "ring-2 ring-red-500" : ""
-          }`}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          disabled={disabled}
-        />
-      ) : (
-        <input
-          id={id}
-          type={type}
-          className={`w-full px-4 py-3 rounded-md bg-white text-gray-900 border-0 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-            error ? "ring-2 ring-red-500" : ""
-          }`}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          disabled={disabled}
-        />
-      )}
-      {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
-    </div>
-  )
+  label,
+  id,
+  type = "text",
+  value,
+  onChange,
+  error,
+  placeholder = "...",
+  options = null,
+  required = false,
+  disabled = false,
+}: FormFieldProps) => (
+  <div className="bg-slate-700 rounded-lg p-4">
+    <label
+      htmlFor={id}
+      className="block text-white text-sm font-medium mb-3 uppercase tracking-wide"
+    >
+      {label} {required && "*"}
+    </label>
+    {options ? (
+      <select
+        id={id}
+        className={`w-full px-4 py-3 rounded-md bg-white text-gray-900 border-0 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+          error ? "ring-2 ring-red-500" : ""
+        }`}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+      >
+        <option value="">{placeholder}</option>
+        {options.map((option) => {
+          if (typeof option === "string") {
+            return (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            );
+          } else {
+            // Aquí TypeScript sabe que es UnifiedOption
+            return (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            );
+          }
+        })}
+
+      </select>
+    ) : type === "textarea" ? (
+      <textarea
+        id={id}
+        rows={4}
+        className={`w-full px-4 py-3 rounded-md bg-white text-gray-900 border-0 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none ${
+          error ? "ring-2 ring-red-500" : ""
+        }`}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        disabled={disabled}
+      />
+    ) : (
+      <input
+        id={id}
+        type={type}
+        className={`w-full px-4 py-3 rounded-md bg-white text-gray-900 border-0 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+          error ? "ring-2 ring-red-500" : ""
+        }`}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        disabled={disabled}
+      />
+    )}
+    {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
+  </div>
+);
+
+
 
 export default function MultiStepForm() {
   const [currentStep, setCurrentStep] = useState(1)
@@ -398,41 +429,56 @@ export default function MultiStepForm() {
   if (!validateStep(currentStep)) return;
 
   try {
-    const formPayload = new FormData(); // le doy un nombre distinto para q no dé error
+    const formPayload = new FormData();
 
-    for (const key in formData) {
-      const value = formData[key as keyof typeof formData];
-      if (
-        value !== null &&
-        value !== undefined &&
-        key !== 'dniFrente' &&
-        key !== 'dniDorso'
-      ) {
+    // Paso 1: Mapear los datos del formulario al formato que espera el DTO del backend.
+    const backendData = {
+      ...formData,
+      // Corrección: Enviar el ID de la carrera con el nombre de campo correcto.
+      carrera_id: formData.carrera,
+      // Corrección: Convertir "SI"/"NO" a strings "true"/"false" para que el backend los transforme a boolean.
+      completo_nivel_medio: (formData.completo_nivel_medio === 'SI').toString(),
+      // Corrección: Lógica para el campo booleano de nivel superior.
+      // Asumimos que "COMPLETO" o "EN_CURSO" significan `true` para el backend.
+      completo_nivel_superior: (
+        formData.completo_nivel_superior === 'COMPLETO' ||
+        formData.completo_nivel_superior === 'EN_CURSO'
+      ).toString(),
+      trabajo: (formData.trabajo === 'SI').toString(),
+      personas_cargo: (formData.personas_cargo === 'SI').toString(),
+    };
+
+    // Paso 2: Poblar el FormData con los datos corregidos y listos para el backend.
+    Object.entries(backendData).forEach(([key, value]) => {
+      // Excluimos campos que se manejan por separado (archivos) o que no deben enviarse (lógica de UI).
+      if (key !== 'dniFrente' && key !== 'dniDorso' && key !== 'carrera' && key !== 'numeroRegistro' && value !== null && value !== undefined) {
         formPayload.append(key, value as string);
       }
-    }
+    });
 
     if (formData.dniFrente) {
       formPayload.append('dniFrente', formData.dniFrente);
     }
-
     if (formData.dniDorso) {
       formPayload.append('dniDorso', formData.dniDorso);
     }
 
-    const response = await fetch('http://localhost:3000/aspirante', {
+    // Paso 3: Realizar UNA ÚNICA llamada al backend.
+    // El controlador de 'aspirante' ya se encarga de crear la preinscripción y enviar la constancia.
+    const aspiranteResponse = await fetch('http://localhost:3000/aspirante', {
       method: 'POST',
       body: formPayload,
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      alert(errorData.mensaje || 'Hubo un error al enviar el formulario');
-      console.error('Error del servidor:', errorData);
+    if (!aspiranteResponse.ok) {
+      const errorData = await aspiranteResponse.json(); // NestJS envía un objeto de error detallado.
+      const errorMessage = errorData.mensaje || 'Hubo un error al enviar el formulario. Por favor, revisa los datos ingresados.';
+      alert(errorMessage);
+      console.error('Error del servidor:', errorData); // Loguear el error completo para depuración.
       return;
     }
 
-    alert('Formulario enviado correctamente!');
+    alert('¡Formulario enviado con éxito! Revisa tu correo electrónico para ver la constancia de preinscripción.');
   } catch (error) {
     console.error(error);
     alert('Error inesperado al conectar con el servidor.');
@@ -449,15 +495,16 @@ export default function MultiStepForm() {
 
       <div className="w-full mt-4">
         <FormField
-          label="CARRERAS"
-          id="carreras"
+          label="Carrera"
+          id="carrera"
           value={formData.carrera}
-          onChange={(value) => handleInputChange("carrera", value)}
-          options={carrera}
+          onChange={(value) => setFormData({ ...formData, carrera: value })}
+          options={carrerasOptions}
           placeholder="..."
-          error={errors.carreras}
           required
         />
+
+
       </div>
 
       <div className="bg-slate-800 rounded-lg p-4 text-center">

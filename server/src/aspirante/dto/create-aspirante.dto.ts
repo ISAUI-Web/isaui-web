@@ -76,10 +76,6 @@ export class CreateAspiranteDto {
 
   @IsString()
   @IsNotEmpty()
-  lugar_nacimiento: string;
-
-  @IsString()
-  @IsNotEmpty()
   provincia_nacimiento: string;
 
   @IsString()
@@ -99,21 +95,25 @@ export class CreateAspiranteDto {
   completo_nivel_medio: boolean;
 
   @Transform(({ value }) => Number(value))
+  @IsOptional()
   @IsNumber()
   @Min(1900)
   @Max(new Date().getFullYear())
   anio_ingreso_medio: number;
 
   @Transform(({ value }) => Number(value))
+  @IsOptional()
   @IsNumber()
   @Min(1900)
   @Max(new Date().getFullYear() + 1)
   anio_egreso_medio: number;
 
+  @IsOptional()
   @IsString()
   @IsNotEmpty()
   provincia_medio: string;
 
+  @IsOptional()
   @IsString()
   @IsNotEmpty()
   titulo_medio: string;
@@ -166,4 +166,9 @@ export class CreateAspiranteDto {
   @Transform(({ value }) => value === 'true')
   @IsBoolean()
   personas_cargo: boolean;
+
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  @IsNotEmpty()
+  carrera_id: number;
 }
