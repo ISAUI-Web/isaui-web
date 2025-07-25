@@ -1,0 +1,311 @@
+"use client"
+
+import { useState } from "react"
+import { Card } from "../components/ui/card"
+import { Input } from "../components/ui/input"
+import { Button } from "../components/ui/button"
+import {
+  Menu,
+  X,
+  Home,
+  Users,
+  BarChart3,
+  Clock,
+  ThumbsUp,
+  FolderOpen,
+  FileText,
+  LogOut,
+  Search,
+  Filter,
+  Check,
+  XIcon,
+  Edit,
+  Eye,
+} from "lucide-react"
+import { useNavigate } from "react-router-dom" 
+import logo from "../assets/logo.png"
+import logo2 from "../assets/logo2.png"
+
+// Datos de ejemplo de aspirantes
+const aspirantesData = [
+  {
+    id: 1,
+    nombre: "JUAN",
+    apellido: "PEREZ",
+    carrera: "DESARROLLO DE SOFTWARE",
+    dni: "43189371",
+    estado: "pendiente",
+  },
+  {
+    id: 2,
+    nombre: "MARÍA",
+    apellido: "GONZÁLEZ",
+    carrera: "TURISMO",
+    dni: "42156789",
+    estado: "pendiente",
+  },
+  {
+    id: 3,
+    nombre: "CARLOS",
+    apellido: "RODRIGUEZ",
+    carrera: "DESARROLLO DE SOFTWARE",
+    dni: "41234567",
+    estado: "pendiente",
+  },
+  {
+    id: 4,
+    nombre: "ANA",
+    apellido: "MARTINEZ",
+    carrera: "ENFERMERÍA",
+    dni: "43567890",
+    estado: "pendiente",
+  },
+  {
+    id: 5,
+    nombre: "LUIS",
+    apellido: "FERNANDEZ",
+    carrera: "DESARROLLO DE SOFTWARE",
+    dni: "42987654",
+    estado: "pendiente",
+  },
+]
+
+const menuItems = [
+  { icon: Home, label: "INICIO", id: "inicio" },
+  { icon: Users, label: "ASPIRANTES", id: "aspirantes" },
+  { icon: BarChart3, label: "CUPOS", id: "cupos" },
+  { icon: Clock, label: "EN ESPERA", id: "espera" },
+  { icon: ThumbsUp, label: "CONFIRMADOS", id: "confirmados" },
+  { icon: FolderOpen, label: "LEGAJO DIGITAL", id: "legajo" },
+  { icon: FileText, label: "REPORTES", id: "reportes" },
+]
+
+export default function AdminAspirantes() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [activeSection, setActiveSection] = useState("aspirantes")
+  const [searchTerm, setSearchTerm] = useState("")
+  const [aspirantes, setAspirantes] = useState(aspirantesData)
+  const navigate = useNavigate()
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen)
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem("adminRemember")
+    localStorage.removeItem("adminUser")
+    alert("¡Sesión cerrada exitosamente!")
+    navigate("/login")
+  }
+
+  const handleMenuItemClick = (itemId: string) => {
+    setActiveSection(itemId)
+    setIsMenuOpen(false)
+
+    switch (itemId) {
+      case "inicio":
+        navigate("/admin")
+        break
+      case "aspirantes":
+        navigate("/aspirantes")
+        break
+      case "cupos":
+        navigate("/cupos")
+        break
+      case "espera":
+        navigate("/espera")
+        break
+      case "confirmados":
+        navigate("/confirmados")
+        break
+      case "legajo":
+        navigate("/legajo")
+        break
+      case "reportes":
+        navigate("/reportes")
+        break
+      default:
+        navigate("/admin")
+  }
+ }
+  const handleConfirmar = (id: number) => {
+    setAspirantes((prev) => prev.map((asp) => (asp.id === id ? { ...asp, estado: "confirmado" } : asp)))
+  }
+
+  const handleRechazar = (id: number) => {
+    setAspirantes((prev) => prev.map((asp) => (asp.id === id ? { ...asp, estado: "rechazado" } : asp)))
+  }
+
+  const handleVer = (id: number) => {
+    navigate(`/detAspirante/${id}`)
+  }
+  const handleWaiting = (id: number) => {
+    setAspirantes((prev) => prev.map((asp) => (asp.id === id ? { ...asp, estado: "pendiente" } : asp)))
+  }
+
+
+  const filteredAspirantes = aspirantes.filter(
+    (aspirante) =>
+      aspirante.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      aspirante.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      aspirante.dni.includes(searchTerm),
+  )
+
+  return (
+   <div className="min-h-screen bg-[#1F6680] from-teal-600 to-teal-800 relative">
+      {/* Header */}
+      <header className="bg-slate-800 h-16 flex items-center px-4 relative z-50">
+        <button onClick={toggleMenu} className="text-white hover:text-gray-300 transition-colors">
+          <Menu className="w-6 h-6" />
+        </button>
+
+        <div className="ml-6">
+          <img src={logo2} alt="Logo" className="mx-auto h-8" />
+        </div>
+      </header>
+
+      {/* Burger Menu Overlay */}
+      {isMenuOpen && <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setIsMenuOpen(false)} />}
+
+      {/* Burger Menu */}
+      <div
+        className={`fixed left-0 top-0 h-full w-80 bg-[#1F6680] transform transition-transform duration-300 ease-in-out z-50 flex flex-col ${
+          isMenuOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {/* Menu Header */}
+        <div className="bg-[#B49658] p-6 text-center flex-shrink-0">
+          <button onClick={toggleMenu} className="absolute top-4 right-4 text-white hover:text-gray-200">
+            <X className="w-6 h-6" />
+          </button>
+
+          <img src={logo} alt="Logo" className="mx-auto h-20" />
+          <div className="mt-3">
+            <p className="text-white text-sm font-medium">ADMINISTRADOR</p>
+          </div>
+        </div>
+
+        {/* Menu Items */}
+        <div className="flex-1">
+          {menuItems.map((item) => {
+            const IconComponent = item.icon
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleMenuItemClick(item.id)}
+                className={`w-full flex items-center px-6 py-4 text-white hover:bg-[#31546D] transition-colors ${
+                  activeSection === item.id ? "bg-[#31546D]" : ""
+                }`}
+              >
+                <IconComponent className="w-5 h-5 mr-4" />
+                <span className="text-sm font-medium tracking-wide">{item.label}</span>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Logout Button */}
+        <div className="p-4 flex-shrink-0">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center px-6 py-3 bg-[#D45A5C] hover:bg-[#C94A4E] text-white rounded-lg transition-colors"
+          >
+            <LogOut className="w-5 h-5 mr-2" />
+            <span className="font-medium">CERRAR SESIÓN</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <main className="p-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Search Bar */}
+          <div className="mb-6 flex items-center gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Input
+                type="text"
+                placeholder="¿A quien estás buscando?"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-4 pr-12 py-3 rounded-full bg-white border-0 focus:ring-2 focus:ring-blue-500"
+              />
+              <button className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Aspirantes Table */}
+          <Card className="bg-white shadow-xl overflow-hidden">
+            <div className="p-4">
+              <h2 className="text-xl font-bold text-gray-800 mb-4">LISTA DE ASPIRANTES</h2>
+
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-2 px-3 font-semibold text-gray-700">
+                        NOMBRE <span className="text-blue-500">↓</span>
+                      </th>
+                      <th className="text-left py-2 px-3 font-semibold text-gray-700">
+                        APELLIDO <span className="text-blue-500">↓</span>
+                      </th>
+                      <th className="text-left py-2 px-3 font-semibold text-gray-700">
+                        CARRERA <span className="text-blue-500">↓</span>
+                      </th>
+                      <th className="text-left py-2 px-3 font-semibold text-gray-700">
+                        DNI <span className="text-blue-500">↓</span>
+                      </th>
+                      <th className="text-center py-2 px-3 font-semibold text-gray-700">ACCIONES</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAspirantes.map((aspirante, index) => (
+                      <tr key={aspirante.id} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                        <td className="py-2 px-3 font-bold text-gray-900">{aspirante.nombre}</td>
+                        <td className="py-2 px-3 text-gray-600">{aspirante.apellido}</td>
+                        <td className="py-2 px-3 text-gray-600">{aspirante.carrera}</td>
+                        <td className="py-2 px-3 text-gray-600">{aspirante.dni}</td>
+                        <td className="py-2 px-3">
+                          <div className="flex justify-center gap-1">
+                            <Button
+                              onClick={() => handleWaiting(aspirante.id)}
+                              className="bg-yellow-500 hover:bg-yellow-600 text-white p-1.5 rounded-lg"
+                              disabled={aspirante.estado === "pendiente"}
+                            >
+                              <Clock className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              onClick={() => handleConfirmar(aspirante.id)}
+                              className="bg-green-500 hover:bg-green-600 text-white p-1.5 rounded-lg"
+                              disabled={aspirante.estado === "confirmado"}
+                            >
+                              <Check className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              onClick={() => handleRechazar(aspirante.id)}
+                              className="bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-lg"
+                              disabled={aspirante.estado === "rechazado"}
+                            >
+                              <XIcon className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              onClick={() => handleVer(aspirante.id)}
+                              className="bg-blue-500 hover:bg-blue-600 text-white p-1.5 rounded-lg"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </main>
+    </div>
+  )
+}

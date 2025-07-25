@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { ChevronLeft, ChevronRight, Upload, User, GraduationCap, FileText, ArrowLeft } from "lucide-react"
+import { Link, useNavigate } from "react-router-dom"
 
 interface FormData {
    // Datos personales
@@ -263,6 +264,7 @@ export default function MultiStepForm() {
   const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState<FormData>(initialFormData)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const navigate = useNavigate()
 
   const totalSteps = 3
   const progress = (currentStep / totalSteps) * 100
@@ -479,6 +481,7 @@ export default function MultiStepForm() {
     }
 
     alert('¡Formulario enviado con éxito! Revisa tu correo electrónico para ver la constancia de preinscripción.');
+    navigate('/'); // Redirigir al usuario a la página principal o a donde desees después del envío exitoso.
   } catch (error) {
     console.error(error);
     alert('Error inesperado al conectar con el servidor.');
@@ -921,9 +924,11 @@ export default function MultiStepForm() {
         <div className="max-w-6xl mx-auto">
           {/* Header con botón de regreso */}
           <div className="flex items-center justify-between mb-8">
-            <button className="flex items-center justify-center w-12 h-12 bg-[#274357] hover:bg-teal-600 rounded-full transition-colors">
-              <ArrowLeft className="w-6 h-6 text-white" />
-            </button>
+            <Link to="/">
+              <button className="flex items-center justify-center w-12 h-12 bg-[#274357] hover:bg-teal-600 rounded-full transition-colors">
+                <ArrowLeft className="w-6 h-6 text-white" />
+              </button>
+            </Link>
             <h1 className="text-3xl md:text-4xl font-bold text-white text-center uppercase tracking-wider flex-1">
               FORMULARIO DE PREINSCRIPCIÓN
             </h1>
