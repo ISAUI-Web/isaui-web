@@ -54,29 +54,52 @@ export default function Login() {
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault()
+  e.preventDefault();
 
-  if (!validateForm()) return
+  if (!validateForm()) return;
 
-  setIsLoading(true)
+  setIsLoading(true);
 
-  await new Promise((resolve) => setTimeout(resolve, 1000))
+  try {
+    const response = await fetch('http://localhost:3000/usuario/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        nombre_usuario: formData.usuario, 
+        contraseña: formData.contraseña,
+      }),
+    });
 
-  if (formData.usuario === "adm" && formData.contraseña === "123") {
-    if (formData.recordarme) {
-      localStorage.setItem("adminRemember", "true")
-      localStorage.setItem("adminUser", formData.usuario)
+    if (!response.ok) {
+      
+      const errorData = await response.json();
+      setErrors({ general: errorData.message || 'Error en el login' });
+      setIsLoading(false);
+      return;
     }
 
-    setIsLoading(false)
-    navigate("/admin") // ✅ Redirigimos al terminar
-  } else {
-    setIsLoading(false)
-    setErrors({
-      general: "Usuario o contraseña incorrectos",
-    })
+    const data = await response.json();
+
+
+    // Ejemplo: data.token, data.usuario
+    // Guardamos token si "recordarme" está marcado
+    if (formData.recordarme && data.token) {
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('usuario', JSON.stringify(data.usuario));
+    }
+
+    setIsLoading(false);
+    navigate('/admin'); // Redirigimos al panel admin
+
+  } catch (error) {
+    console.error(error);
+    setErrors({ general: 'Error de conexión con el servidor' });
+    setIsLoading(false);
   }
-}
+};
+
 
   const handleBack = () => {
     navigate("/")
