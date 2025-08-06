@@ -5,7 +5,8 @@ import { Card } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
-import { ArrowLeft, User, Save, Edit } from "lucide-react"
+import { Textarea } from "../components/ui/textarea"
+import { ArrowLeft, User, Save, Edit, Eye, MessageSquare, X, Send } from "lucide-react"
 import { useParams, useNavigate } from 'react-router-dom'
 
 
@@ -60,6 +61,9 @@ export default function DetalleAspirante() {
   const [activeTab, setActiveTab] = useState("datos")
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState(aspiranteData)
+  const [isObservationModalOpen, setIsObservationModalOpen] = useState(false)
+  const [observationMessage, setObservationMessage] = useState("")
+  const [isSubmittingObservation, setIsSubmittingObservation] = useState(false)
 
   const handleBack = () => {
     navigate("/aspirantes")
@@ -69,6 +73,37 @@ export default function DetalleAspirante() {
     // Aquí conectarías con tu API para guardar los cambios
     console.log("Guardando datos:", formData)
     setIsEditing(false)
+  }
+  const handleOpenObservationModal = () => {
+    setIsObservationModalOpen(true)
+    setObservationMessage("")
+  }
+
+  const handleCloseObservationModal = () => {
+    setIsObservationModalOpen(false)
+    setObservationMessage("")
+  }
+
+  const handleSubmitObservation = async () => {
+    if (!observationMessage.trim()) return
+
+    setIsSubmittingObservation(true)
+
+    // Simular envío de observación
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+
+    // Aquí conectarías con tu API para enviar la observación
+    console.log("Enviando observación:", {
+      mensaje: observationMessage,
+      fecha: new Date().toISOString(),
+    })
+
+    setIsSubmittingObservation(false)
+    setIsObservationModalOpen(false)
+    setObservationMessage("")
+
+    // Mostrar confirmación (opcional)
+    alert("Observación enviada correctamente")
   }
 
   const handleEdit = () => {
@@ -472,6 +507,70 @@ export default function DetalleAspirante() {
               
             </button>
 
+      {/* Modal de Observación */}
+      {isObservationModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md bg-white shadow-2xl">
+            <div className="p-6">
+              {/* Header del modal */}
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-900">Enviar Observación</h3>
+                <button
+                  onClick={handleCloseObservationModal}
+                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Información del aspirante */}
+              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-600">
+                  <strong>Aspirante:</strong> {formData.nombre} {formData.apellido}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <strong>DNI:</strong> {formData.dni}
+                </p>
+              </div>
+
+              {/* Textarea para el mensaje */}
+              <div className="mb-4">
+                <Label htmlFor="observacion" className="text-sm font-medium text-gray-700 mb-2 block">
+                  Mensaje de observación:
+                </Label>
+                <Textarea
+                  id="observacion"
+                  value={observationMessage}
+                  onChange={(e) => setObservationMessage(e.target.value)}
+                  placeholder="Escriba aquí su observación para el aspirante..."
+                  className="w-full h-32 resize-none"
+                />
+              </div>
+
+              {/* Botones del modal */}
+              <div className="flex justify-end gap-3">
+                <Button
+                  onClick={handleCloseObservationModal}
+                  variant="outline"
+                  className="px-4 py-2"
+                  disabled={isSubmittingObservation}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleSubmitObservation}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 flex items-center gap-2"
+                  disabled={!observationMessage.trim() || isSubmittingObservation}
+                >
+                  <Send className="w-4 h-4" />
+                  {isSubmittingObservation ? "Enviando..." : "Enviar"}
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
       {/* Contenedor principal centrado */}
       <div className="flex items-center justify-center min-h-screen py-4">
         <Card className="w-full max-w-4xl bg-white shadow-2xl">
@@ -511,22 +610,35 @@ export default function DetalleAspirante() {
 
             {/* Action Buttons */}
             <div className="flex justify-center gap-4">
-              <Button
-                onClick={handleSave}
-                className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg flex items-center gap-2"
-              >
-                <Save className="w-4 h-4" />
-                GUARDAR
-              </Button>
-              {!isEditing && (
-                <Button
-                  onClick={handleEdit}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg flex items-center gap-2"
-                >
-                  <Edit className="w-4 h-4" />
-                  EDITAR
-                </Button>
-              )}
+                {isEditing ? (
+                  <Button
+                    onClick={() => {
+                      handleSave();
+                      window.alert("Cambios guardados con éxito");
+                    }}
+                    className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg flex items-center gap-2"
+                  >
+                    <Save className="w-4 h-4" />
+                    GUARDAR
+                  </Button>
+                ) : (
+                 <>
+                   <Button
+                     onClick={handleOpenObservationModal}
+                     className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg flex items-center gap-2"
+                   >
+                     <Eye className="w-4 h-4" />
+                     OBSERVACIÓN
+                   </Button>
+                   <Button
+                     onClick={handleEdit}
+                     className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg flex items-center gap-2"
+                   >
+                     <Edit className="w-4 h-4" />
+                     EDITAR
+                   </Button>
+                 </>
+                )}
             </div>
           </div>
         </Card>
