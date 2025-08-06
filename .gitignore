@@ -64,6 +64,6 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 *.pid
 
 # Server-specific uploads
-/server/uploads/*
+/server/uploads/**
 !/server/uploads/**/
 !/server/uploads/documentos/.gitkeep
