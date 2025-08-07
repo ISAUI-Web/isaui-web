@@ -89,12 +89,12 @@ const initialFormData: FormData = {
 }
 
 const carreras = [
-  { id: 1, nombre: "Tecnicatura Superior en Diseño de Espacios" },
-  { id: 2, nombre: "Tecnicatura Superior en Desarrollo de Software" },
+  { id: 1, nombre: "Tecnicatura Superior en Desarrollo de Software" },
+  { id: 2, nombre: "Tecnicatura Superior en Diseño de Espacios" },
   { id: 3, nombre: "Tecnicatura Superior en Turismo y Hotelería" },
-  { id: 4, nombre: "Tecnicatura Superior en Guía de Turismo" },
-  { id: 5, nombre: "Tecnicatura Superior en Guía de Trekking y Guía de Montaña" },
-  { id: 6, nombre: "Tecnicatura Superior en Enfermería" },
+  { id: 4, nombre: "Tecnicatura Superior en Enfermería" },
+  { id: 5, nombre: "Tecnicatura Superior en Guía de Turismo" },
+  { id: 6, nombre: "Tecnicatura Superior en Guía de Trekking y Guía de Montaña" },
 ];
 
 const carrerasOptions: UnifiedOption[] = carreras.map((c) => ({
@@ -433,10 +433,9 @@ export default function MultiStepForm() {
   try {
     const formPayload = new FormData();
 
-    // Paso 1: Mapear los datos del formulario al formato que espera el DTO del backend.
+    // 1: Mapear los datos del formulario al formato que espera el DTO del backend.
     const backendData = {
       ...formData,
-      // Corrección: Enviar el ID de la carrera con el nombre de campo correcto.
       carrera_id: formData.carrera,
       // Corrección: Convertir "SI"/"NO" a strings "true"/"false" para que el backend los transforme a boolean.
       completo_nivel_medio: (formData.completo_nivel_medio === 'SI').toString(),
@@ -450,7 +449,7 @@ export default function MultiStepForm() {
       personas_cargo: (formData.personas_cargo === 'SI').toString(),
     };
 
-    // Paso 2: Poblar el FormData con los datos corregidos y listos para el backend.
+    // 2: Poblar el FormData con los datos corregidos y listos para el backend.
     Object.entries(backendData).forEach(([key, value]) => {
       // Excluimos campos que se manejan por separado (archivos) o que no deben enviarse (lógica de UI).
       if (key !== 'dniFrente' && key !== 'dniDorso' && key !== 'carrera' && key !== 'numeroRegistro' && value !== null && value !== undefined) {
@@ -465,7 +464,7 @@ export default function MultiStepForm() {
       formPayload.append('dniDorso', formData.dniDorso);
     }
 
-    // Paso 3: Realizar UNA ÚNICA llamada al backend.
+    // 3: Hacer una llamada unica al backend.
     // El controlador de 'aspirante' ya se encarga de crear la preinscripción y enviar la constancia.
     const aspiranteResponse = await fetch('http://localhost:3000/aspirante', {
       method: 'POST',
@@ -481,7 +480,7 @@ export default function MultiStepForm() {
     }
 
     alert('¡Formulario enviado con éxito! Revisa tu correo electrónico para ver la constancia de preinscripción.');
-    navigate('/'); // Redirigir al usuario a la página principal o a donde desees después del envío exitoso.
+    navigate('/'); // Redirigir al usuario a la página principal después del envío exitoso.
   } catch (error) {
     console.error(error);
     alert('Error inesperado al conectar con el servidor.');
