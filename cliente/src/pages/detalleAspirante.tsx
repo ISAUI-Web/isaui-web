@@ -31,6 +31,129 @@ export default function DetalleAspirante() {
   const [isObservationModalOpen, setIsObservationModalOpen] = useState(false)
   const [observationMessage, setObservationMessage] = useState("")
   const [isSubmittingObservation, setIsSubmittingObservation] = useState(false)
+  const [currentStep, setCurrentStep] = useState(1)
+  const totalSteps = 3
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // VALIDACIONES
+  const validateStep = (step: number): boolean => {
+    const newErrors: Record<string, string> = {}
+
+    if (step === 1) {
+     if (!formData.nombre) {
+    newErrors.nombre = "El nombre es requerido"
+      } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.nombre)) {
+        newErrors.nombre = "El nombre solo puede contener letras"
+      }
+      if (!formData.apellido) {
+        newErrors.apellido = "El apellido es requerido"
+      } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.apellido)) {
+        newErrors.apellido = "El apellido solo puede contener letras"
+      }
+      if (!formData.dni) newErrors.dni = "El DNI es requerido"
+      else if (!/^\d{8}$/.test(formData.dni)) {
+        newErrors.dni = "El DNI debe tener 8 digitos"
+      } else if (isNaN(Number(formData.dni))) {
+        newErrors.dni = "El DNI debe ser un número"
+      }
+      if (!formData.cuil) newErrors.cuil = "El CUIL/CUIT es requerido"
+      else if (!/^\d{11}$/.test(formData.cuil)) {
+        newErrors.cuil = "El CUIL/CUIT debe tener 11 digitos"
+      } else if (isNaN(Number(formData.cuil))) {
+        newErrors.cuil = "El CUIL/CUIT debe ser un número"
+      }
+      if (!formData.domicilio) newErrors.domicilio = "El domicilio es requerido"
+      if (!formData.localidad) newErrors.localidad = "La localidad es requerida"
+      if (!formData.barrio) newErrors.barrio = "El barrio es requerido"
+      if (!formData.codigo_postal) newErrors.codigo_postal = "El código postal es requerido"
+      else if (!/^\d{4}$/.test(formData.codigo_postal)) {
+        newErrors.codigo_postal = "El código postal debe tener 4 digitos"
+      } else if (isNaN(Number(formData.codigo_postal))) {
+        newErrors.codigo_postal = "El código postal debe ser un número"
+      }
+      if (!formData.telefono) newErrors.telefono = "El teléfono es requerido"
+      else if (!/^\d{10,15}$/.test(formData.telefono)) {
+        newErrors.telefono = "El teléfono debe tener entre 10 y 15 digitos"
+      } else if (isNaN(Number(formData.telefono))) {
+        newErrors.telefono = "El teléfono debe ser un número"
+      }
+      if (!formData.email) {
+        newErrors.email = "El email es requerido"
+      } else if (
+        !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(formData.email)
+      ) {
+        newErrors.email = "El email no es válido"
+      }
+      if (!formData.fecha_nacimiento) newErrors.fecha_nacimiento = "La fecha de nacimiento es requerida"
+      else {
+        const today = new Date()
+        const birthDate = new Date(formData.fecha_nacimiento)
+        if (birthDate >= today) {
+          newErrors.fecha_nacimiento = "La fecha de nacimiento no puede ser hoy o en el futuro"
+        }
+      }
+      if (!formData.ciudad_nacimiento) newErrors.ciudad_nacimiento = "La ciudad de nacimiento es requerida"
+      if (!formData.provincia_nacimiento) newErrors.provincia_nacimiento = "La provincia es requerida"
+      if (!formData.sexo) newErrors.sexo = "El sexo es requerido"
+      if(!formData.carrera) newErrors.carrera = "La carrera es requerida"
+
+    }
+
+    if (step === 2) {
+      if (!formData.completo_nivel_medio) newErrors.completo_nivel_medio = "Debe indicar si completó el nivel medio";
+      if (formData.completo_nivel_medio === "SI") {
+        if (!formData.anio_ingreso_medio) newErrors.anio_ingreso_medio = "El año de ingreso es requerido";
+        else if (Number(formData.anio_ingreso_medio) < 1900) newErrors.anio_ingreso_medio = "El año de ingreso debe ser mayor a 1900";
+        if (!formData.anio_egreso_medio) newErrors.anio_egreso_medio = "El año de egreso es requerido";
+        else if (Number(formData.anio_egreso_medio) < 1900) newErrors.anio_egreso_medio = "El año de egreso debe ser mayor a 1900";
+        if (!formData.provincia_medio) newErrors.provincia_medio = "La provincia es requerida";
+        if (!formData.titulo_medio) newErrors.titulo_medio = "El título es requerido";
+      }
+
+      if (!formData.completo_nivel_superior) newErrors.completo_nivel_superior = "Debe indicar si completó el nivel superior"
+      if (formData.completo_nivel_superior === "Sí") {
+        if (!formData.carrera_superior) newErrors.carrera_superior = "La carrera es requerida"
+        if (!formData.institucion_superior) newErrors.institucion_superior = "La institución es requerida"
+        if (!formData.provincia_superior) newErrors.provincia_superior = "La provincia es requerida"
+        if (!formData.anio_ingreso_superior) newErrors.anio_ingreso_superior = "El año de ingreso es requerido"
+        if (!formData.anio_egreso_superior) newErrors.anio_egreso_superior = "El año de egreso es requerido"
+      }
+      if (formData.completo_nivel_superior === "En_curso") {
+        if (!formData.carrera_superior) newErrors.carrera_superior = "La carrera es requerida"
+        if (!formData.institucion_superior) newErrors.institucion_superior = "La institución es requerida"
+        if (!formData.provincia_superior) newErrors.provincia_superior = "La provincia es requerida"
+        if (!formData.anio_ingreso_superior) newErrors.anio_ingreso_superior = "El año de ingreso es requerido"
+      }
+    }
+
+    if (step === 3) {
+      // Validaciones de situación laboral y responsabilidades
+      if (formData.trabajo === "Sí") {
+        if (!formData.horas_diarias) {
+          newErrors.horas_diarias = "Las horas diarias son requeridas";
+        } else if (isNaN(Number(formData.horas_diarias)) || Number(formData.horas_diarias) <= 0) {
+          newErrors.horas_diarias = "Las horas diarias deben ser un número mayor a 0";
+        }
+        if (!formData.descripcion_trabajo) {
+          newErrors.descripcion_trabajo = "La descripción del trabajo es requerida";
+        }
+      }
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const nextStep = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep((prev) => Math.min(prev + 1, totalSteps))
+    }
+  }
+
+  const prevStep = () => {
+    setCurrentStep((prev) => Math.max(prev - 1, 1))
+  }
+  //hasta acá
 
   useEffect(() => {
   const fetchAspirante = async () => {
@@ -90,6 +213,17 @@ export default function DetalleAspirante() {
   }
 
   const handleSave = async () => {
+    const step =
+    activeTab === "datos" ? 1 :
+    activeTab === "estudios" ? 2 :
+    activeTab === "laboral" ? 3 :
+    activeTab === "documentacion" ? 4 : 1;
+  const isValid = validateStep(step);
+  if (!isValid) {
+    alert("Por favor, corrige los errores antes de guardar.");
+    return;
+  }
+
     try {
       // Clono formData para no modificar el estado directamente
       const payload = { ...formData };
@@ -150,7 +284,7 @@ export default function DetalleAspirante() {
     setIsObservationModalOpen(false)
     setObservationMessage("")
 
-    // Mostrar confirmación (opcional)
+    // Mostrar confirmación
     alert("Observación enviada correctamente")
   }
 
@@ -159,7 +293,12 @@ export default function DetalleAspirante() {
   }
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    // Opcional: validación en tiempo real solo si está editando
+    if (isEditing) {
+      const step = activeTab === "datos" ? 1 : activeTab === "estudios" ? 2 : activeTab === "laboral" ? 3 : activeTab === "documentacion" ? 4 : 1;
+      validateStep(step);
+    }
   }
 
   const renderTabContent = () => {
@@ -180,6 +319,9 @@ export default function DetalleAspirante() {
               ) : (
                 <div className="text-blue-600 font-medium">{formData.nombre}</div>
               )}
+              {errors.nombre && (
+    <div className="text-red-500 text-xs mt-1">{errors.nombre}</div>
+  )}
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">APELLIDO</Label>
@@ -192,6 +334,7 @@ export default function DetalleAspirante() {
               ) : (
                 <div className="text-blue-600 font-medium">{formData.apellido}</div>
               )}
+              {errors.apellido && <div className="text-red-500 text-xs mt-1">{errors.apellido}</div>}
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">SEXO</Label>
@@ -204,6 +347,7 @@ export default function DetalleAspirante() {
               ) : (
                 <div className="text-blue-600 font-medium">{formData.sexo}</div>
               )}
+              {errors.sexo && <div className="text-red-500 text-xs mt-1">{errors.sexo}</div>}
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">DNI</Label>
@@ -216,6 +360,7 @@ export default function DetalleAspirante() {
               ) : (
                 <div className="text-blue-600 font-medium">{formData.dni}</div>
               )}
+              {errors.dni && <div className="text-red-500 text-xs mt-1">{errors.dni}</div>}
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">CUIL/CUIT</Label>
@@ -228,6 +373,7 @@ export default function DetalleAspirante() {
               ) : (
                 <div className="text-blue-600 font-medium">{formData.cuil}</div>
               )}
+              {errors.cuil && <div className="text-red-500 text-xs mt-1">{errors.cuil}</div>}
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">DOMICILIO</Label>
@@ -240,6 +386,7 @@ export default function DetalleAspirante() {
               ) : (
                 <div className="text-blue-600 font-medium">{formData.domicilio}</div>
               )}
+              {errors.domicilio && <div className="text-red-500 text-xs mt-1">{errors.domicilio}</div>}
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">LOCALIDAD</Label>
@@ -252,6 +399,7 @@ export default function DetalleAspirante() {
               ) : (
                 <div className="text-blue-600 font-medium">{formData.localidad}</div>
               )}
+              {errors.localidad && <div className="text-red-500 text-xs mt-1">{errors.localidad}</div>}
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">BARRIO</Label>
@@ -264,6 +412,7 @@ export default function DetalleAspirante() {
               ) : (
                 <div className="text-blue-600 font-medium">{formData.barrio}</div>
               )}
+              {errors.barrio && <div className="text-red-500 text-xs mt-1">{errors.barrio}</div>}
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">CÓDIGO POSTAL</Label>
@@ -276,6 +425,7 @@ export default function DetalleAspirante() {
               ) : (
                 <div className="text-blue-600 font-medium">{formData.codigo_postal}</div>
               )}
+              {errors.codigo_postal && <div className="text-red-500 text-xs mt-1">{errors.codigo_postal}</div>}
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">TELÉFONO</Label>
@@ -288,6 +438,7 @@ export default function DetalleAspirante() {
               ) : (
                 <div className="text-blue-600 font-medium">{formData.telefono}</div>
               )}
+              {errors.telefono && <div className="text-red-500 text-xs mt-1">{errors.telefono}</div>}
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">MAIL</Label>
@@ -300,19 +451,20 @@ export default function DetalleAspirante() {
               ) : (
                 <div className="text-blue-600 font-medium">{formData.email}</div>
               )}
+              {errors.email && <div className="text-red-500 text-xs mt-1">{errors.email}</div>}
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">CARRERA</Label>
               {isEditing ? (
                 <Input
                   value={formData.carrera || ""}
-                  // Este campo es solo lectura para evitar confusiones
                   readOnly
                   className="w-full bg-gray-100 cursor-not-allowed"
                 />
               ) : (
                 <div className="text-blue-600 font-medium">{formData.carrera}</div>
               )}
+              {errors.carrera && <div className="text-red-500 text-xs mt-1">{errors.carrera}</div>}
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">ESTADO DE PREINSCRIPCIÓN</Label>
@@ -338,6 +490,7 @@ export default function DetalleAspirante() {
                 <div className="text-blue-600 font-medium">{formData.estado_matriculacion}</div>
               )}
             </div>
+
           </div>
         );
       case "estudios":
@@ -351,12 +504,13 @@ export default function DetalleAspirante() {
                   onChange={(e) => handleInputChange('completo_nivel_medio', e.target.value)}
                   className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
                 >
-                  <option value="Sí">Sí</option>
-                  <option value="No">No</option>
+                  <option value="SI">Sí</option>
+                  <option value="NO">No</option>
                 </select>
               ) : (
                 <div className="text-blue-600 font-medium">{formData.completo_nivel_medio}</div>
               )}
+              {errors.completo_nivel_medio && <div className="text-red-500 text-xs mt-1">{errors.completo_nivel_medio}</div>}
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">AÑO DE INGRESO MEDIO</Label>
@@ -369,6 +523,7 @@ export default function DetalleAspirante() {
               ) : (
                 <div className="text-blue-600 font-medium">{formData.anio_ingreso_medio}</div>
               )}
+              {errors.anio_ingreso_medio && <div className="text-red-500 text-xs mt-1">{errors.anio_ingreso_medio}</div>}
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">AÑO DE EGRESO MEDIO</Label>
@@ -381,6 +536,7 @@ export default function DetalleAspirante() {
               ) : (
                 <div className="text-blue-600 font-medium">{formData.anio_egreso_medio}</div>
               )}
+              {errors.anio_egreso_medio && <div className="text-red-500 text-xs mt-1">{errors.anio_egreso_medio}</div>}
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">PROVINCIA (MEDIO)</Label>
@@ -393,6 +549,7 @@ export default function DetalleAspirante() {
               ) : (
                 <div className="text-blue-600 font-medium">{formData.provincia_medio}</div>
               )}
+              {errors.provincia_medio && <div className="text-red-500 text-xs mt-1">{errors.provincia_medio}</div>}
             </div>
             <div className="col-span-2">
               <Label className="text-sm font-medium text-gray-700 mb-1 block">TÍTULO NIVEL MEDIO</Label>
@@ -405,6 +562,7 @@ export default function DetalleAspirante() {
               ) : (
                 <div className="text-blue-600 font-medium">{formData.titulo_medio}</div>
               )}
+              {errors.titulo_medio && <div className="text-red-500 text-xs mt-1">{errors.titulo_medio}</div>}
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">¿COMPLETÓ NIVEL SUPERIOR?</Label>
@@ -421,6 +579,7 @@ export default function DetalleAspirante() {
               ) : (
                 <div className="text-blue-600 font-medium">{formData.completo_nivel_superior}</div>
               )}
+              {errors.completo_nivel_superior && <div className="text-red-500 text-xs mt-1">{errors.completo_nivel_superior}</div>}
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">CARRERA SUPERIOR</Label>
@@ -433,6 +592,7 @@ export default function DetalleAspirante() {
               ) : (
                 <div className="text-blue-600 font-medium">{formData.carrera_superior}</div>
               )}
+              {errors.carrera_superior && <div className="text-red-500 text-xs mt-1">{errors.carrera_superior}</div>}
             </div>
             <div className="col-span-2">
               <Label className="text-sm font-medium text-gray-700 mb-1 block">INSTITUCIÓN SUPERIOR</Label>
@@ -445,6 +605,7 @@ export default function DetalleAspirante() {
               ) : (
                 <div className="text-blue-600 font-medium">{formData.institucion_superior}</div>
               )}
+              {errors.institucion_superior && <div className="text-red-500 text-xs mt-1">{errors.institucion_superior}</div>}
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">PROVINCIA (SUPERIOR)</Label>
@@ -457,6 +618,7 @@ export default function DetalleAspirante() {
               ) : (
                 <div className="text-blue-600 font-medium">{formData.provincia_superior}</div>
               )}
+              {errors.provincia_superior && <div className="text-red-500 text-xs mt-1">{errors.provincia_superior}</div>}
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">AÑO DE INGRESO SUPERIOR</Label>
@@ -469,6 +631,7 @@ export default function DetalleAspirante() {
               ) : (
                 <div className="text-blue-600 font-medium">{formData.anio_ingreso_superior}</div>
               )}
+              {errors.anio_ingreso_superior && <div className="text-red-500 text-xs mt-1">{errors.anio_ingreso_superior}</div>}
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">AÑO DE EGRESO SUPERIOR</Label>
@@ -481,6 +644,7 @@ export default function DetalleAspirante() {
               ) : (
                 <div className="text-blue-600 font-medium">{formData.anio_egreso_superior}</div>
               )}
+              {errors.anio_egreso_superior && <div className="text-red-500 text-xs mt-1">{errors.anio_egreso_superior}</div>}
             </div>
           </div>
         );
@@ -499,8 +663,9 @@ export default function DetalleAspirante() {
                   <option value="No">No</option>
                 </select>
               ) : (
-                <div className="text-blue-600 font-medium">{formData.trabajo}</div>
+                  <div className="text-blue-600 font-medium">{formData.trabajo}</div>
               )}
+              {errors.trabajo && <div className="text-red-500 text-xs mt-1">{errors.trabajo}</div>}
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">HORAS DIARIAS</Label>
@@ -513,6 +678,7 @@ export default function DetalleAspirante() {
               ) : (
                 <div className="text-blue-600 font-medium">{formData.horas_diarias}</div>
               )}
+              {errors.horas_diarias && <div className="text-red-500 text-xs mt-1">{errors.horas_diarias}</div>}
             </div>
             <div className="col-span-2">
               <Label className="text-sm font-medium text-gray-700 mb-1 block">DESCRIPCIÓN DEL TRABAJO</Label>
@@ -525,6 +691,7 @@ export default function DetalleAspirante() {
               ) : (
                 <div className="text-blue-600 font-medium">{formData.descripcion_trabajo}</div>
               )}
+              {errors.descripcion_trabajo && <div className="text-red-500 text-xs mt-1">{errors.descripcion_trabajo}</div>}
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">PERSONAS A CARGO</Label>
@@ -540,6 +707,7 @@ export default function DetalleAspirante() {
               ) : (
                 <div className="text-blue-600 font-medium">{formData.personas_cargo}</div>
               )}
+              {errors.personas_cargo && <div className="text-red-500 text-xs mt-1">{errors.personas_cargo}</div>}
             </div>
           </div>
         );
