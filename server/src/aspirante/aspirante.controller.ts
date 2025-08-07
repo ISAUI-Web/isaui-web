@@ -1,6 +1,11 @@
 import {
   Controller,
+  Get,
   Post,
+  Param,
+  Put,
+  ParseIntPipe,
+  NotFoundException,
   UploadedFiles,
   UseInterceptors,
   Body,
@@ -12,6 +17,9 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { AspiranteService } from './aspirante.service';
 import { CreateAspiranteDto } from './dto/create-aspirante.dto';
+import { UpdateAspiranteDto } from './dto/update-aspirante.dto';
+import { plainToInstance } from 'class-transformer';
+import { DetalleAspiranteDto } from './dto/detalle-aspirante.dto';
 
 @Controller('aspirante')
 export class AspiranteController {
@@ -41,7 +49,7 @@ export class AspiranteController {
               const ext = extname(file.originalname);
               cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
             } else {
-              cb(new Error('Archivo inválido'), ''); // <-- línea válida para tipado
+              cb(new Error('Archivo inválido'), ''); //línea válida para tipado
             }
           },
         }),
@@ -69,7 +77,7 @@ export class AspiranteController {
     },
   ) {
     try {
-      // Podrías validar aquí si los archivos son requeridos
+      // Validar acá si los archivos son requeridos
       if (!files.dniFrente?.length || !files.dniDorso?.length) {
         throw new BadRequestException('Se requieren ambas imágenes del DNI.');
       }
@@ -113,5 +121,50 @@ export class AspiranteController {
         mensaje: 'Ocurrió un error inesperado.',
       });
     }
+  }
+
+  @Get()
+  async findAll() {
+    return this.aspiranteService.findAll();
+  }
+
+  @Get(':id')
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    const aspirante = await this.aspiranteService.findOne(id);
+
+    if (!aspirante) {
+      throw new NotFoundException(`Aspirante con ID ${id} no encontrado`);
+    }
+
+    const carrera =
+      aspirante.preinscripciones?.[0]?.carrera?.nombre || 'Sin carrera';
+
+    const aspiranteLegible = plainToInstance(
+      DetalleAspiranteDto,
+      {
+        ...aspirante,
+        carrera,
+      },
+      {
+        excludeExtraneousValues: true,
+      },
+    );
+
+    return aspiranteLegible;
+  }
+
+  @Put(':id')
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateAspiranteDto: UpdateAspiranteDto,
+  ) {
+    const updated = await this.aspiranteService.update(id, updateAspiranteDto);
+
+    if (!updated) {
+      throw new NotFoundException('Aspirante no encontrado');
+    }
+    // Después de actualizar, volvemos a buscar el aspirante para devolverlo
+    // con el formato legible
+    return this.findOne(id);
   }
 }

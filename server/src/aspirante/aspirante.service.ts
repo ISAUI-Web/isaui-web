@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Aspirante } from './aspirante.entity';
 import { CreateAspiranteDto } from './dto/create-aspirante.dto';
+import { UpdateAspiranteDto } from './dto/update-aspirante.dto';
 import { DocumentoService } from '../documento/documento.service';
 import { PreinscripcionService } from '../preinscripcion/preinscripcion.service';
 
@@ -40,5 +41,50 @@ export class AspiranteService {
     });
 
     return savedAspirante;
+  }
+
+  async findAll() {
+    const aspirantes = await this.aspiranteRepository.find({
+      select: ['id', 'nombre', 'apellido', 'dni'],
+      relations: ['preinscripciones', 'preinscripciones.carrera'],
+    });
+
+    return aspirantes.flatMap((aspirante) =>
+      aspirante.preinscripciones.map((pre) => ({
+        id: aspirante.id, // Necesario para abrir el detalleAsp
+        nombre: aspirante.nombre,
+        apellido: aspirante.apellido,
+        dni: aspirante.dni,
+        carrera: pre.carrera?.nombre || 'Sin carrera',
+      })),
+    );
+  }
+
+  async findOne(id: number) {
+    const aspirante = await this.aspiranteRepository.findOne({
+      where: { id },
+      relations: ['preinscripciones', 'preinscripciones.carrera'],
+    });
+
+    if (!aspirante) throw new NotFoundException('Aspirante no encontrado');
+
+    return aspirante;
+  }
+
+  async update(
+    id: number,
+    updateAspiranteDto: UpdateAspiranteDto,
+  ): Promise<Aspirante> {
+    const aspirante = await this.aspiranteRepository.findOne({ where: { id } });
+
+    if (!aspirante) {
+      throw new NotFoundException(`No se encontró el aspirante con ID ${id}`);
+    }
+
+    const updated = this.aspiranteRepository.merge(
+      aspirante,
+      updateAspiranteDto,
+    );
+    return await this.aspiranteRepository.save(updated);
   }
 }

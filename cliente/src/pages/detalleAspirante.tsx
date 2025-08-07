@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
@@ -12,40 +12,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 
 
 // Datos de ejemplo del aspirante
-const aspiranteData = {
-  id: 1,
-  nombre: "",
-  apellido: "",
-  sexo: "",
-  dni: "",
-  cuil: "",
-  domicilio: "",
-  localidad: "",
-  barrio: "",
-  codigoPostal: "",
-  telefono: "",
-  email: "",
-  carrera: "",
-  estado_preinscripcion: "pendiente",
-  estado_matriculacion: "no matriculado",
-  completo_nivel_medio: "",
-  anio_ingreso_medio: "",
-  anio_egreso_medio: "",
-  provincia_medio: "",
-  titulo_medio: "",
-  completo_nivel_superior: "",
-  carrera_superior: "",
-  institucion_superior: "",
-  provincia_superior: "",
-  anio_ingreso_superior: "",
-  anio_egreso_superior: "",
-  trabajo: "",
-  horas_diarias: "",
-  descripcion_trabajo: "",
-  personas_cargo: "",
-  dniFrente: null,
-  dniDorso: null,
-}
+
 
 const tabs = [
   { id: "datos", label: "Datos personales" },
@@ -60,20 +27,101 @@ export default function DetalleAspirante() {
 
   const [activeTab, setActiveTab] = useState("datos")
   const [isEditing, setIsEditing] = useState(false)
-  const [formData, setFormData] = useState(aspiranteData)
+  const [formData, setFormData] = useState<any | null>(null)
   const [isObservationModalOpen, setIsObservationModalOpen] = useState(false)
   const [observationMessage, setObservationMessage] = useState("")
   const [isSubmittingObservation, setIsSubmittingObservation] = useState(false)
+
+  useEffect(() => {
+  const fetchAspirante = async () => {
+    try {
+      const response = await fetch(`http://localhost:3000/aspirante/${id}`)
+      if (!response.ok) throw new Error('Error al cargar el aspirante')
+
+      const data = await response.json()
+      console.log("Aspirante cargado:", data)
+
+      setFormData({
+        id: data.id,
+        nombre: data.nombre || "",
+        apellido: data.apellido || "",
+        sexo: data.sexo || "",
+        dni: data.dni || "",
+        cuil: data.cuil || "",
+        domicilio: data.domicilio || "",
+        localidad: data.localidad || "",
+        barrio: data.barrio || "",
+        codigo_postal: data.codigo_postal || "",
+        telefono: data.telefono || "",
+        email: data.email || "",
+        carrera: data.carrera || "", 
+        estado_preinscripcion: data.estado_preinscripcion || "pendiente",
+        estado_matriculacion: data.estado_matriculacion || "no matriculado",
+        completo_nivel_medio: data.completo_nivel_medio || "",
+        anio_ingreso_medio: data.anio_ingreso_medio || "",
+        anio_egreso_medio: data.anio_egreso_medio || "",
+        provincia_medio: data.provincia_medio || "",
+        titulo_medio: data.titulo_medio || "",
+        completo_nivel_superior: data.completo_nivel_superior || "",
+        carrera_superior: data.carrera_superior || "",
+        institucion_superior: data.institucion_superior || "",
+        provincia_superior: data.provincia_superior || "",
+        anio_ingreso_superior: data.anio_ingreso_superior || "",
+        anio_egreso_superior: data.anio_egreso_superior || "",
+        trabajo: data.trabajo || "",
+        horas_diarias: data.horas_diarias || "",
+        descripcion_trabajo: data.descripcion_trabajo || "",
+        personas_cargo: data.personas_cargo || "",
+      })
+    } catch (error) {
+      console.error("❌ Error:", error)
+    }
+  }
+
+  if (id) fetchAspirante()
+}, [id])
+
+  if (!formData) {
+  return <div className="text-white text-center mt-10">Cargando datos del aspirante...</div>
+  }
 
   const handleBack = () => {
     navigate("/aspirantes")
   }
 
-  const handleSave = () => {
-    // Aquí conectarías con tu API para guardar los cambios
-    console.log("Guardando datos:", formData)
-    setIsEditing(false)
-  }
+  const handleSave = async () => {
+    try {
+      // Clono formData para no modificar el estado directamente
+      const payload = { ...formData };
+      // Eliminamos 'carrera' porque el backend no lo necesita
+      // en la ruta de actualización. La carrera se gestiona a través de la preinscripción.
+      delete payload.carrera;
+
+      const res = await fetch(`http://localhost:3000/aspirante/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        const errorMessage = errorData.message || 'Error desconocido del servidor.';
+        const detailedMessage = Array.isArray(errorMessage) ? errorMessage.join(', ') : errorMessage;
+        throw new Error(detailedMessage);
+      }
+
+      const updatedAspirante = await res.json();
+      setFormData(updatedAspirante);
+      setIsEditing(false);
+      alert('Cambios guardados con éxito');
+    } catch (error: any) {
+      console.error('Error guardando aspirante:', error);
+      alert(`Hubo un error al guardar los cambios: ${error.message}`);
+    }
+  };
+
   const handleOpenObservationModal = () => {
     setIsObservationModalOpen(true)
     setObservationMessage("")
@@ -125,7 +173,7 @@ export default function DetalleAspirante() {
               <Label className="text-sm font-medium text-gray-700 mb-1 block">NOMBRE</Label>
               {isEditing ? (
                 <Input
-                  value={formData.nombre}
+                  value={formData.nombre || ""}
                   onChange={(e) => handleInputChange("nombre", e.target.value)}
                   className="w-full"
                 />
@@ -137,7 +185,7 @@ export default function DetalleAspirante() {
               <Label className="text-sm font-medium text-gray-700 mb-1 block">APELLIDO</Label>
               {isEditing ? (
                 <Input
-                  value={formData.apellido}
+                  value={formData.apellido || ""}
                   onChange={(e) => handleInputChange("apellido", e.target.value)}
                   className="w-full"
                 />
@@ -149,7 +197,7 @@ export default function DetalleAspirante() {
               <Label className="text-sm font-medium text-gray-700 mb-1 block">SEXO</Label>
               {isEditing ? (
                 <Input
-                  value={formData.sexo}
+                  value={formData.sexo || ""}
                   onChange={(e) => handleInputChange("sexo", e.target.value)}
                   className="w-full"
                 />
@@ -161,7 +209,7 @@ export default function DetalleAspirante() {
               <Label className="text-sm font-medium text-gray-700 mb-1 block">DNI</Label>
               {isEditing ? (
                 <Input
-                  value={formData.dni}
+                  value={formData.dni || ""}
                   onChange={(e) => handleInputChange("dni", e.target.value)}
                   className="w-full"
                 />
@@ -173,7 +221,7 @@ export default function DetalleAspirante() {
               <Label className="text-sm font-medium text-gray-700 mb-1 block">CUIL/CUIT</Label>
               {isEditing ? (
                 <Input
-                  value={formData.cuil}
+                  value={formData.cuil || ""}
                   onChange={(e) => handleInputChange("cuil", e.target.value)}
                   className="w-full"
                 />
@@ -185,7 +233,7 @@ export default function DetalleAspirante() {
               <Label className="text-sm font-medium text-gray-700 mb-1 block">DOMICILIO</Label>
               {isEditing ? (
                 <Input
-                  value={formData.domicilio}
+                  value={formData.domicilio || ""}
                   onChange={(e) => handleInputChange("domicilio", e.target.value)}
                   className="w-full"
                 />
@@ -197,7 +245,7 @@ export default function DetalleAspirante() {
               <Label className="text-sm font-medium text-gray-700 mb-1 block">LOCALIDAD</Label>
               {isEditing ? (
                 <Input
-                  value={formData.localidad}
+                  value={formData.localidad || ""}
                   onChange={(e) => handleInputChange("localidad", e.target.value)}
                   className="w-full"
                 />
@@ -209,7 +257,7 @@ export default function DetalleAspirante() {
               <Label className="text-sm font-medium text-gray-700 mb-1 block">BARRIO</Label>
               {isEditing ? (
                 <Input
-                  value={formData.barrio}
+                  value={formData.barrio || ""}
                   onChange={(e) => handleInputChange("barrio", e.target.value)}
                   className="w-full"
                 />
@@ -221,19 +269,19 @@ export default function DetalleAspirante() {
               <Label className="text-sm font-medium text-gray-700 mb-1 block">CÓDIGO POSTAL</Label>
               {isEditing ? (
                 <Input
-                  value={formData.codigoPostal}
-                  onChange={(e) => handleInputChange("codigoPostal", e.target.value)}
+                  value={formData.codigo_postal || ""}
+                  onChange={(e) => handleInputChange("codigo_postal", e.target.value)}
                   className="w-full"
                 />
               ) : (
-                <div className="text-blue-600 font-medium">{formData.codigoPostal}</div>
+                <div className="text-blue-600 font-medium">{formData.codigo_postal}</div>
               )}
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">TELÉFONO</Label>
               {isEditing ? (
                 <Input
-                  value={formData.telefono}
+                  value={formData.telefono || ""}
                   onChange={(e) => handleInputChange("telefono", e.target.value)}
                   className="w-full"
                 />
@@ -245,7 +293,7 @@ export default function DetalleAspirante() {
               <Label className="text-sm font-medium text-gray-700 mb-1 block">MAIL</Label>
               {isEditing ? (
                 <Input
-                  value={formData.email}
+                  value={formData.email || ""}
                   onChange={(e) => handleInputChange("email", e.target.value)}
                   className="w-full"
                 />
@@ -257,9 +305,10 @@ export default function DetalleAspirante() {
               <Label className="text-sm font-medium text-gray-700 mb-1 block">CARRERA</Label>
               {isEditing ? (
                 <Input
-                  value={formData.carrera}
-                  onChange={(e) => handleInputChange("carrera", e.target.value)}
-                  className="w-full"
+                  value={formData.carrera || ""}
+                  // Este campo es solo lectura para evitar confusiones
+                  readOnly
+                  className="w-full bg-gray-100 cursor-not-allowed"
                 />
               ) : (
                 <div className="text-blue-600 font-medium">{formData.carrera}</div>
@@ -269,7 +318,7 @@ export default function DetalleAspirante() {
               <Label className="text-sm font-medium text-gray-700 mb-1 block">ESTADO DE PREINSCRIPCIÓN</Label>
               {isEditing ? (
                 <Input
-                  value={formData.estado_preinscripcion}
+                  value={formData.estado_preinscripcion || ""}
                   onChange={(e) => handleInputChange("estado_preinscripcion", e.target.value)}
                   className="w-full"
                 />
@@ -281,7 +330,7 @@ export default function DetalleAspirante() {
               <Label className="text-sm font-medium text-gray-700 mb-1 block">ESTADO DE MATRICULACIÓN</Label>
               {isEditing ? (
                 <Input
-                  value={formData.estado_matriculacion}
+                  value={formData.estado_matriculacion || ""}
                   onChange={(e) => handleInputChange("estado_matriculacion", e.target.value)}
                   className="w-full"
                 />
@@ -297,11 +346,14 @@ export default function DetalleAspirante() {
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">¿COMPLETÓ NIVEL MEDIO?</Label>
               {isEditing ? (
-                <Input
+                <select
                   value={formData.completo_nivel_medio}
-                  onChange={(e) => handleInputChange("completo_nivel_medio", e.target.value)}
-                  className="w-full"
-                />
+                  onChange={(e) => handleInputChange('completo_nivel_medio', e.target.value)}
+                  className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
+                >
+                  <option value="Sí">Sí</option>
+                  <option value="No">No</option>
+                </select>
               ) : (
                 <div className="text-blue-600 font-medium">{formData.completo_nivel_medio}</div>
               )}
@@ -310,7 +362,7 @@ export default function DetalleAspirante() {
               <Label className="text-sm font-medium text-gray-700 mb-1 block">AÑO DE INGRESO MEDIO</Label>
               {isEditing ? (
                 <Input
-                  value={formData.anio_ingreso_medio}
+                  value={formData.anio_ingreso_medio || ""}
                   onChange={(e) => handleInputChange("anio_ingreso_medio", e.target.value)}
                   className="w-full"
                 />
@@ -322,7 +374,7 @@ export default function DetalleAspirante() {
               <Label className="text-sm font-medium text-gray-700 mb-1 block">AÑO DE EGRESO MEDIO</Label>
               {isEditing ? (
                 <Input
-                  value={formData.anio_egreso_medio}
+                  value={formData.anio_egreso_medio || ""}
                   onChange={(e) => handleInputChange("anio_egreso_medio", e.target.value)}
                   className="w-full"
                 />
@@ -334,7 +386,7 @@ export default function DetalleAspirante() {
               <Label className="text-sm font-medium text-gray-700 mb-1 block">PROVINCIA (MEDIO)</Label>
               {isEditing ? (
                 <Input
-                  value={formData.provincia_medio}
+                  value={formData.provincia_medio || ""}
                   onChange={(e) => handleInputChange("provincia_medio", e.target.value)}
                   className="w-full"
                 />
@@ -346,7 +398,7 @@ export default function DetalleAspirante() {
               <Label className="text-sm font-medium text-gray-700 mb-1 block">TÍTULO NIVEL MEDIO</Label>
               {isEditing ? (
                 <Input
-                  value={formData.titulo_medio}
+                  value={formData.titulo_medio || ""}
                   onChange={(e) => handleInputChange("titulo_medio", e.target.value)}
                   className="w-full"
                 />
@@ -357,11 +409,15 @@ export default function DetalleAspirante() {
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">¿COMPLETÓ NIVEL SUPERIOR?</Label>
               {isEditing ? (
-                <Input
+                <select
                   value={formData.completo_nivel_superior}
-                  onChange={(e) => handleInputChange("completo_nivel_superior", e.target.value)}
-                  className="w-full"
-                />
+                  onChange={(e) => handleInputChange('completo_nivel_superior', e.target.value)}
+                  className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
+                >
+                  <option value="Sí">Sí</option>
+                  <option value="No">No</option>
+                  <option value="En curso">En curso</option>
+                </select>
               ) : (
                 <div className="text-blue-600 font-medium">{formData.completo_nivel_superior}</div>
               )}
@@ -370,7 +426,7 @@ export default function DetalleAspirante() {
               <Label className="text-sm font-medium text-gray-700 mb-1 block">CARRERA SUPERIOR</Label>
               {isEditing ? (
                 <Input
-                  value={formData.carrera_superior}
+                  value={formData.carrera_superior || ""}
                   onChange={(e) => handleInputChange("carrera_superior", e.target.value)}
                   className="w-full"
                 />
@@ -382,7 +438,7 @@ export default function DetalleAspirante() {
               <Label className="text-sm font-medium text-gray-700 mb-1 block">INSTITUCIÓN SUPERIOR</Label>
               {isEditing ? (
                 <Input
-                  value={formData.institucion_superior}
+                  value={formData.institucion_superior || ""}
                   onChange={(e) => handleInputChange("institucion_superior", e.target.value)}
                   className="w-full"
                 />
@@ -394,7 +450,7 @@ export default function DetalleAspirante() {
               <Label className="text-sm font-medium text-gray-700 mb-1 block">PROVINCIA (SUPERIOR)</Label>
               {isEditing ? (
                 <Input
-                  value={formData.provincia_superior}
+                  value={formData.provincia_superior || ""}
                   onChange={(e) => handleInputChange("provincia_superior", e.target.value)}
                   className="w-full"
                 />
@@ -406,7 +462,7 @@ export default function DetalleAspirante() {
               <Label className="text-sm font-medium text-gray-700 mb-1 block">AÑO DE INGRESO SUPERIOR</Label>
               {isEditing ? (
                 <Input
-                  value={formData.anio_ingreso_superior}
+                  value={formData.anio_ingreso_superior || ""}
                   onChange={(e) => handleInputChange("anio_ingreso_superior", e.target.value)}
                   className="w-full"
                 />
@@ -418,7 +474,7 @@ export default function DetalleAspirante() {
               <Label className="text-sm font-medium text-gray-700 mb-1 block">AÑO DE EGRESO SUPERIOR</Label>
               {isEditing ? (
                 <Input
-                  value={formData.anio_egreso_superior}
+                  value={formData.anio_egreso_superior || ""}
                   onChange={(e) => handleInputChange("anio_egreso_superior", e.target.value)}
                   className="w-full"
                 />
@@ -434,11 +490,14 @@ export default function DetalleAspirante() {
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">¿TRABAJA ACTUALMENTE?</Label>
               {isEditing ? (
-                <Input
+                <select
                   value={formData.trabajo}
-                  onChange={(e) => handleInputChange("trabajo", e.target.value)}
-                  className="w-full"
-                />
+                  onChange={(e) => handleInputChange('trabajo', e.target.value)}
+                  className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
+                >
+                  <option value="Sí">Sí</option>
+                  <option value="No">No</option>
+                </select>
               ) : (
                 <div className="text-blue-600 font-medium">{formData.trabajo}</div>
               )}
@@ -447,7 +506,7 @@ export default function DetalleAspirante() {
               <Label className="text-sm font-medium text-gray-700 mb-1 block">HORAS DIARIAS</Label>
               {isEditing ? (
                 <Input
-                  value={formData.horas_diarias}
+                  value={formData.horas_diarias || ""}
                   onChange={(e) => handleInputChange("horas_diarias", e.target.value)}
                   className="w-full"
                 />
@@ -459,7 +518,7 @@ export default function DetalleAspirante() {
               <Label className="text-sm font-medium text-gray-700 mb-1 block">DESCRIPCIÓN DEL TRABAJO</Label>
               {isEditing ? (
                 <Input
-                  value={formData.descripcion_trabajo}
+                  value={formData.descripcion_trabajo || ""}
                   onChange={(e) => handleInputChange("descripcion_trabajo", e.target.value)}
                   className="w-full"
                 />
@@ -470,11 +529,14 @@ export default function DetalleAspirante() {
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">PERSONAS A CARGO</Label>
               {isEditing ? (
-                <Input
+                <select
                   value={formData.personas_cargo}
-                  onChange={(e) => handleInputChange("personas_cargo", e.target.value)}
-                  className="w-full"
-                />
+                  onChange={(e) => handleInputChange('personas_cargo', e.target.value)}
+                  className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
+                >
+                  <option value="Sí">Sí</option>
+                  <option value="No">No</option>
+                </select>
               ) : (
                 <div className="text-blue-600 font-medium">{formData.personas_cargo}</div>
               )}
@@ -612,10 +674,7 @@ export default function DetalleAspirante() {
             <div className="flex justify-center gap-4">
                 {isEditing ? (
                   <Button
-                    onClick={() => {
-                      handleSave();
-                      window.alert("Cambios guardados con éxito");
-                    }}
+                    onClick={handleSave}
                     className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg flex items-center gap-2"
                   >
                     <Save className="w-4 h-4" />

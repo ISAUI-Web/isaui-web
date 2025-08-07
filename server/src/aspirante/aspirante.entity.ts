@@ -70,9 +70,8 @@ export class Aspirante {
   @Column()
   titulo_medio: string;
 
-  // Nivel superior
-  @Column()
-  completo_nivel_superior: boolean;
+  @Column({ type: 'varchar', length: 20, default: 'No' })
+  completo_nivel_superior: string;
 
   @Column({ nullable: true })
   carrera_superior: string;

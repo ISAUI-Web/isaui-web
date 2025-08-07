@@ -13,6 +13,19 @@ import {
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
+const transformToBoolean = ({ value }: { value: any }): boolean | any => {
+  if (typeof value === 'string') {
+    const lowerValue = value.toLowerCase().trim();
+    if (lowerValue === 'true' || lowerValue === 'sí' || lowerValue === 'si') {
+      return true;
+    }
+    if (lowerValue === 'false' || lowerValue === 'no') {
+      return false;
+    }
+  }
+  return value; // Devuelve el valor original si no es un string booleano reconocible
+};
+
 export class CreateAspiranteDto {
   @IsString()
   @IsNotEmpty()
@@ -90,7 +103,7 @@ export class CreateAspiranteDto {
   @IsNotEmpty()
   estado_matriculacion: string;
 
-  @Transform(({ value }) => value === 'true')
+  @Transform(transformToBoolean)
   @IsBoolean()
   completo_nivel_medio: boolean;
 
@@ -118,9 +131,9 @@ export class CreateAspiranteDto {
   @IsNotEmpty()
   titulo_medio: string;
 
-  @Transform(({ value }) => value === 'true')
-  @IsBoolean()
-  completo_nivel_superior: boolean;
+  @IsOptional()
+  @IsString()
+  completo_nivel_superior: string;
 
   @IsOptional()
   @IsString()
@@ -148,7 +161,7 @@ export class CreateAspiranteDto {
   @Max(new Date().getFullYear() + 1)
   anio_egreso_superior?: number;
 
-  @Transform(({ value }) => value === 'true')
+  @Transform(transformToBoolean)
   @IsBoolean()
   trabajo: boolean;
 
@@ -163,7 +176,7 @@ export class CreateAspiranteDto {
   @IsString()
   descripcion_trabajo?: string;
 
-  @Transform(({ value }) => value === 'true')
+  @Transform(transformToBoolean)
   @IsBoolean()
   personas_cargo: boolean;
 

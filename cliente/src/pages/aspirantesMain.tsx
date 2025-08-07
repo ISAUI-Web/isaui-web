@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "../components/ui/card"
 import { Input } from "../components/ui/input"
 import { Button } from "../components/ui/button"
@@ -26,49 +26,18 @@ import { useNavigate } from "react-router-dom"
 import logo from "../assets/logo.png"
 import logo2 from "../assets/logo2.png"
 
+interface AspiranteItem {
+  id: number;
+  nombre: string;
+  apellido: string;
+  dni: string;
+  carrera: string;
+  estado: string;
+}
+
+
 // Datos de ejemplo de aspirantes
-const aspirantesData = [
-  {
-    id: 1,
-    nombre: "JUAN",
-    apellido: "PEREZ",
-    carrera: "DESARROLLO DE SOFTWARE",
-    dni: "43189371",
-    estado: "pendiente",
-  },
-  {
-    id: 2,
-    nombre: "MARÍA",
-    apellido: "GONZÁLEZ",
-    carrera: "TURISMO",
-    dni: "42156789",
-    estado: "pendiente",
-  },
-  {
-    id: 3,
-    nombre: "CARLOS",
-    apellido: "RODRIGUEZ",
-    carrera: "DESARROLLO DE SOFTWARE",
-    dni: "41234567",
-    estado: "pendiente",
-  },
-  {
-    id: 4,
-    nombre: "ANA",
-    apellido: "MARTINEZ",
-    carrera: "ENFERMERÍA",
-    dni: "43567890",
-    estado: "pendiente",
-  },
-  {
-    id: 5,
-    nombre: "LUIS",
-    apellido: "FERNANDEZ",
-    carrera: "DESARROLLO DE SOFTWARE",
-    dni: "42987654",
-    estado: "pendiente",
-  },
-]
+
 
 const menuItems = [
   { icon: Home, label: "INICIO", id: "inicio" },
@@ -84,9 +53,35 @@ export default function AdminAspirantes() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [activeSection, setActiveSection] = useState("aspirantes")
   const [searchTerm, setSearchTerm] = useState("")
-  const [aspirantes, setAspirantes] = useState(aspirantesData)
+  const [aspirantes, setAspirantes] = useState<AspiranteItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
 
+
+  useEffect(() => {
+    fetch("http://localhost:3000/aspirante")
+      .then((res) => {
+        if (!res.ok) throw new Error("Error al traer los aspirantes");
+        return res.json();
+      })
+      .then((data) => {
+        setAspirantes(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error:", err);
+        setError("No se pudo cargar la lista de aspirantes");
+        setLoading(false);
+      });
+  }, []);
+  
+  const filteredAspirantes = aspirantes.filter((asp) =>
+    `${asp.nombre} ${asp.apellido} ${asp.dni} ${asp.carrera}`
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase())
+  )
+  
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
   }
@@ -144,12 +139,8 @@ export default function AdminAspirantes() {
   }
 
 
-  const filteredAspirantes = aspirantes.filter(
-    (aspirante) =>
-      aspirante.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      aspirante.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      aspirante.dni.includes(searchTerm),
-  )
+  if (loading) return <p className="text-white">Cargando aspirantes...</p>
+  if (error) return <p className="text-red-400">{error}</p>
 
   return (
    <div className="min-h-screen bg-[#1F6680] from-teal-600 to-teal-800 relative">
@@ -261,7 +252,7 @@ export default function AdminAspirantes() {
                   </thead>
                   <tbody>
                     {filteredAspirantes.map((aspirante, index) => (
-                      <tr key={aspirante.id} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                      <tr key={`${aspirante.id}-${aspirante.dni}`} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
                         <td className="py-2 px-3 font-bold text-gray-900">{aspirante.nombre}</td>
                         <td className="py-2 px-3 text-gray-600">{aspirante.apellido}</td>
                         <td className="py-2 px-3 text-gray-600">{aspirante.carrera}</td>
