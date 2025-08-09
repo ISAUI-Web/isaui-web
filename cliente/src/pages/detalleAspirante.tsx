@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
 import { Textarea } from "../components/ui/textarea"
-import { ArrowLeft, User, Save, Edit, Eye, MessageSquare, X, Send } from "lucide-react"
+import { ArrowLeft, User, Save, Edit, Eye, MessageSquare, X, Send, Camera, Upload } from "lucide-react"
 import { useParams, useNavigate } from 'react-router-dom'
 
 
@@ -34,6 +34,10 @@ export default function DetalleAspirante() {
   const [currentStep, setCurrentStep] = useState(1)
   const totalSteps = 3
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const dniFrenteInputRef = useRef<HTMLInputElement>(null)
+  const dniDorsoInputRef = useRef<HTMLInputElement>(null)
+  const [isUploadingImage, setIsUploadingImage] = useState<"dniFrente" | "dniDorso" | null>(null)
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
 
   // VALIDACIONES
   const validateStep = (step: number): boolean => {
@@ -153,7 +157,6 @@ export default function DetalleAspirante() {
   const prevStep = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1))
   }
-  //hasta acá
 
   useEffect(() => {
   const fetchAspirante = async () => {
@@ -292,8 +295,92 @@ export default function DetalleAspirante() {
     setIsEditing(true)
   }
 
+  const handleViewImage = (imageUrl: string | null) => {
+    if (imageUrl) {
+      setSelectedImage(imageUrl)
+    }
+  }
+
+  const handleImageUpload = async (file: File, documentType: "dniFrente" | "dniDorso") => {
+    if (!file || !formData) return
+
+    // Validar tipo de archivo
+    if (!file.type.startsWith("image/")) {
+      alert("Por favor seleccione un archivo de imagen válido")
+      return
+    }
+
+    // Validar tamaño (máximo 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("El archivo es demasiado grande. Máximo 5MB permitido.")
+      return
+    }
+
+    setIsUploadingImage(documentType)
+
+    try {
+      // Crear FormData para enviar el archivo
+      const formDataUpload = new FormData()
+      formDataUpload.append("file", file)
+      formDataUpload.append("documentType", documentType)
+      formDataUpload.append("aspiranteId", id ?? "")
+
+      // Aquí conectarías con tu API de NestJS para subir la imagen
+      // GASTÓN
+      const response = await fetch(`/api/aspirantes/${id}/documentos`, {
+        method: "POST",
+        body: formDataUpload,
+      })
+
+      if (!response.ok) {
+        throw new Error("Error al subir la imagen")
+      }
+
+      const result = await response.json()
+
+      // Actualizar el estado con la nueva URL de la imagen desde el servidor
+      setFormData((prev: any) =>
+        prev
+          ? {
+              ...prev,
+              documentos: {
+                ...prev.documentos,
+                [documentType]: result.imageUrl, // URL devuelta por el servidor
+              },
+            }
+          : prev,
+      )
+
+      console.log(`Imagen ${documentType} subida:`, result)
+      alert("Imagen actualizada correctamente")
+    } catch (error) {
+      console.error("Error al subir imagen:", error)
+      alert("Error al subir la imagen. Intente nuevamente.")
+    } finally {
+      setIsUploadingImage(null)
+    }
+  }
+
+  const handleFileInputChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    documentType: "dniFrente" | "dniDorso",
+  ) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      handleImageUpload(file, documentType)
+    }
+  }
+
+  const triggerFileInput = (documentType: "dniFrente" | "dniDorso") => {
+    if (documentType === "dniFrente") {
+      dniFrenteInputRef.current?.click()
+    } else {
+      dniDorsoInputRef.current?.click()
+    }
+  }
+
   const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((prev: typeof formData) => ({ ...prev, [field]: value }));
     // Opcional: validación en tiempo real solo si está editando
     if (isEditing) {
       const step = activeTab === "datos" ? 1 : activeTab === "estudios" ? 2 : activeTab === "laboral" ? 3 : activeTab === "documentacion" ? 4 : 1;
@@ -714,7 +801,193 @@ export default function DetalleAspirante() {
       case "documentacion":
         return (
           <div className="text-gray-500 text-center py-8 col-span-2">
-            <span className="uppercase tracking-wide text-sm font-semibold">SECCIÓN DE DOCUMENTACIÓN (PRÓXIMAMENTE)</span>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Documentos del Aspirante</h3>
+
+            {/* Inputs ocultos para subir archivos */}
+            <input
+              ref={dniFrenteInputRef}
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleFileInputChange(e, "dniFrente")}
+              className="hidden"
+            />
+            <input
+              ref={dniDorsoInputRef}
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleFileInputChange(e, "dniDorso")}
+              className="hidden"
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* DNI Frente */}
+              <div className="space-y-3">
+                <h4 className="text-md font-medium text-gray-700">DNI - Frente</h4>
+                <div className="relative group">
+                  {formData.documentos && formData.documentos.dniFrente ? (
+                    <img
+                      src={formData.documentos.dniFrente || "/placeholder.svg"}
+                      alt="DNI Frente"
+                      className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                      onClick={() => !isEditing && handleViewImage(formData.documentos.dniFrente)}
+                    />
+                  ) : (
+                    <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                      <div className="text-center text-gray-500">
+                        <Camera className="w-8 h-8 mx-auto mb-2" />
+                        <p className="text-sm">No hay imagen disponible</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Overlay para modo edición */}
+                  {isEditing && (
+                    <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center">
+                      <Button
+                        onClick={() => triggerFileInput("dniFrente")}
+                        disabled={isUploadingImage === "dniFrente"}
+                        className="bg-white/90 hover:bg-white text-gray-800 px-4 py-2 rounded-lg flex items-center gap-2"
+                      >
+                        {isUploadingImage === "dniFrente" ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
+                            Subiendo...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4" />
+                            {formData.documentos && formData.documentos.dniFrente ? "Cambiar imagen" : "Subir imagen"}
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Overlay para modo vista */}
+                  {!isEditing && formData.documentos && formData.documentos.dniFrente && (
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <Button
+                        onClick={() => handleViewImage(formData.documentos.dniFrente)}
+                        className="bg-white/90 hover:bg-white text-gray-800 p-2 rounded-full"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  {isEditing ? (
+                    <Button
+                      onClick={() => triggerFileInput("dniFrente")}
+                      disabled={isUploadingImage === "dniFrente"}
+                      className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
+                    >
+                      <Camera className="w-4 h-4 mr-2" />
+                      {isUploadingImage === "dniFrente"
+                        ? "Subiendo..."
+                        : formData.documentos && formData.documentos.dniFrente
+                          ? "Cambiar"
+                          : "Subir"}
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => handleViewImage(formData.documentos?.dniFrente)}
+                      variant="outline"
+                      className="flex-1 text-sm"
+                      disabled={!formData.documentos || !formData.documentos.dniFrente}
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Ver
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* DNI Dorso */}
+              <div className="space-y-3">
+                <h4 className="text-md font-medium text-gray-700">DNI - Dorso</h4>
+                <div className="relative group">
+                  {formData.documentos && formData.documentos.dniDorso ? (
+                    <img
+                      src={formData.documentos.dniDorso || "/placeholder.svg"}
+                      alt="DNI Dorso"
+                      className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                      onClick={() => !isEditing && handleViewImage(formData.documentos.dniDorso)}
+                    />
+                  ) : (
+                    <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                      <div className="text-center text-gray-500">
+                        <Camera className="w-8 h-8 mx-auto mb-2" />
+                        <p className="text-sm">No hay imagen disponible</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Overlay para modo edición */}
+                  {isEditing && (
+                    <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center">
+                      <Button
+                        onClick={() => triggerFileInput("dniDorso")}
+                        disabled={isUploadingImage === "dniDorso"}
+                        className="bg-white/90 hover:bg-white text-gray-800 px-4 py-2 rounded-lg flex items-center gap-2"
+                      >
+                        {isUploadingImage === "dniDorso" ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
+                            Subiendo...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4" />
+                            {formData.documentos && formData.documentos.dniDorso ? "Cambiar imagen" : "Subir imagen"}
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Overlay para modo vista */}
+                  {!isEditing && formData.documentos && formData.documentos.dniDorso && (
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <Button
+                        onClick={() => handleViewImage(formData.documentos.dniDorso)}
+                        className="bg-white/90 hover:bg-white text-gray-800 p-2 rounded-full"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  {isEditing ? (
+                    <Button
+                      onClick={() => triggerFileInput("dniDorso")}
+                      disabled={isUploadingImage === "dniDorso"}
+                      className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
+                    >
+                      <Camera className="w-4 h-4 mr-2" />
+                      {isUploadingImage === "dniDorso"
+                        ? "Subiendo..."
+                        : formData.documentos && formData.documentos.dniDorso
+                          ? "Cambiar"
+                          : "Subir"}
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => handleViewImage(formData.documentos?.dniDorso)}
+                      variant="outline"
+                      className="flex-1 text-sm"
+                      disabled={!formData.documentos || !formData.documentos.dniDorso}
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Ver
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         );
       default:
