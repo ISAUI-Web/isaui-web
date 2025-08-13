@@ -1,5 +1,8 @@
 import { Expose, Transform } from 'class-transformer';
 
+const transformBooleanToSiNo = ({ value }: { value: any }): string =>
+  value === true || value === 1 ? 'Sí' : 'No';
+
 export class DetalleAspiranteDto {
   @Expose() nombre: string;
   @Expose() apellido: string;
@@ -24,8 +27,7 @@ export class DetalleAspiranteDto {
   codigo_postal: string;
 
   @Expose()
-  @Transform(({ value }) => (value === true || value === 1 ? 'Sí' : 'No'))
-  completo_nivel_medio: string;
+  completo_nivel_medio: string; // Ahora será 'Sí', 'No', o 'En curso'
 
   @Expose()
   anio_ingreso_medio: number;
@@ -40,7 +42,7 @@ export class DetalleAspiranteDto {
   titulo_medio: string;
 
   @Expose()
-  completo_nivel_superior: string;
+  completo_nivel_superior: string; // Ahora será 'Sí', 'No', o 'En curso'
 
   @Expose()
   carrera_superior: string;
@@ -58,7 +60,7 @@ export class DetalleAspiranteDto {
   anio_egreso_superior: number;
 
   @Expose()
-  @Transform(({ value }) => (value === true || value === 1 ? 'Sí' : 'No'))
+  @Transform(transformBooleanToSiNo)
   trabajo: string;
 
   @Expose()
@@ -68,6 +70,6 @@ export class DetalleAspiranteDto {
   descripcion_trabajo: string;
 
   @Expose()
-  @Transform(({ value }) => (value === true || value === 1 ? 'Sí' : 'No'))
+  @Transform(transformBooleanToSiNo)
   personas_cargo: string;
 }

@@ -295,6 +295,11 @@ export default function MultiStepForm() {
         newData.anio_egreso_superior = ""
       }
 
+      // Limpiar año de egreso si se cambia a "EN CURSO"
+      if (field === "completo_nivel_superior" && value === "EN_CURSO") {
+        newData.anio_egreso_superior = ""
+      }
+
       if (field === "trabajo" && value === "NO") {
         newData.horas_diarias = ""
         newData.descripcion_trabajo = ""
@@ -437,15 +442,13 @@ export default function MultiStepForm() {
     const backendData = {
       ...formData,
       carrera_id: formData.carrera,
-      // Corrección: Convertir "SI"/"NO" a strings "true"/"false" para que el backend los transforme a boolean.
-      completo_nivel_medio: (formData.completo_nivel_medio === 'SI').toString(),
-      // Corrección: Lógica para el campo booleano de nivel superior.
-      // Asumimos que "COMPLETO" o "EN_CURSO" significan `true` para el backend.
-      completo_nivel_superior: (
-        formData.completo_nivel_superior === 'COMPLETO' ||
-        formData.completo_nivel_superior === 'EN_CURSO'
-      ).toString(),
-      trabajo: (formData.trabajo === 'SI').toString(),
+      // Se mapean los valores del frontend a los strings que el backend espera.
+      completo_nivel_medio: formData.completo_nivel_medio === 'SI' ? 'Sí' : 'No',
+      completo_nivel_superior:
+        formData.completo_nivel_superior === 'COMPLETO' ? 'Sí'
+        : formData.completo_nivel_superior === 'EN_CURSO' ? 'En curso'
+        : 'No',
+      trabajo: (formData.trabajo === 'SI').toString(), // Se mantiene como booleano
       personas_cargo: (formData.personas_cargo === 'SI').toString(),
     };
 
@@ -653,6 +656,7 @@ export default function MultiStepForm() {
   const renderEducationData = () => {
     const nivelMedioEnabled = formData.completo_nivel_medio === "SI"
     const nivelSuperiorEnabled = formData.completo_nivel_superior === "COMPLETO" || formData.completo_nivel_superior === "EN_CURSO"
+    const nivelSuperiorCompleto = formData.completo_nivel_superior === "COMPLETO"
     const trabajaEnabled = formData.trabajo === "SI"
 
     return (
@@ -771,7 +775,7 @@ export default function MultiStepForm() {
               id="anio_egreso_superior"
               value={formData.anio_egreso_superior}
               onChange={(value) => handleInputChange("anio_egreso_superior", value)}
-              disabled={!nivelSuperiorEnabled}
+              disabled={!nivelSuperiorCompleto}
               required
             />
           </div>
