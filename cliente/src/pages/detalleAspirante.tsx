@@ -105,7 +105,7 @@ export default function DetalleAspirante() {
 
     if (step === 2) {
       if (!formData.completo_nivel_medio) newErrors.completo_nivel_medio = "Debe indicar si completó el nivel medio";
-      if (formData.completo_nivel_medio === "SI") {
+      if (formData.completo_nivel_medio === "Sí") {
         if (!formData.anio_ingreso_medio) newErrors.anio_ingreso_medio = "El año de ingreso es requerido";
         else if (Number(formData.anio_ingreso_medio) < 1900) newErrors.anio_ingreso_medio = "El año de ingreso debe ser mayor a 1900";
         if (!formData.anio_egreso_medio) newErrors.anio_egreso_medio = "El año de egreso es requerido";
@@ -122,7 +122,7 @@ export default function DetalleAspirante() {
         if (!formData.anio_ingreso_superior) newErrors.anio_ingreso_superior = "El año de ingreso es requerido"
         if (!formData.anio_egreso_superior) newErrors.anio_egreso_superior = "El año de egreso es requerido"
       }
-      if (formData.completo_nivel_superior === "En_curso") {
+      if (formData.completo_nivel_superior === "En curso") {
         if (!formData.carrera_superior) newErrors.carrera_superior = "La carrera es requerida"
         if (!formData.institucion_superior) newErrors.institucion_superior = "La institución es requerida"
         if (!formData.provincia_superior) newErrors.provincia_superior = "La provincia es requerida"
@@ -591,8 +591,8 @@ export default function DetalleAspirante() {
                   onChange={(e) => handleInputChange('completo_nivel_medio', e.target.value)}
                   className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
                 >
-                  <option value="SI">Sí</option>
-                  <option value="NO">No</option>
+                  <option value="Sí">Sí</option>
+                  <option value="No">No</option>
                 </select>
               ) : (
                 <div className="text-blue-600 font-medium">{formData.completo_nivel_medio}</div>

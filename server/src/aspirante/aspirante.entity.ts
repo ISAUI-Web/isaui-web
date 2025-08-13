@@ -55,22 +55,22 @@ export class Aspirante {
   estado_matriculacion: string;
 
   // Nivel medio
-  @Column()
-  completo_nivel_medio: boolean;
+  @Column({ type: 'varchar', length: 20, default: 'No' })
+  completo_nivel_medio: string;
 
-  @Column({ name: 'año_ingreso_medio' })
+  @Column({ nullable: true, name: 'año_ingreso_medio' })
   anio_ingreso_medio: number;
 
-  @Column({ name: 'año_egreso_medio' })
+  @Column({ nullable: true, name: 'año_egreso_medio' })
   anio_egreso_medio: number;
 
-  @Column()
+  @Column({ nullable: true })
   provincia_medio: string;
 
-  @Column()
+  @Column({ nullable: true })
   titulo_medio: string;
 
-  @Column({ type: 'varchar', length: 20, default: 'No' })
+  @Column({ type: 'varchar', length: 20, nullable: true })
   completo_nivel_superior: string;
 
   @Column({ nullable: true })
