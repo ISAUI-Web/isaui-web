@@ -16,8 +16,6 @@ export default function App() {
       <Route path="/aspirantes" element={<Aspirantes />} />
       <Route path="/detAspirante/:id" element={<DetalleAspirante />} />
       {/* Podés agregar más rutas aquí */}
-      {/* Ejemplo: <Route path="/otra-pagina" element={<OtraPagina />} /> */}
-      {/* Podés agregar más rutas aquí */}
       {/* Podés agregar más rutas como <Route path="/" element={<Inicio />} /> */}
     </Routes>
   )
