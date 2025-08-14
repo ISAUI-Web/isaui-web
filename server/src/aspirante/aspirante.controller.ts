@@ -144,6 +144,8 @@ export class AspiranteController {
       {
         ...aspirante,
         carrera,
+        dniFrenteUrl: aspirante.dniFrenteUrl,
+        dniDorsoUrl: aspirante.dniDorsoUrl,
       },
       {
         excludeExtraneousValues: true,

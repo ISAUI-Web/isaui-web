@@ -68,7 +68,19 @@ export class AspiranteService {
 
     if (!aspirante) throw new NotFoundException('Aspirante no encontrado');
 
-    return aspirante;
+     // Traer documentos
+    const documentos = await this.documentoService.getDocumentosByAspiranteId(id);
+
+    // Crear objeto con URLs
+    const aspiranteConDocumentos = {
+      ...aspirante,
+      dniFrenteUrl: documentos.dniFrente?.url || null,
+      dniDorsoUrl: documentos.dniDorso?.url || null,
+      dniFrenteNombre: documentos.dniFrente?.url.split('/').pop() || 'No hay imagen disponible',
+      dniDorsoNombre: documentos.dniDorso?.url.split('/').pop() || 'No hay imagen disponible',
+    };
+
+    return aspiranteConDocumentos;
   }
 
   async update(

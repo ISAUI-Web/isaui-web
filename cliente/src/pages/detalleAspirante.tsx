@@ -9,7 +9,8 @@ import { Textarea } from "../components/ui/textarea"
 import { ArrowLeft, User, Save, Edit, Eye, MessageSquare, X, Send, Camera, Upload } from "lucide-react"
 import { useParams, useNavigate } from 'react-router-dom'
 
-
+const API_BASE = 'http://localhost:3000';
+const abs = (u?: string | null) => (u ? (u.startsWith('http') ? u : `${API_BASE}${u}`) : '');
 
 // Datos de ejemplo del aspirante
 
@@ -198,6 +199,14 @@ export default function DetalleAspirante() {
         horas_diarias: data.horas_diarias || "",
         descripcion_trabajo: data.descripcion_trabajo || "",
         personas_cargo: data.personas_cargo || "",
+        documentos: {
+          dniFrente: data.documentos?.dniFrente || null,
+          dniDorso: data.documentos?.dniDorso || null,
+          dniFrenteUrl: data.dniFrenteUrl || null,
+          dniDorsoUrl: data.dniDorsoUrl || null,
+          dniFrenteNombre: data.dniFrenteNombre || "",
+          dniDorsoNombre: data.dniDorsoNombre || ""
+        }
       })
     } catch (error) {
       console.error("❌ Error:", error)
@@ -824,12 +833,12 @@ export default function DetalleAspirante() {
               <div className="space-y-3">
                 <h4 className="text-md font-medium text-gray-700">DNI - Frente</h4>
                 <div className="relative group">
-                  {formData.documentos && formData.documentos.dniFrente ? (
+                  {formData.documentos?.dniFrenteUrl ? (
                     <img
-                      src={formData.documentos.dniFrente || "/placeholder.svg"}
+                      src={formData.documentos?.dniFrenteUrl ? `http://localhost:3000${formData.documentos.dniFrenteUrl}` : "/placeholder.svg"}
                       alt="DNI Frente"
                       className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                      onClick={() => !isEditing && handleViewImage(formData.documentos.dniFrente)}
+                      onClick={() => !isEditing && handleViewImage(`http://localhost:3000${formData.documentos.dniFrenteUrl}`)}
                     />
                   ) : (
                     <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
@@ -838,6 +847,13 @@ export default function DetalleAspirante() {
                         <p className="text-sm">No hay imagen disponible</p>
                       </div>
                     </div>
+                  )}
+
+                  {/* Mostrar nombre del archivo si existe */}
+                  {formData.documentos?.dniFrenteUrl && (
+                    <p className="text-sm text-gray-700 truncate mt-1">
+                      {formData.documentos.dniFrenteUrl.split('/').pop()}
+                    </p>
                   )}
 
                   {/* Overlay para modo edición */}
@@ -892,10 +908,10 @@ export default function DetalleAspirante() {
                     </Button>
                   ) : (
                     <Button
-                      onClick={() => handleViewImage(formData.documentos?.dniFrente)}
+                      onClick={() => window.open(`http://localhost:3000${formData.documentos.dniFrenteUrl}`, "_blank")}
                       variant="outline"
                       className="flex-1 text-sm"
-                      disabled={!formData.documentos || !formData.documentos.dniFrente}
+                      disabled={!formData.documentos?.dniFrenteUrl}
                     >
                       <Eye className="w-4 h-4 mr-2" />
                       Ver
@@ -908,12 +924,12 @@ export default function DetalleAspirante() {
               <div className="space-y-3">
                 <h4 className="text-md font-medium text-gray-700">DNI - Dorso</h4>
                 <div className="relative group">
-                  {formData.documentos && formData.documentos.dniDorso ? (
+                  {formData.documentos?.dniDorsoUrl ? (
                     <img
-                      src={formData.documentos.dniDorso || "/placeholder.svg"}
+                      src={formData.documentos?.dniDorsoUrl ? `http://localhost:3000${formData.documentos.dniDorsoUrl}` : "/placeholder.svg"}
                       alt="DNI Dorso"
                       className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                      onClick={() => !isEditing && handleViewImage(formData.documentos.dniDorso)}
+                      onClick={() => !isEditing && handleViewImage(`http://localhost:3000${formData.documentos.dniDorsoUrl}`)}
                     />
                   ) : (
                     <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
@@ -922,6 +938,12 @@ export default function DetalleAspirante() {
                         <p className="text-sm">No hay imagen disponible</p>
                       </div>
                     </div>
+                  )}
+
+                  {formData.documentos?.dniDorsoUrl && (
+                    <p className="text-sm text-gray-700 truncate">
+                      {formData.documentos.dniDorsoUrl.split('/').pop()}
+                    </p>
                   )}
 
                   {/* Overlay para modo edición */}
@@ -976,14 +998,15 @@ export default function DetalleAspirante() {
                     </Button>
                   ) : (
                     <Button
-                      onClick={() => handleViewImage(formData.documentos?.dniDorso)}
+                      onClick={() => window.open(`http://localhost:3000${formData.documentos.dniDorsoUrl}`, "_blank")}
                       variant="outline"
                       className="flex-1 text-sm"
-                      disabled={!formData.documentos || !formData.documentos.dniDorso}
+                      disabled={!formData.documentos?.dniDorsoUrl}
                     >
                       <Eye className="w-4 h-4 mr-2" />
                       Ver
                     </Button>
+
                   )}
                 </div>
               </div>

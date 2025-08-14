@@ -72,4 +72,16 @@ export class DetalleAspiranteDto {
   @Expose()
   @Transform(transformBooleanToSiNo)
   personas_cargo: string;
+
+  @Expose()
+  dniFrenteUrl: string;
+
+  @Expose()
+  dniDorsoUrl: string;
+
+  @Expose()
+  dniFrenteNombre: string;
+
+  @Expose()
+  dniDorsoNombre: string;
 }
