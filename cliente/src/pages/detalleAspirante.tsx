@@ -6,7 +6,7 @@ import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
 import { Textarea } from "../components/ui/textarea"
-import { ArrowLeft, User, Save, Edit, Eye, MessageSquare, X, Send, Camera, Upload } from "lucide-react"
+import { ArrowLeft, User, Save, Edit, Eye, X, Camera, Upload } from "lucide-react"
 import { useParams, useNavigate } from 'react-router-dom'
 
 
@@ -28,9 +28,6 @@ export default function DetalleAspirante() {
   const [activeTab, setActiveTab] = useState("datos")
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState<any | null>(null)
-  const [isObservationModalOpen, setIsObservationModalOpen] = useState(false)
-  const [observationMessage, setObservationMessage] = useState("")
-  const [isSubmittingObservation, setIsSubmittingObservation] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
   const totalSteps = 3
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -259,38 +256,6 @@ export default function DetalleAspirante() {
     }
   };
 
-  const handleOpenObservationModal = () => {
-    setIsObservationModalOpen(true)
-    setObservationMessage("")
-  }
-
-  const handleCloseObservationModal = () => {
-    setIsObservationModalOpen(false)
-    setObservationMessage("")
-  }
-
-  const handleSubmitObservation = async () => {
-    if (!observationMessage.trim()) return
-
-    setIsSubmittingObservation(true)
-
-    // Simular envío de observación
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    // Aquí conectarías con tu API para enviar la observación
-    console.log("Enviando observación:", {
-      mensaje: observationMessage,
-      fecha: new Date().toISOString(),
-    })
-
-    setIsSubmittingObservation(false)
-    setIsObservationModalOpen(false)
-    setObservationMessage("")
-
-    // Mostrar confirmación
-    alert("Observación enviada correctamente")
-  }
-
   const handleEdit = () => {
     setIsEditing(true)
   }
@@ -380,177 +345,12 @@ export default function DetalleAspirante() {
   }
 
   const handleInputChange = (field: string, value: string) => {
-    // Calcula el nuevo estado antes de setearlo
-    let newFormData = { ...formData, [field]: value };
-
-    // Limpiar campos relacionados cuando se cambia a "No"
-    if (field === "completo_nivel_medio" && value === "No") {
-      newFormData.anio_ingreso_medio = "";
-      newFormData.anio_egreso_medio = "";
-      newFormData.provincia_medio = "";
-      newFormData.titulo_medio = "";
-    }
-
-    if (field === "completo_nivel_superior" && value === "No") {
-      newFormData.carrera_superior = "";
-      newFormData.institucion_superior = "";
-      newFormData.provincia_superior = "";
-      newFormData.anio_ingreso_superior = "";
-      newFormData.anio_egreso_superior = "";
-    }
-
-    // Limpiar año de egreso si se cambia a "En curso"
-    if (field === "completo_nivel_superior" && value === "En curso") {
-      newFormData.anio_egreso_superior = "";
-    }
-
-    if (field === "trabajo" && value === "No") {
-      newFormData.horas_diarias = "";
-      newFormData.descripcion_trabajo = "";
-    }
-
-    setFormData(newFormData);
-
-    // Validación en tiempo real usando el nuevo estado
+    setFormData((prev: typeof formData) => ({ ...prev, [field]: value }));
+    // Opcional: validación en tiempo real solo si está editando
     if (isEditing) {
-      const step =
-        activeTab === "datos" ? 1 :
-        activeTab === "estudios" ? 2 :
-        activeTab === "laboral" ? 3 :
-        activeTab === "documentacion" ? 4 : 1;
-      validateStepWithData(step, newFormData);
+      const step = activeTab === "datos" ? 1 : activeTab === "estudios" ? 2 : activeTab === "laboral" ? 3 : activeTab === "documentacion" ? 4 : 1;
+      validateStep(step);
     }
-  }
-
-  // Nueva función que acepta el formData a validar
-  const validateStepWithData = (step: number, data: any): boolean => {
-    const newErrors: Record<string, string> = {}
-
-    if (step === 1) {
-     if (!data.nombre) {
-    newErrors.nombre = "El nombre es requerido"
-      } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(data.nombre)) {
-        newErrors.nombre = "El nombre solo puede contener letras"
-      }
-      if (!data.apellido) {
-        newErrors.apellido = "El apellido es requerido"
-      } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(data.apellido)) {
-        newErrors.apellido = "El apellido solo puede contener letras"
-      }
-      if (!data.dni) newErrors.dni = "El DNI es requerido"
-      else if (!/^\d{8}$/.test(data.dni)) {
-        newErrors.dni = "El DNI debe tener 8 digitos"
-      } else if (isNaN(Number(data.dni))) {
-        newErrors.dni = "El DNI debe ser un número"
-      }
-      if (!data.cuil) newErrors.cuil = "El CUIL/CUIT es requerido"
-      else if (!/^\d{11}$/.test(data.cuil)) {
-        newErrors.cuil = "El CUIL/CUIT debe tener 11 digitos"
-      } else if (isNaN(Number(data.cuil))) {
-        newErrors.cuil = "El CUIL/CUIT debe ser un número"
-      }
-      if (!data.domicilio) newErrors.domicilio = "El domicilio es requerido"
-      if (!data.localidad) newErrors.localidad = "La localidad es requerida"
-      if (!data.barrio) newErrors.barrio = "El barrio es requerido"
-      if (!data.codigo_postal) newErrors.codigo_postal = "El código postal es requerido"
-      else if (!/^\d{4}$/.test(data.codigo_postal)) {
-        newErrors.codigo_postal = "El código postal debe tener 4 digitos"
-      } else if (isNaN(Number(data.codigo_postal))) {
-        newErrors.codigo_postal = "El código postal debe ser un número"
-      }
-      if (!data.telefono) newErrors.telefono = "El teléfono es requerido"
-      else if (!/^\d{10,15}$/.test(data.telefono)) {
-        newErrors.telefono = "El teléfono debe tener entre 10 y 15 digitos"
-      } else if (isNaN(Number(data.telefono))) {
-        newErrors.telefono = "El teléfono debe ser un número"
-      }
-      if (!data.email) {
-        newErrors.email = "El email es requerido"
-      } else if (
-        !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(data.email)
-      ) {
-        newErrors.email = "El email no es válido"
-      }
-      if (!data.fecha_nacimiento) newErrors.fecha_nacimiento = "La fecha de nacimiento es requerida"
-      else {
-        const today = new Date()
-        const birthDate = new Date(data.fecha_nacimiento)
-        if (birthDate >= today) {
-          newErrors.fecha_nacimiento = "La fecha de nacimiento no puede ser hoy o en el futuro"
-        }
-      }
-      if (!data.ciudad_nacimiento) newErrors.ciudad_nacimiento = "La ciudad de nacimiento es requerida"
-      if (!data.provincia_nacimiento) newErrors.provincia_nacimiento = "La provincia es requerida"
-      if (!data.sexo) newErrors.sexo = "El sexo es requerido"
-      if(!data.carrera) newErrors.carrera = "La carrera es requerida"
-
-    }
-
-    if (step === 2) {
-      if (!data.completo_nivel_medio) newErrors.completo_nivel_medio = "Debe indicar si completó el nivel medio";
-      if (data.completo_nivel_medio === "Sí") {
-        if (!data.anio_ingreso_medio) newErrors.anio_ingreso_medio = "El año de ingreso es requerido";
-        else if (Number(data.anio_ingreso_medio) < 1900) newErrors.anio_ingreso_medio = "El año de ingreso debe ser mayor a 1900";
-        else if (Number(data.anio_ingreso_medio) > new Date().getFullYear()) newErrors.anio_ingreso_medio = "El año de ingreso no puede ser mayor al año actual";
-        else if (isNaN(Number(data.anio_ingreso_medio))) newErrors.anio_ingreso_medio = "El año de ingreso debe ser un número";
-        if (!data.anio_egreso_medio) newErrors.anio_egreso_medio = "El año de egreso es requerido";
-        else if (Number(data.anio_egreso_medio) < 1900) newErrors.anio_egreso_medio = "El año de egreso debe ser mayor a 1900";
-        else if (Number(data.anio_egreso_medio) > new Date().getFullYear()) newErrors.anio_egreso_medio = "El año de egreso no puede ser mayor al año actual";
-        else if (data.anio_ingreso_medio && Number(data.anio_egreso_medio) < Number(data.anio_ingreso_medio)) {
-          newErrors.anio_egreso_medio = "El año de egreso no puede ser menor al año de ingreso";
-        }
-        else if (isNaN(Number(data.anio_egreso_medio))) newErrors.anio_egreso_medio = "El año de egreso debe ser un número";
-        if (!data.provincia_medio) newErrors.provincia_medio = "La provincia es requerida";
-        if (!data.titulo_medio) newErrors.titulo_medio = "El título es requerido";
-      }
-      else if (data.completo_nivel_medio === "No") {  
-        newErrors.anio_ingreso_medio = "";
-        newErrors.anio_egreso_medio = "";
-        newErrors.provincia_medio = "";
-        newErrors.titulo_medio = "";
-      }
-
-      if (!data.completo_nivel_superior) newErrors.completo_nivel_superior = "Debe indicar si completó el nivel superior"
-      if (data.completo_nivel_superior === "Sí") {
-        if (!data.carrera_superior) newErrors.carrera_superior = "La carrera es requerida"
-        if (!data.institucion_superior) newErrors.institucion_superior = "La institución es requerida"
-        if (!data.provincia_superior) newErrors.provincia_superior = "La provincia es requerida"
-        if (!data.anio_ingreso_superior) newErrors.anio_ingreso_superior = "El año de ingreso es requerido"
-        else if (Number(data.anio_ingreso_superior) < 1900) newErrors.anio_ingreso_superior = "El año de ingreso debe ser mayor a 1900"
-        else if (Number(data.anio_ingreso_superior) > new Date().getFullYear()) newErrors.anio_ingreso_superior = "El año de ingreso no puede ser mayor al año actual"
-        else if (isNaN(Number(data.anio_ingreso_superior))) newErrors.anio_ingreso_superior = "El año de ingreso debe ser un número"
-        if (!data.anio_egreso_superior) newErrors.anio_egreso_superior = "El año de egreso es requerido"
-        else if (Number(data.anio_egreso_superior) < 1900) newErrors.anio_egreso_superior = "El año de egreso debe ser mayor a 1900"
-        else if (Number(data.anio_egreso_superior) > new Date().getFullYear()) newErrors.anio_egreso_superior = "El año de egreso no puede ser mayor al año actual"
-        else if (data.anio_ingreso_superior && Number(data.anio_egreso_superior) < Number(data.anio_ingreso_superior)) {
-          newErrors.anio_egreso_superior = "El año de egreso no puede ser menor al año de ingreso";
-        }
-        else if (isNaN(Number(data.anio_egreso_superior))) newErrors.anio_egreso_superior = "El año de egreso debe ser un número";
-      }
-      if (data.completo_nivel_superior === "En curso") {
-        if (!data.carrera_superior) newErrors.carrera_superior = "La carrera es requerida"
-        if (!data.institucion_superior) newErrors.institucion_superior = "La institución es requerida"
-        if (!data.provincia_superior) newErrors.provincia_superior = "La provincia es requerida"
-        if (!data.anio_ingreso_superior) newErrors.anio_ingreso_superior = "El año de ingreso es requerido"
-      }
-    }
-
-    if (step === 3) {
-      // Validaciones de situación laboral y responsabilidades
-      if (data.trabajo === "Sí") {
-        if (!data.horas_diarias) {
-          newErrors.horas_diarias = "Las horas diarias son requeridas";
-        } else if (isNaN(Number(data.horas_diarias)) || Number(data.horas_diarias) <= 0) {
-          newErrors.horas_diarias = "Las horas diarias deben ser un número mayor a 0";
-        }
-        if (!data.descripcion_trabajo) {
-          newErrors.descripcion_trabajo = "La descripción del trabajo es requerida";
-        }
-      }
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
   }
 
   const renderTabContent = () => {
@@ -770,8 +570,7 @@ export default function DetalleAspirante() {
                 <Input
                   value={formData.anio_ingreso_medio || ""}
                   onChange={(e) => handleInputChange("anio_ingreso_medio", e.target.value)}
-                  className={`w-full ${formData.completo_nivel_medio === "No" ? "bg-gray-100 cursor-not-allowed" : ""}`}
-                  disabled={formData.completo_nivel_medio === "No"}
+                  className="w-full"
                 />
               ) : (
                 <div className="text-blue-600 font-medium">{formData.anio_ingreso_medio}</div>
@@ -782,10 +581,9 @@ export default function DetalleAspirante() {
               <Label className="text-sm font-medium text-gray-700 mb-1 block">AÑO DE EGRESO MEDIO</Label>
               {isEditing ? (
                 <Input
-                  value={formData.anio_egreso_medio || ""}  
+                  value={formData.anio_egreso_medio || ""}
                   onChange={(e) => handleInputChange("anio_egreso_medio", e.target.value)}
-                  className={`w-full ${formData.completo_nivel_medio === "No" ? "bg-gray-100 cursor-not-allowed" : ""}`}
-                  disabled={formData.completo_nivel_medio === "No"}
+                  className="w-full"
                 />
               ) : (
                 <div className="text-blue-600 font-medium">{formData.anio_egreso_medio}</div>
@@ -798,8 +596,7 @@ export default function DetalleAspirante() {
                 <Input
                   value={formData.provincia_medio || ""}
                   onChange={(e) => handleInputChange("provincia_medio", e.target.value)}
-                  className={`w-full ${formData.completo_nivel_medio === "No" ? "bg-gray-100 cursor-not-allowed" : ""}`}
-                  disabled={formData.completo_nivel_medio === "No"}
+                  className="w-full"
                 />
               ) : (
                 <div className="text-blue-600 font-medium">{formData.provincia_medio}</div>
@@ -812,8 +609,7 @@ export default function DetalleAspirante() {
                 <Input
                   value={formData.titulo_medio || ""}
                   onChange={(e) => handleInputChange("titulo_medio", e.target.value)}
-                  className={`w-full ${formData.completo_nivel_medio === "No" ? "bg-gray-100 cursor-not-allowed" : ""}`}
-                  disabled={formData.completo_nivel_medio === "No"}
+                  className="w-full"
                 />
               ) : (
                 <div className="text-blue-600 font-medium">{formData.titulo_medio}</div>
@@ -843,8 +639,7 @@ export default function DetalleAspirante() {
                 <Input
                   value={formData.carrera_superior || ""}
                   onChange={(e) => handleInputChange("carrera_superior", e.target.value)}
-                  className={`w-full ${formData.completo_nivel_superior === "No" ? "bg-gray-100 cursor-not-allowed" : ""}`}
-                  disabled={formData.completo_nivel_superior === "No"}
+                  className="w-full"
                 />
               ) : (
                 <div className="text-blue-600 font-medium">{formData.carrera_superior}</div>
@@ -857,8 +652,7 @@ export default function DetalleAspirante() {
                 <Input
                   value={formData.institucion_superior || ""}
                   onChange={(e) => handleInputChange("institucion_superior", e.target.value)}
-                  className={`w-full ${formData.completo_nivel_superior === "No" ? "bg-gray-100 cursor-not-allowed" : ""}`}
-                  disabled={formData.completo_nivel_superior === "No"}
+                  className="w-full"
                 />
               ) : (
                 <div className="text-blue-600 font-medium">{formData.institucion_superior}</div>
@@ -871,8 +665,7 @@ export default function DetalleAspirante() {
                 <Input
                   value={formData.provincia_superior || ""}
                   onChange={(e) => handleInputChange("provincia_superior", e.target.value)}
-                  className={`w-full ${formData.completo_nivel_superior === "No" ? "bg-gray-100 cursor-not-allowed" : ""}`}
-                  disabled={formData.completo_nivel_superior === "No"}
+                  className="w-full"
                 />
               ) : (
                 <div className="text-blue-600 font-medium">{formData.provincia_superior}</div>
@@ -885,8 +678,7 @@ export default function DetalleAspirante() {
                 <Input
                   value={formData.anio_ingreso_superior || ""}
                   onChange={(e) => handleInputChange("anio_ingreso_superior", e.target.value)}
-                  className={`w-full ${formData.completo_nivel_superior === "No" ? "bg-gray-100 cursor-not-allowed" : ""}`}
-                  disabled={formData.completo_nivel_superior === "No"}
+                  className="w-full"
                 />
               ) : (
                 <div className="text-blue-600 font-medium">{formData.anio_ingreso_superior}</div>
@@ -899,8 +691,7 @@ export default function DetalleAspirante() {
                 <Input
                   value={formData.anio_egreso_superior || ""}
                   onChange={(e) => handleInputChange("anio_egreso_superior", e.target.value)}
-                  className={`w-full ${(formData.completo_nivel_superior === "No" || formData.completo_nivel_superior === "En curso") ? "bg-gray-100 cursor-not-allowed" : ""}`}
-                  disabled={formData.completo_nivel_superior === "No" || formData.completo_nivel_superior === "En curso"}
+                  className="w-full"
                 />
               ) : (
                 <div className="text-blue-600 font-medium">{formData.anio_egreso_superior}</div>
@@ -934,8 +725,7 @@ export default function DetalleAspirante() {
                 <Input
                   value={formData.horas_diarias || ""}
                   onChange={(e) => handleInputChange("horas_diarias", e.target.value)}
-                  className={`w-full ${formData.trabajo === "No" ? "bg-gray-100 cursor-not-allowed" : ""}`}
-                  disabled={formData.trabajo === "No"}
+                  className="w-full"
                 />
               ) : (
                 <div className="text-blue-600 font-medium">{formData.horas_diarias}</div>
@@ -948,8 +738,7 @@ export default function DetalleAspirante() {
                 <Input
                   value={formData.descripcion_trabajo || ""}
                   onChange={(e) => handleInputChange("descripcion_trabajo", e.target.value)}
-                  className={`w-full ${formData.trabajo === "No" ? "bg-gray-100 cursor-not-allowed" : ""}`}
-                  disabled={formData.trabajo === "No"}
+                  className="w-full"
                 />
               ) : (
                 <div className="text-blue-600 font-medium">{formData.descripcion_trabajo}</div>
@@ -1186,70 +975,6 @@ export default function DetalleAspirante() {
               
             </button>
 
-      {/* Modal de Observación */}
-      {isObservationModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-md bg-white shadow-2xl">
-            <div className="p-6">
-              {/* Header del modal */}
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-900">Enviar Observación</h3>
-                <button
-                  onClick={handleCloseObservationModal}
-                  className="text-gray-500 hover:text-gray-700 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Información del aspirante */}
-              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600">
-                  <strong>Aspirante:</strong> {formData.nombre} {formData.apellido}
-                </p>
-                <p className="text-sm text-gray-600">
-                  <strong>DNI:</strong> {formData.dni}
-                </p>
-              </div>
-
-              {/* Textarea para el mensaje */}
-              <div className="mb-4">
-                <Label htmlFor="observacion" className="text-sm font-medium text-gray-700 mb-2 block">
-                  Mensaje de observación:
-                </Label>
-                <Textarea
-                  id="observacion"
-                  value={observationMessage}
-                  onChange={(e) => setObservationMessage(e.target.value)}
-                  placeholder="Escriba aquí su observación para el aspirante..."
-                  className="w-full h-32 resize-none"
-                />
-              </div>
-
-              {/* Botones del modal */}
-              <div className="flex justify-end gap-3">
-                <Button
-                  onClick={handleCloseObservationModal}
-                  variant="outline"
-                  className="px-4 py-2"
-                  disabled={isSubmittingObservation}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={handleSubmitObservation}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 flex items-center gap-2"
-                  disabled={!observationMessage.trim() || isSubmittingObservation}
-                >
-                  <Send className="w-4 h-4" />
-                  {isSubmittingObservation ? "Enviando..." : "Enviar"}
-                </Button>
-              </div>
-            </div>
-          </Card>
-        </div>
-      )}
-
       {/* Contenedor principal centrado */}
       <div className="flex items-center justify-center min-h-screen py-4">
         <Card className="w-full max-w-4xl bg-white shadow-2xl">
@@ -1299,13 +1024,6 @@ export default function DetalleAspirante() {
                   </Button>
                 ) : (
                  <>
-                   <Button
-                     onClick={handleOpenObservationModal}
-                     className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg flex items-center gap-2"
-                   >
-                     <Eye className="w-4 h-4" />
-                     OBSERVACIÓN
-                   </Button>
                    <Button
                      onClick={handleEdit}
                      className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg flex items-center gap-2"
