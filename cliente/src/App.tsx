@@ -5,6 +5,7 @@ import Login from './pages/login'
 import AdminMain from './pages/adminMain'
 import Aspirantes from './pages/aspirantesMain'
 import DetalleAspirante from './pages/detalleAspirante'
+import Mantenimiento from './pages/mantenimiento'
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
       <Route path="/admin" element={<AdminMain />} />
       <Route path="/aspirantes" element={<Aspirantes />} />
       <Route path="/detAspirante/:id" element={<DetalleAspirante />} />
+      <Route path="/mantenimiento" element={<Mantenimiento />} />
       {/* Podés agregar más rutas aquí */}
       {/* Podés agregar más rutas como <Route path="/" element={<Inicio />} /> */}
     </Routes>

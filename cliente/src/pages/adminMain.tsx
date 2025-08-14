@@ -15,6 +15,7 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  Settings,
 } from "lucide-react"
 import logo from "../assets/logo.png"
 import logo2 from "../assets/logo2.png"
@@ -42,6 +43,7 @@ const menuItems = [
   { icon: ThumbsUp, label: "CONFIRMADOS", id: "confirmados" },
   { icon: FolderOpen, label: "LEGAJO DIGITAL", id: "legajo" },
   { icon: FileText, label: "REPORTES", id: "reportes" },
+  { icon: Settings, label: "MANTENIMIENTO", id: "mantenimiento" },
 ]
 
 export default function AdminMain() {
@@ -95,6 +97,9 @@ export default function AdminMain() {
       case "reportes":
         navigate("/reportes")
         break
+      case "mantenimiento":
+        navigate("/mantenimiento")
+        break
       default:
         navigate("/admin")
   }
@@ -118,7 +123,11 @@ export default function AdminMain() {
 
       {/* Burger Menu */}
       <div
-        className={`fixed left-0 top-0 h-full w-80 bg-[#1F6680] transform transition-transform duration-300 ease-in-out z-50 flex flex-col ${
+        style={{
+          scrollbarWidth: "thin",
+          scrollbarColor: "rgba(255, 255, 255, 0.3) transparent",
+        }}
+        className={`fixed left-0 top-0 h-full w-80 bg-[#1F6680] transform transition-transform duration-300 ease-in-out z-50 flex flex-col overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/30 hover:scrollbar-thumb-white/50 ${
           isMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
