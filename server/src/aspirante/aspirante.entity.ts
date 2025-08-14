@@ -48,7 +48,7 @@ export class Aspirante {
   @Column()
   ciudad_nacimiento: string;
 
-  @Column()
+  @Column({ default: 'pendiente' })
   estado_preinscripcion: string;
 
   @Column()

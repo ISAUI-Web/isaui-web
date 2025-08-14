@@ -6,6 +6,7 @@ import { CreateAspiranteDto } from './dto/create-aspirante.dto';
 import { UpdateAspiranteDto } from './dto/update-aspirante.dto';
 import { DocumentoService } from '../documento/documento.service';
 import { PreinscripcionService } from '../preinscripcion/preinscripcion.service';
+import { ConstanciaService } from '../constancia/constancia.service'; 
 
 @Injectable()
 export class AspiranteService {
@@ -14,6 +15,7 @@ export class AspiranteService {
     private readonly aspiranteRepository: Repository<Aspirante>,
     private readonly documentoService: DocumentoService,
     private readonly preinscripcionService: PreinscripcionService,
+    private readonly constanciaService: ConstanciaService,
   ) {}
 
   async create(
@@ -83,20 +85,41 @@ export class AspiranteService {
     return aspiranteConDocumentos;
   }
 
-  async update(
-    id: number,
-    updateAspiranteDto: UpdateAspiranteDto,
-  ): Promise<Aspirante> {
-    const aspirante = await this.aspiranteRepository.findOne({ where: { id } });
+async update(
+  id: number,
+  updateAspiranteDto: UpdateAspiranteDto,
+): Promise<Aspirante> {
+  const aspirante = await this.aspiranteRepository.findOne({ where: { id } });
 
-    if (!aspirante) {
-      throw new NotFoundException(`No se encontró el aspirante con ID ${id}`);
-    }
-
-    const updated = this.aspiranteRepository.merge(
-      aspirante,
-      updateAspiranteDto,
-    );
-    return await this.aspiranteRepository.save(updated);
+  if (!aspirante) {
+    throw new NotFoundException(`No se encontró el aspirante con ID ${id}`);
   }
+
+  const estadoAnterior = aspirante.estado_preinscripcion; // Guardamos el estado anterior
+
+  const updated = this.aspiranteRepository.merge(
+    aspirante,
+    updateAspiranteDto,
+  );
+  const saved = await this.aspiranteRepository.save(updated);
+
+  // Enviar email solo si el estado cambió
+  if (
+    updateAspiranteDto.estado_preinscripcion &&
+    updateAspiranteDto.estado_preinscripcion !== estadoAnterior &&
+    saved.email
+  ) {
+    try {
+      await this.constanciaService.enviarNotificacionEstado(
+        saved.email,
+        `${saved.nombre} ${saved.apellido}`,
+        saved.estado_preinscripcion
+      );
+    } catch (error) {
+      console.error('Error al enviar email de cambio de estado:', error);
+    }
+  }
+
+  return saved;
+}
 }
