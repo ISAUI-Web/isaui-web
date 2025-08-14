@@ -386,7 +386,11 @@ export default function MultiStepForm() {
       if (!formData.completo_nivel_medio) newErrors.completo_nivel_medio = "Debe indicar si completó el nivel medio"
       if (formData.completo_nivel_medio === "SI") {
         if (!formData.anio_ingreso_medio) newErrors.anio_ingreso_medio = "El año de ingreso es requerido"
+        else if (isNaN(Number(formData.anio_ingreso_medio))) newErrors.anio_ingreso_medio = "El año de ingreso debe ser un número"
+        else if (Number(formData.anio_ingreso_medio) < 1900) newErrors.anio_ingreso_medio = "El año de ingreso debe ser mayor a 1900";
         if (!formData.anio_egreso_medio) newErrors.anio_egreso_medio = "El año de egreso es requerido"
+        else if (isNaN(Number(formData.anio_egreso_medio))) newErrors.anio_egreso_medio = "El año de egreso debe ser un número"
+        else if (Number(formData.anio_egreso_medio) < 1900) newErrors.anio_egreso_medio = "El año de egreso debe ser mayor a 1900"
         if (!formData.provincia_medio) newErrors.provincia_medio = "La provincia es requerida"
         if (!formData.titulo_medio) newErrors.titulo_medio = "El título es requerido"
       }
@@ -424,7 +428,9 @@ export default function MultiStepForm() {
 
   const nextStep = () => {
     if (validateStep(currentStep)) {
-      setCurrentStep((prev) => Math.min(prev + 1, totalSteps))
+      setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
+    } else {
+      alert("Debe completar todos los datos antes de avanzar");
     }
   }
 
@@ -687,6 +693,7 @@ export default function MultiStepForm() {
               onChange={(value) => handleInputChange("anio_ingreso_medio", value)}
               disabled={!nivelMedioEnabled}
               required
+              error={errors.anio_ingreso_medio}
             />
             <FormField
               label="AÑO DE EGRESO"
@@ -695,6 +702,7 @@ export default function MultiStepForm() {
               onChange={(value) => handleInputChange("anio_egreso_medio", value)}
               disabled={!nivelMedioEnabled}
               required
+              error={errors.anio_egreso_medio}
             />
             <FormField
               label="PROVINCIA"
@@ -705,6 +713,7 @@ export default function MultiStepForm() {
               placeholder="PROVINCIA..."
               disabled={!nivelMedioEnabled}
               required
+              error={errors.provincia_medio}
             />
             <FormField
               label="TÍTULO"
@@ -713,6 +722,7 @@ export default function MultiStepForm() {
               onChange={(value) => handleInputChange("titulo_medio", value)}
               disabled={!nivelMedioEnabled}
               required
+              error={errors.titulo_medio}
             />
           </div>
         </div>
@@ -726,10 +736,10 @@ export default function MultiStepForm() {
               { value: "COMPLETO", label: "COMPLETO" },
               { value: "NO", label: "NO" },
               { value: "EN_CURSO", label: "EN CURSO" },
+              
             ]}
             value={formData.completo_nivel_superior}
             onChange={(value) => handleInputChange("completo_nivel_superior", value)}
-            
           />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -740,6 +750,7 @@ export default function MultiStepForm() {
               onChange={(value) => handleInputChange("carrera_superior", value)}
               disabled={!nivelSuperiorEnabled}
               required
+              error={errors.carrera_superior}
             />
             <FormField
               label="INSTITUCIÓN"
@@ -748,6 +759,7 @@ export default function MultiStepForm() {
               onChange={(value) => handleInputChange("institucion_superior", value)}
               disabled={!nivelSuperiorEnabled}
               required
+              error={errors.institucion_superior}
             />
             <FormField
               label="PROVINCIA"
@@ -758,6 +770,7 @@ export default function MultiStepForm() {
               placeholder="PROVINCIA..."
               disabled={!nivelSuperiorEnabled}
               required
+              error={errors.provincia_superior}
             />
           </div>
 
@@ -769,6 +782,7 @@ export default function MultiStepForm() {
               onChange={(value) => handleInputChange("anio_ingreso_superior", value)}
               disabled={!nivelSuperiorEnabled}
               required
+              error={errors.anio_ingreso_superior}
             />
             <FormField
               label="AÑO DE EGRESO"
@@ -777,6 +791,7 @@ export default function MultiStepForm() {
               onChange={(value) => handleInputChange("anio_egreso_superior", value)}
               disabled={!nivelSuperiorCompleto}
               required
+              error={errors.anio_egreso_superior}
             />
           </div>
         </div>
@@ -806,7 +821,8 @@ export default function MultiStepForm() {
                 value={formData.horas_diarias}
                 onChange={(value) => handleInputChange("horas_diarias", value)}
                 disabled={!trabajaEnabled}
-                required  
+                required
+                error={errors.horas_diarias}
               />
 
               <FormField
@@ -817,6 +833,7 @@ export default function MultiStepForm() {
                 onChange={(value) => handleInputChange("descripcion_trabajo", value)}
                 disabled={!trabajaEnabled}
                 required
+                error={errors.descripcion_trabajo}
               />
             </div>
           </div>
