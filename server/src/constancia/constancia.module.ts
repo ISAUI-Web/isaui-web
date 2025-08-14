@@ -10,5 +10,6 @@ import { Aspirante } from '../aspirante/aspirante.entity'; // ajustá la ruta si
   ],
   controllers: [ConstanciaController],
   providers: [ConstanciaService],
+  exports: [ConstanciaService],
 })
 export class ConstanciaModule {}
