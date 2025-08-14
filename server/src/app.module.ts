@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ServeStaticModule } from '@nestjs/serve-static'; // 👈 Importar esto
+import { join } from 'path';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -22,6 +24,12 @@ import { ConstanciaModule } from './constancia/constancia.module';
 
 @Module({
   imports: [
+    // 📂 Servir carpeta de documentos
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'uploads'),
+      serveRoot: '/uploads', // URL base para acceder
+    }),
+
     ConfigModule.forRoot({
       isGlobal: true, // Permite que ConfigService esté disponible en toda la app sin reimportar
     }),

@@ -46,4 +46,20 @@ export class DocumentoService {
       await this.documentoRepository.save(documentosToSave);
     }
   }
+
+  async getDocumentosByAspiranteId(aspiranteId: number) {
+    // Buscar todos los documentos asociados al aspirante
+    const documentos = await this.documentoRepository.find({
+      where: { aspirante: { id: aspiranteId } },
+    });
+
+    // Buscar el DNI frente y dorso
+    const dniFrente = documentos.find(doc => doc.tipo === 'DNI Frente');
+    const dniDorso = documentos.find(doc => doc.tipo === 'DNI Dorso');
+
+    return {
+      dniFrente: dniFrente ? { url: `/uploads/documentos/${dniFrente.archivo_pdf}` } : null,
+      dniDorso: dniDorso ? { url: `/uploads/documentos/${dniDorso.archivo_pdf}` } : null,
+    };
+  }
 }
