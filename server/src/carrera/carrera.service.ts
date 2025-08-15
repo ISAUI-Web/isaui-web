@@ -1,4 +1,4 @@
-import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
+import { Injectable, NotFoundException, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Carrera } from './carrera.entity';
 import { Repository } from 'typeorm';
@@ -55,6 +55,31 @@ export class CarreraService implements OnApplicationBootstrap {
       if (!existe) {
         await this.carreraRepository.save(carrera);
       }
+    }
+  }
+
+  async findAll(): Promise<Carrera[]> {
+    return this.carreraRepository.find();
+  }
+
+  async create(data: Partial<Carrera>): Promise<Carrera> {
+    const nuevaCarrera = this.carreraRepository.create(data);
+    return this.carreraRepository.save(nuevaCarrera);
+  }
+
+  async update(id: number, data: Partial<Carrera>): Promise<Carrera> {
+    const carrera = await this.carreraRepository.findOne({ where: { id } });
+    if (!carrera) {
+      throw new NotFoundException(`Carrera con ID ${id} no encontrada`);
+    }
+    Object.assign(carrera, data);
+    return this.carreraRepository.save(carrera);
+  }
+
+  async remove(id: number): Promise<void> {
+    const result = await this.carreraRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`Carrera con ID ${id} no encontrada`);
     }
   }
 }
