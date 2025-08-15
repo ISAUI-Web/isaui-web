@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
@@ -28,6 +28,24 @@ import {
   Save,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
+
+// URL base para API
+const API_BASE_URL = "http://localhost:3000/carrera"; // Ajustá el puerto si tu backend corre en otro
+
+type Carrera = {
+  id: number;
+  nombre: string;
+  cupoMaximo: number;
+  cupoActual: number;
+};
+
+// Función para transformar datos del backend a formato frontend
+const mapCarreraFromApi = (c: any): Carrera => ({
+  id: c.id,
+  nombre: c.nombre,
+  cupoMaximo: c.cupo_maximo,
+  cupoActual: c.cupo_actual,
+});
 
 // Datos de ejemplo para carreras
 const carrerasData = [
@@ -68,7 +86,7 @@ export default function Mantenimiento() {
   const [activeTab, setActiveTab] = useState("carreras")
 
   // Estados para carreras
-  const [carreras, setCarreras] = useState(carrerasData)
+  const [carreras, setCarreras] = useState<Carrera[]>([])
   const [editingCarrera, setEditingCarrera] = useState<number | null>(null)
   const [newCarrera, setNewCarrera] = useState({ nombre: "", cupoMaximo: 0 })
   const [showNewCarreraForm, setShowNewCarreraForm] = useState(false)
@@ -78,6 +96,13 @@ export default function Mantenimiento() {
   const [editingUsuario, setEditingUsuario] = useState<number | null>(null)
   const [newUsuario, setNewUsuario] = useState({ usuario: "", email: "", password: "", rol: "" })
   const [showNewUsuarioForm, setShowNewUsuarioForm] = useState(false)
+
+  useEffect(() => {
+    fetch(API_BASE_URL)
+      .then((res) => res.json())
+      .then((data) => setCarreras(data.map(mapCarreraFromApi)))
+      .catch((err) => console.error("Error cargando carreras:", err));
+  }, []);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
@@ -129,51 +154,51 @@ export default function Mantenimiento() {
     }
 
     try {
-      // Aquí conectarías con tu API de NestJS
-      const response = await fetch("/api/carreras", {
+      const response = await fetch(API_BASE_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newCarrera),
-      })
+        body: JSON.stringify({
+          nombre: newCarrera.nombre,
+          cupo_maximo: newCarrera.cupoMaximo,
+          cupo_actual: newCarrera.cupoMaximo,
+        }),
+      });
 
       if (!response.ok) throw new Error("Error al crear carrera")
 
-      const nuevaCarrera = await response.json()
-      setCarreras([...carreras, { ...nuevaCarrera, id: Date.now() }])
-      setNewCarrera({ nombre: "", cupoMaximo: 0 })
-      setShowNewCarreraForm(false)
-      alert("Carrera creada correctamente")
+      const creada = mapCarreraFromApi(await response.json());
+      setCarreras([...carreras, creada]);
+      setNewCarrera({ nombre: "", cupoMaximo: 0 });
+      setShowNewCarreraForm(false);
+      alert("Carrera creada correctamente");
     } catch (error) {
-      console.error("Error:", error)
-      // Simulación local
-      const nuevaCarrera = { ...newCarrera, id: Date.now() }
-      setCarreras([...carreras, nuevaCarrera])
-      setNewCarrera({ nombre: "", cupoMaximo: 0 })
-      setShowNewCarreraForm(false)
-      alert("Carrera creada correctamente")
+      console.error(error);
+      alert("Error al crear carrera");
     }
   }
 
   const handleUpdateCarrera = async (id: number, updatedData: any) => {
     try {
       // Aquí conectarías con tu API de NestJS
-      const response = await fetch(`/api/carreras/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedData),
-      })
+        body: JSON.stringify({
+          nombre: updatedData.nombre,
+          cupo_maximo: updatedData.cupoMaximo,
+          cupo_actual: updatedData.cupoActual,
+        }),
+      });
 
       if (!response.ok) throw new Error("Error al actualizar carrera")
 
-      setCarreras(carreras.map((c) => (c.id === id ? { ...c, ...updatedData } : c)))
-      setEditingCarrera(null)
-      alert("Carrera actualizada correctamente")
+      const actualizada = mapCarreraFromApi(await response.json());
+      setCarreras(carreras.map((c) => (c.id === id ? actualizada : c)));
+      setEditingCarrera(null);
+      alert("Carrera actualizada correctamente");
     } catch (error) {
-      console.error("Error:", error)
-      // Simulación local
-      setCarreras(carreras.map((c) => (c.id === id ? { ...c, ...updatedData } : c)))
-      setEditingCarrera(null)
-      alert("Carrera actualizada correctamente")
+      console.error(error);
+      alert("Error al actualizar carrera");
     }
   }
 
@@ -182,9 +207,7 @@ export default function Mantenimiento() {
 
     try {
       // Aquí conectarías con tu API de NestJS
-      const response = await fetch(`/api/carreras/${id}`, {
-        method: "DELETE",
-      })
+      const response = await fetch(`${API_BASE_URL}/${id}`, { method: "DELETE" });
 
       if (!response.ok) throw new Error("Error al eliminar carrera")
 
@@ -192,9 +215,7 @@ export default function Mantenimiento() {
       alert("Carrera eliminada correctamente")
     } catch (error) {
       console.error("Error:", error)
-      // Simulación local
-      setCarreras(carreras.filter((c) => c.id !== id))
-      alert("Carrera eliminada correctamente")
+      alert("Error al eliminar carrera");
     }
   }
 
