@@ -1,9 +1,11 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Usuario } from './usuario.entity';
+import { Usuario, RolUsuario } from './usuario.entity';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
+import { CreateUsuarioDto } from './dto/create-usuario.dto';
+import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 
 @Injectable()
 export class UsuarioService {
@@ -13,6 +15,7 @@ export class UsuarioService {
     private jwtService: JwtService,
   ) {}
 
+  // 🔑 LOGIN
   async validarUsuario(nombre_usuario: string, contraseña: string) {
     const usuario = await this.usuarioRepo.findOne({
       where: { nombre_usuario },
@@ -37,5 +40,64 @@ export class UsuarioService {
         nombre_usuario: usuario.nombre_usuario,
       },
     };
+  }
+
+  // 📌 CRUD
+  async findAll(): Promise<Usuario[]> {
+    return this.usuarioRepo.find();
+  }
+
+  async findOne(id: number): Promise<Usuario> {
+    const usuario = await this.usuarioRepo.findOneBy({ id });
+    if (!usuario) throw new NotFoundException('Usuario no encontrado');
+    return usuario;
+  }
+
+  async create(data: CreateUsuarioDto): Promise<Usuario> {
+    const usuario = new Usuario();
+    usuario.nombre_usuario = data.nombre_usuario;
+    usuario.correo = data.correo;
+    usuario.rol = data.rol;
+
+    // Contraseña por defecto "1234" hasheada
+    const contraseñaPorDefecto = "1234";
+    const salt = await bcrypt.genSalt(10);
+    usuario.contraseña_hash = await bcrypt.hash(contraseñaPorDefecto, salt);
+
+    return this.usuarioRepo.save(usuario);
+  }
+
+  async update(id: number, data: UpdateUsuarioDto): Promise<Usuario> {
+    const usuario = await this.usuarioRepo.findOneBy({ id });
+    if (!usuario) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    if (data.nombre_usuario) usuario.nombre_usuario = data.nombre_usuario;
+    if (data.correo) usuario.correo = data.correo;
+    if (data.rol) usuario.rol = data.rol;
+
+    return this.usuarioRepo.save(usuario);
+  }
+
+  async resetPassword(id: number) {
+    const usuario = await this.usuarioRepo.findOne({ where: { id } });
+    if (!usuario) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    // Reiniciar a "1234"
+    const contraseñaPorDefecto = "1234";
+    const salt = await bcrypt.genSalt(10);
+    usuario.contraseña_hash = await bcrypt.hash(contraseñaPorDefecto, salt);
+
+    return this.usuarioRepo.save(usuario);
+  }
+
+  async remove(id: number): Promise<void> {
+    const result = await this.usuarioRepo.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
   }
 }
