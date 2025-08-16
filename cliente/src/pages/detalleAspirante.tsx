@@ -36,6 +36,10 @@ export default function DetalleAspirante() {
   const dniDorsoInputRef = useRef<HTMLInputElement>(null)
   const [isUploadingImage, setIsUploadingImage] = useState<"dniFrente" | "dniDorso" | null>(null)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  
+  // Estado para manejar los archivos seleccionados para subir
+  const [dniFrenteFile, setDniFrenteFile] = useState<File | null>(null);
+  const [dniDorsoFile, setDniDorsoFile] = useState<File | null>(null);
 
   // VALIDACIONES
   const validateStep = (step: number): boolean => {
@@ -233,37 +237,49 @@ export default function DetalleAspirante() {
     return;
   }
 
-    try {
-      // Clono formData para no modificar el estado directamente
-      const payload = { ...formData };
-      // Eliminamos 'carrera' porque el backend no lo necesita
-      // en la ruta de actualización. La carrera se gestiona a través de la preinscripción.
-      delete payload.carrera;
+  const data = new FormData();
 
-      const res = await fetch(`http://localhost:3000/aspirante/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        const errorMessage = errorData.message || 'Error desconocido del servidor.';
-        const detailedMessage = Array.isArray(errorMessage) ? errorMessage.join(', ') : errorMessage;
-        throw new Error(detailedMessage);
-      }
-
-      const updatedAspirante = await res.json();
-      setFormData(updatedAspirante);
-      setIsEditing(false);
-      alert('Cambios guardados con éxito');
-    } catch (error: any) {
-      console.error('Error guardando aspirante:', error);
-      alert(`Hubo un error al guardar los cambios: ${error.message}`);
+  // Agregamos todos los campos del formulario al FormData
+  // Omitimos 'documentos' y 'carrera' que no se envían en el body
+  Object.keys(formData).forEach(key => {
+    if (key !== 'id' && key !== 'documentos' && key !== 'carrera' && formData[key] !== null) {
+      // Aseguramos que los booleanos se envíen como strings 'true' o 'false'
+      const value = typeof formData[key] === 'boolean' ? String(formData[key]) : formData[key];
+      data.append(key, value);
     }
-  };
+  });
+
+  // Adjuntamos los nuevos archivos si fueron seleccionados
+  if (dniFrenteFile) {
+    data.append('dniFrente', dniFrenteFile);
+  }
+  if (dniDorsoFile) {
+    data.append('dniDorso', dniDorsoFile);
+  }
+
+  try {
+    const res = await fetch(`http://localhost:3000/aspirante/${id}`, {
+      method: 'PUT',
+      // NO establecemos Content-Type, el navegador lo hará automáticamente para FormData
+      body: data,
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      const errorMessage = errorData.message || 'Error desconocido del servidor.';
+      const detailedMessage = Array.isArray(errorMessage) ? errorMessage.join(', ') : errorMessage;
+      throw new Error(detailedMessage);
+    }
+
+    const updatedAspirante = await res.json();
+    setFormData(updatedAspirante); // Actualizamos con los datos del servidor
+    setIsEditing(false);
+    alert('Cambios guardados con éxito');
+  } catch (error: any) {
+    console.error('Error guardando aspirante:', error);
+    alert(`Hubo un error al guardar los cambios: ${error.message}`);
+  }
+};
 
   const handleEdit = () => {
     setIsEditing(true)
@@ -275,73 +291,27 @@ export default function DetalleAspirante() {
     }
   }
 
-  const handleImageUpload = async (file: File, documentType: "dniFrente" | "dniDorso") => {
-    if (!file || !formData) return
-
-    // Validar tipo de archivo
-    if (!file.type.startsWith("image/")) {
-      alert("Por favor seleccione un archivo de imagen válido")
-      return
-    }
-
-    // Validar tamaño (máximo 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert("El archivo es demasiado grande. Máximo 5MB permitido.")
-      return
-    }
-
-    setIsUploadingImage(documentType)
-
-    try {
-      // Crear FormData para enviar el archivo
-      const formDataUpload = new FormData()
-      formDataUpload.append("file", file)
-      formDataUpload.append("documentType", documentType)
-      formDataUpload.append("aspiranteId", id ?? "")
-
-      // Aquí conectarías con tu API de NestJS para subir la imagen
-      // GASTÓN
-      const response = await fetch(`/api/aspirantes/${id}/documentos`, {
-        method: "POST",
-        body: formDataUpload,
-      })
-
-      if (!response.ok) {
-        throw new Error("Error al subir la imagen")
-      }
-
-      const result = await response.json()
-
-      // Actualizar el estado con la nueva URL de la imagen desde el servidor
-      setFormData((prev: any) =>
-        prev
-          ? {
-              ...prev,
-              documentos: {
-                ...prev.documentos,
-                [documentType]: result.imageUrl, // URL devuelta por el servidor
-              },
-            }
-          : prev,
-      )
-
-      console.log(`Imagen ${documentType} subida:`, result)
-      alert("Imagen actualizada correctamente")
-    } catch (error) {
-      console.error("Error al subir imagen:", error)
-      alert("Error al subir la imagen. Intente nuevamente.")
-    } finally {
-      setIsUploadingImage(null)
-    }
-  }
-
   const handleFileInputChange = (
     event: React.ChangeEvent<HTMLInputElement>,
     documentType: "dniFrente" | "dniDorso",
   ) => {
     const file = event.target.files?.[0]
     if (file) {
-      handleImageUpload(file, documentType)
+      // Guardamos el archivo en el estado correspondiente
+      if (documentType === 'dniFrente') {
+        setDniFrenteFile(file);
+      } else {
+        setDniDorsoFile(file);
+      }
+      // Mostramos una vista previa local de la imagen seleccionada
+      const previewUrl = URL.createObjectURL(file);
+      const urlKey = documentType === 'dniFrente' ? 'dniFrenteUrl' : 'dniDorsoUrl';
+      const nameKey = documentType === 'dniFrente' ? 'dniFrenteNombre' : 'dniDorsoNombre';
+
+      setFormData((prev: any) => ({
+        ...prev,
+        documentos: { ...prev.documentos, [urlKey]: previewUrl, [nameKey]: file.name },
+      }));
     }
   }
 

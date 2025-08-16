@@ -6,7 +6,7 @@ import { CreateAspiranteDto } from './dto/create-aspirante.dto';
 import { UpdateAspiranteDto } from './dto/update-aspirante.dto';
 import { DocumentoService } from '../documento/documento.service';
 import { PreinscripcionService } from '../preinscripcion/preinscripcion.service';
-import { ConstanciaService } from '../constancia/constancia.service'; 
+import { ConstanciaService } from '../constancia/constancia.service';
 
 @Injectable()
 export class AspiranteService {
@@ -70,56 +70,70 @@ export class AspiranteService {
 
     if (!aspirante) throw new NotFoundException('Aspirante no encontrado');
 
-     // Traer documentos
-    const documentos = await this.documentoService.getDocumentosByAspiranteId(id);
+    // Traer documentos
+    const documentos =
+      await this.documentoService.getDocumentosByAspiranteId(id);
 
     // Crear objeto con URLs
     const aspiranteConDocumentos = {
       ...aspirante,
       dniFrenteUrl: documentos.dniFrente?.url || null,
       dniDorsoUrl: documentos.dniDorso?.url || null,
-      dniFrenteNombre: documentos.dniFrente?.url.split('/').pop() || 'No hay imagen disponible',
-      dniDorsoNombre: documentos.dniDorso?.url.split('/').pop() || 'No hay imagen disponible',
+      dniFrenteNombre:
+        documentos.dniFrente?.url.split('/').pop() ||
+        'No hay imagen disponible',
+      dniDorsoNombre:
+        documentos.dniDorso?.url.split('/').pop() || 'No hay imagen disponible',
     };
 
     return aspiranteConDocumentos;
   }
 
-async update(
-  id: number,
-  updateAspiranteDto: UpdateAspiranteDto,
-): Promise<Aspirante> {
-  const aspirante = await this.aspiranteRepository.findOne({ where: { id } });
+  async update(
+    id: number,
+    updateAspiranteDto: UpdateAspiranteDto,
+    archivos?: {
+      dniFrente?: Express.Multer.File[];
+      dniDorso?: Express.Multer.File[];
+    },
+  ): Promise<Aspirante> {
+    const aspirante = await this.aspiranteRepository.findOne({ where: { id } });
 
-  if (!aspirante) {
-    throw new NotFoundException(`No se encontró el aspirante con ID ${id}`);
-  }
-
-  const estadoAnterior = aspirante.estado_preinscripcion; // Guardamos el estado anterior
-
-  const updated = this.aspiranteRepository.merge(
-    aspirante,
-    updateAspiranteDto,
-  );
-  const saved = await this.aspiranteRepository.save(updated);
-
-  // Enviar email solo si el estado cambió
-  if (
-    updateAspiranteDto.estado_preinscripcion &&
-    updateAspiranteDto.estado_preinscripcion !== estadoAnterior &&
-    saved.email
-  ) {
-    try {
-      await this.constanciaService.enviarNotificacionEstado(
-        saved.email,
-        `${saved.nombre} ${saved.apellido}`,
-        saved.estado_preinscripcion
-      );
-    } catch (error) {
-      console.error('Error al enviar email de cambio de estado:', error);
+    if (!aspirante) {
+      throw new NotFoundException(`No se encontró el aspirante con ID ${id}`);
     }
-  }
 
-  return saved;
-}
+    const estadoAnterior = aspirante.estado_preinscripcion; // Guardamos el estado anterior
+
+    const updated = this.aspiranteRepository.merge(
+      aspirante,
+      updateAspiranteDto,
+    );
+    const saved = await this.aspiranteRepository.save(updated);
+
+    // Si se subieron nuevos archivos, los guardamos.
+    // El servicio de documentos debería manejar la lógica de reemplazar si ya existen.
+    if (archivos && (archivos.dniFrente?.length || archivos.dniDorso?.length)) {
+      await this.documentoService.guardarDocumentosAspirante(saved, archivos);
+    }
+
+    // Enviar email solo si el estado cambió
+    if (
+      updateAspiranteDto.estado_preinscripcion &&
+      updateAspiranteDto.estado_preinscripcion !== estadoAnterior &&
+      saved.email
+    ) {
+      try {
+        await this.constanciaService.enviarNotificacionEstado(
+          saved.email,
+          `${saved.nombre} ${saved.apellido}`,
+          saved.estado_preinscripcion,
+        );
+      } catch (error) {
+        console.error('Error al enviar email de cambio de estado:', error);
+      }
+    }
+
+    return saved;
+  }
 }
