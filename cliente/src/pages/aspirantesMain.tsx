@@ -141,31 +141,10 @@ const handleMenuItemClick = (itemId: string) => {
         navigate("/admin");
     }
   }
+};
 
- const handleEstado = async (id: number, nuevoEstado: "en espera" | "confirmado" | "rechazado") => {
-  try {
-    const res = await fetch(`http://localhost:3000/aspirante/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ estado_preinscripcion: nuevoEstado })
-    });
-
-    if (!res.ok) throw new Error(`Error al cambiar estado a ${nuevoEstado}`);
-
-    setAspirantes((prev) =>
-      prev.map((asp) =>
-        asp.id === id ? { ...asp, estado_preinscripcion: nuevoEstado } : asp
-      )
-    );
-  } catch (error) {
-    console.error(error);
-    alert(`No se pudo cambiar el estado a ${nuevoEstado}`);
-  }
-
-
- const handleEstado = async (id: number, nuevoEstado: "en espera" | "confirmado" | "rechazado") => {
+// Move handleEstado outside handleMenuItemClick and keep only one definition
+const handleEstado = async (id: number, nuevoEstado: "en espera" | "confirmado" | "rechazado") => {
   try {
     const res = await fetch(`http://localhost:3000/aspirante/${id}`, {
       method: "PUT",
