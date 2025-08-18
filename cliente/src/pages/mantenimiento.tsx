@@ -1,33 +1,36 @@
 "use client"
 
+
 import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
+
 import { Card } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
-import logo from "../assets/logo.png"
-import logo2 from "../assets/logo2.png"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
 import {
   Menu,
   X,
   Home,
   Users,
   BarChart3,
-  Clock,
-  ThumbsUp,
   FolderOpen,
   FileText,
   LogOut,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
   Settings,
-  GraduationCap,
-  UserPlus,
   Plus,
+  Save,
   Edit,
   Trash2,
-  Save,
+  UserPlus,
+  GraduationCap,
 } from "lucide-react"
-import { useNavigate } from "react-router-dom"
+import logo from "../assets/logo.png"
+import logo2 from "../assets/logo2.png"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
 
 // URL base para API
 const API_BASE_URL_CARRERA = "http://localhost:3000/carrera";
@@ -65,10 +68,16 @@ const usuariosData = [
 
 const menuItems = [
   { icon: Home, label: "INICIO", id: "inicio" },
-  { icon: Users, label: "ASPIRANTES", id: "aspirantes" },
+  {
+    icon: Users,
+    label: "ASPIRANTES",
+    id: "aspirantes",
+    submenu: [
+      { id: "aspirantes-preinscripcion", label: "Preinscripción" },
+      { id: "aspirantes-matriculacion", label: "Matriculación" },
+    ],
+  },
   { icon: BarChart3, label: "CUPOS", id: "cupos" },
-  { icon: Clock, label: "EN ESPERA", id: "espera" },
-  { icon: ThumbsUp, label: "CONFIRMADOS", id: "confirmados" },
   { icon: FolderOpen, label: "LEGAJO DIGITAL", id: "legajo" },
   { icon: FileText, label: "REPORTES", id: "reportes" },
   { icon: Settings, label: "MANTENIMIENTO", id: "mantenimiento" },
@@ -85,6 +94,7 @@ export default function Mantenimiento() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [activeSection, setActiveSection] = useState("mantenimiento")
   const [activeTab, setActiveTab] = useState("carreras")
+  const [expandedSubmenu, setExpandedSubmenu] = useState<string | null>(null)
 
   // Estados para carreras
   const [carreras, setCarreras] = useState<Carrera[]>([])
@@ -129,40 +139,48 @@ export default function Mantenimiento() {
   const handleLogout = () => {
     localStorage.removeItem("adminRemember")
     localStorage.removeItem("adminUser")
+    alert("¡Sesión cerrada exitosamente!")
+    navigate("/login")
   }
 
   const handleMenuItemClick = (itemId: string) => {
-    setActiveSection(itemId)
-    setIsMenuOpen(false)
+  setActiveSection(itemId);
 
+  // Handle submenu toggle for "aspirantes"
+  if (itemId === "aspirantes") {
+    setExpandedSubmenu(expandedSubmenu === "aspirantes" ? null : "aspirantes");
+    return;
+  }
+
+  // Handle navigation for submenu items
+  if (itemId === "aspirantes-preinscripcion") {
+    navigate("/aspirantes");
+  } else if (itemId === "aspirantes-matriculacion") {
+    navigate("/matriculacion");
+  } else {
     switch (itemId) {
       case "inicio":
-        navigate("/admin")
-        break
-      case "aspirantes":
-        navigate("/aspirantes")
-        break
+        navigate("/admin");
+        break;
       case "cupos":
-        navigate("/cupos")
-        break
-      case "espera":
-        navigate("/espera")
-        break
-      case "confirmados":
-        navigate("/confirmados")
-        break
+        navigate("/cupos");
+        break;
       case "legajo":
-        navigate("/legajo")
-        break
+        navigate("/legajo");
+        break;
       case "reportes":
-        navigate("/reportes")
-        break
+        navigate("/reportes");
+        break;
       case "mantenimiento":
-        navigate("/mantenimiento")
-        break
+        navigate("/mantenimiento");
+        break;
       default:
-        navigate("/admin")
+        navigate("/admin");
+    }
   }
+
+  setIsMenuOpen(false);
+
 }
   // Funciones para carreras
   const handleCreateCarrera = async () => {
@@ -632,7 +650,6 @@ export default function Mantenimiento() {
           <button onClick={toggleMenu} className="absolute top-4 right-4 text-white hover:text-gray-200">
             <X className="w-6 h-6" />
           </button>
-
           <img src={logo} alt="Logo" className="mx-auto h-20" />
           <div className="mt-3">
             <p className="text-white text-sm font-medium">ADMINISTRADOR</p>
@@ -644,16 +661,38 @@ export default function Mantenimiento() {
           {menuItems.map((item) => {
             const IconComponent = item.icon
             return (
-              <button
-                key={item.id}
-                onClick={() => handleMenuItemClick(item.id)}
-                className={`w-full flex items-center px-6 py-4 text-white hover:bg-[#31546D] transition-colors ${
-                  activeSection === item.id ? "bg-[#31546D]" : ""
-                }`}
-              >
-                <IconComponent className="w-5 h-5 mr-4" />
-                <span className="text-sm font-medium tracking-wide">{item.label}</span>
-              </button>
+              <div key={item.id}>
+                <button
+                  onClick={() => handleMenuItemClick(item.id)}
+                  className={`w-full flex items-center px-6 py-4 text-white hover:bg-[#31546D] transition-colors ${
+                    activeSection === item.id ? "bg-[#31546D]" : ""
+                  }`}
+                >
+                  <IconComponent className="w-5 h-5 mr-4" />
+                  <span className="text-sm font-medium tracking-wide">{item.label}</span>
+                  {item.submenu && (
+                    <span className="ml-auto">
+                      {expandedSubmenu === item.id ? <ChevronDown /> : <ChevronRight />}
+                    </span>
+                  )}
+                </button>
+                {/* Submenu */}
+                {item.submenu && expandedSubmenu === item.id && (
+                  <div className="bg-[#1A5A75] ml-4">
+                    {item.submenu.map((subItem) => (
+                      <button
+                        key={subItem.id}
+                        onClick={() => handleMenuItemClick(subItem.id)}
+                        className={`w-full flex items-center px-6 py-3 text-white hover:bg-[#2A7A9A] transition-colors text-sm ${
+                          activeSection === subItem.id ? "bg-[#2A7A9A]" : ""
+                        }`}
+                      >
+                        <span className="ml-6">• {subItem.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             )
           })}
         </div>

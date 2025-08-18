@@ -10,19 +10,18 @@ import {
   Home,
   Users,
   BarChart3,
-  Clock,
-  ThumbsUp,
   FolderOpen,
   FileText,
   LogOut,
-  Search,
-  Filter,
-  Check,
-  XIcon,
-  Edit,
-  Eye,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
   Settings,
-} from "lucide-react"
+  Check,
+  Eye,
+  Clock,
+  XIcon
+} from "lucide-react";
 import { useNavigate } from "react-router-dom" 
 import logo from "../assets/logo.png"
 import logo2 from "../assets/logo2.png"
@@ -37,15 +36,25 @@ interface AspiranteItem {
 }
 
 
-// Datos de ejemplo de aspirantes
-
+type MenuItem = {
+  icon: React.ElementType;
+  label: string;
+  id: string;
+  submenu?: { id: string; label: string }[];
+};
 
 const menuItems = [
   { icon: Home, label: "INICIO", id: "inicio" },
-  { icon: Users, label: "ASPIRANTES", id: "aspirantes" },
+  {
+    icon: Users,
+    label: "ASPIRANTES",
+    id: "aspirantes",
+    submenu: [
+      { id: "aspirantes-preinscripcion", label: "Preinscripción" },
+      { id: "aspirantes-matriculacion", label: "Matriculación" },
+    ],
+  },
   { icon: BarChart3, label: "CUPOS", id: "cupos" },
-  { icon: Clock, label: "EN ESPERA", id: "espera" },
-  { icon: ThumbsUp, label: "CONFIRMADOS", id: "confirmados" },
   { icon: FolderOpen, label: "LEGAJO DIGITAL", id: "legajo" },
   { icon: FileText, label: "REPORTES", id: "reportes" },
   { icon: Settings, label: "MANTENIMIENTO", id: "mantenimiento" },
@@ -95,39 +104,66 @@ export default function AdminAspirantes() {
     navigate("/login")
   }
 
-  const handleMenuItemClick = (itemId: string) => {
-    setActiveSection(itemId)
-    setIsMenuOpen(false)
+  const [expandedSubmenu, setExpandedSubmenu] = useState<string | null>(null);
 
+const handleMenuItemClick = (itemId: string) => {
+  setActiveSection(itemId);
+
+  // Handle submenu toggle for "aspirantes"
+  if (itemId === "aspirantes") {
+    setExpandedSubmenu(expandedSubmenu === "aspirantes" ? null : "aspirantes");
+    return;
+  }
+
+  // Handle navigation for submenu items
+  if (itemId === "aspirantes-preinscripcion") {
+    navigate("/aspirantes");
+  } else if (itemId === "aspirantes-matriculacion") {
+    navigate("/matriculacion");
+  } else {
     switch (itemId) {
       case "inicio":
-        navigate("/admin")
-        break
-      case "aspirantes":
-        navigate("/aspirantes")
-        break
+        navigate("/admin");
+        break;
       case "cupos":
-        navigate("/cupos")
-        break
-      case "espera":
-        navigate("/espera")
-        break
-      case "confirmados":
-        navigate("/confirmados")
-        break
+        navigate("/cupos");
+        break;
       case "legajo":
-        navigate("/legajo")
-        break
+        navigate("/legajo");
+        break;
       case "reportes":
-        navigate("/reportes")
-        break
+        navigate("/reportes");
+        break;
       case "mantenimiento":
-        navigate("/mantenimiento")
-        break
+        navigate("/mantenimiento");
+        break;
       default:
-        navigate("/admin")
+        navigate("/admin");
+    }
   }
- }
+
+ const handleEstado = async (id: number, nuevoEstado: "en espera" | "confirmado" | "rechazado") => {
+  try {
+    const res = await fetch(`http://localhost:3000/aspirante/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ estado_preinscripcion: nuevoEstado })
+    });
+
+    if (!res.ok) throw new Error(`Error al cambiar estado a ${nuevoEstado}`);
+
+    setAspirantes((prev) =>
+      prev.map((asp) =>
+        asp.id === id ? { ...asp, estado_preinscripcion: nuevoEstado } : asp
+      )
+    );
+  } catch (error) {
+    console.error(error);
+    alert(`No se pudo cambiar el estado a ${nuevoEstado}`);
+  }
+
 
  const handleEstado = async (id: number, nuevoEstado: "en espera" | "confirmado" | "rechazado") => {
   try {
@@ -211,19 +247,41 @@ export default function AdminAspirantes() {
         {/* Menu Items */}
         <div className="flex-1">
           {menuItems.map((item) => {
-            const IconComponent = item.icon
+            const IconComponent = item.icon;
             return (
-              <button
-                key={item.id}
-                onClick={() => handleMenuItemClick(item.id)}
-                className={`w-full flex items-center px-6 py-4 text-white hover:bg-[#31546D] transition-colors ${
-                  activeSection === item.id ? "bg-[#31546D]" : ""
-                }`}
-              >
-                <IconComponent className="w-5 h-5 mr-4" />
-                <span className="text-sm font-medium tracking-wide">{item.label}</span>
-              </button>
-            )
+              <div key={item.id}>
+                <button
+                  onClick={() => handleMenuItemClick(item.id)}
+                  className={`w-full flex items-center px-6 py-4 text-white hover:bg-[#31546D] transition-colors ${
+                    activeSection === item.id ? "bg-[#31546D]" : ""
+                  }`}
+                >
+                  <IconComponent className="w-5 h-5 mr-4" />
+                  <span className="text-sm font-medium tracking-wide">{item.label}</span>
+                  {item.submenu && (
+                    <span className="ml-auto">
+                      {expandedSubmenu === item.id ? <ChevronDown /> : <ChevronRight />}
+                    </span>
+                  )}
+                </button>
+                {/* Submenu */}
+                {item.submenu && expandedSubmenu === item.id && (
+                  <div className="bg-[#1A5A75] ml-4">
+                    {item.submenu.map((subItem) => (
+                      <button
+                        key={subItem.id}
+                        onClick={() => handleMenuItemClick(subItem.id)}
+                        className={`w-full flex items-center px-6 py-3 text-white hover:bg-[#2A7A9A] transition-colors text-sm ${
+                          activeSection === subItem.id ? "bg-[#2A7A9A]" : ""
+                        }`}
+                      >
+                        <span className="ml-6">• {subItem.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
           })}
         </div>
 

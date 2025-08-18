@@ -17,24 +17,13 @@ import {
   ChevronRight,
   ChevronDown,
   Settings,
+  Construction,
+  AlertTriangle,
 } from "lucide-react"
 import logo from "../assets/logo.png"
 import logo2 from "../assets/logo2.png"
-import carrusel1 from "../assets/carrusel1.jpg"
-import carrusel2 from "../assets/carrusel2.jpg"
-import carrusel3 from "../assets/carrusel3.jpg"
-import carrusel4 from "../assets/carrusel4.jpg"
-import carrusel5 from "../assets/carrusel5.jpg"
 import { useNavigate } from "react-router-dom"
 
-const carouselImages = [
-  carrusel1,
-  carrusel2,
-  carrusel3,
-  carrusel4,
-  carrusel5,
-  //las fotos agregarlas acá
-]
 
 type MenuItem = {
   icon: React.ElementType;
@@ -60,7 +49,7 @@ const menuItems: MenuItem[] = [
   { icon: Settings, label: "MANTENIMIENTO", id: "mantenimiento" },
 ]
 
-export default function AdminMain() {
+export default function Cupos() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [activeSection, setActiveSection] = useState("inicio")
@@ -77,13 +66,6 @@ export default function AdminMain() {
     navigate("/login")
   }
 
-  const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % carouselImages.length)
-  }
-
-  const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + carouselImages.length) % carouselImages.length)
-  }
 
 const [expandedSubmenu, setExpandedSubmenu] = useState<string | null>(null);
 
@@ -125,7 +107,6 @@ const handleMenuItemClick = (itemId: string) => {
 
   setIsMenuOpen(false);
 }
-
   return (
     <div className="min-h-screen bg-[#1F6680] from-teal-600 to-teal-800 relative">
       {/* Header */}
@@ -184,7 +165,7 @@ const handleMenuItemClick = (itemId: string) => {
                     </span>
                   )}
                 </button>
-                {/* Submenu - Submenu items */}
+                {/* Submenu */}
                 {item.submenu && expandedSubmenu === item.id && (
                   <div className="bg-[#1A5A75] ml-4">
                     {item.submenu.map((subItem) => (
@@ -219,50 +200,39 @@ const handleMenuItemClick = (itemId: string) => {
 
       {/* Main Content */}
       <main className="p-8">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-4xl mx-auto">
+          {/* Page Title */}
           <div className="mb-8 text-center">
-            <h2 className="text-white text-3xl font-bold mb-4">Bienvenido al Panel de Administración</h2>
+            <h2 className="text-white text-3xl font-bold mb-4">Gestión de Cupos</h2>
           </div>
 
-          {/* Carousel Container */}
-          <Card className="bg-white/10 backdrop-blur-sm border-none shadow-2xl overflow-hidden">
-            <div className="relative">
-              {/* Carousel */}
-              <div className="relative h-96 md:h-[500px] overflow-hidden">
-                <img
-                  src={carouselImages[currentImageIndex] || "carrusel2.jpg"}
-                  alt={`Imagen ${currentImageIndex + 1}`}
-                  className="w-full h-full object-cover transition-opacity duration-500"
-                />
-
-                {/* Navigation Arrows */}
-                <button
-                  onClick={prevImage}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-3 transition-colors shadow-lg"
-                >
-                  <ChevronLeft className="w-6 h-6" />
-                </button>
-
-                <button
-                  onClick={nextImage}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-3 transition-colors shadow-lg"
-                >
-                  <ChevronRight className="w-6 h-6" />
-                </button>
+          {/* Under Construction Card */}
+          <Card className="bg-white shadow-xl overflow-hidden">
+            <div className="p-12 text-center">
+              {/* Construction Icon */}
+              <div className="flex justify-center mb-6">
+                <div className="relative">
+                  <Construction className="w-24 h-24 text-orange-500" />
+                  <div className="absolute -top-2 -right-2">
+                    <AlertTriangle className="w-8 h-8 text-yellow-500" />
+                  </div>
+                </div>
               </div>
 
-              {/* Carousel Indicators */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
-                {carouselImages.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentImageIndex(index)}
-                    className={`w-3 h-3 rounded-full transition-colors ${
-                      index === currentImageIndex ? "bg-white" : "bg-white/50"
-                    }`}
-                  />
-                ))}
+              {/* Title */}
+              <h3 className="text-3xl font-bold text-gray-800 mb-4">Vista en Desarrollo</h3>
+
+              {/* Description */}
+              <div className="max-w-2xl mx-auto mb-8">
+                <p className="text-gray-600 text-lg mb-4">
+                  La sección de <strong>Cupos</strong> está actualmente en proceso de desarrollo.
+                </p>
+                <p className="text-gray-500 text-base">
+                  Nuestro equipo está trabajando para implementar todas las funcionalidades necesarias para la gestión
+                  de cupos.
+                </p>
               </div>
+
             </div>
           </Card>
         </div>
