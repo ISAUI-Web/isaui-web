@@ -6,6 +6,10 @@ import AdminMain from './pages/adminMain'
 import Aspirantes from './pages/aspirantesMain'
 import DetalleAspirante from './pages/detalleAspirante'
 import Mantenimiento from './pages/mantenimiento'
+import AspirantesMatriculacion from './pages/aspirantesMatriculacion'
+import Cupos from './pages/cupos'
+import Legajo from './pages/legajo'
+import Reportes from './pages/reportes'
 
 export default function App() {
   return (
@@ -17,6 +21,10 @@ export default function App() {
       <Route path="/aspirantes" element={<Aspirantes />} />
       <Route path="/detAspirante/:id" element={<DetalleAspirante />} />
       <Route path="/mantenimiento" element={<Mantenimiento />} />
+      <Route path="/matriculacion" element={<AspirantesMatriculacion />} />
+      <Route path="/cupos" element={<Cupos />} />
+      <Route path="/legajo" element={<Legajo />} />
+      <Route path="/reportes" element={<Reportes />} />
       {/* Podés agregar más rutas aquí */}
       {/* Podés agregar más rutas como <Route path="/" element={<Inicio />} /> */}
     </Routes>
