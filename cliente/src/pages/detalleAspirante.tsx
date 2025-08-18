@@ -9,7 +9,8 @@ import { Textarea } from "../components/ui/textarea"
 import { ArrowLeft, User, Save, Edit, Eye, X, Camera, Upload } from "lucide-react"
 import { useParams, useNavigate } from 'react-router-dom'
 
-
+const API_BASE = 'http://localhost:3000';
+const abs = (u?: string | null) => (u ? (u.startsWith('http') ? u : `${API_BASE}${u}`) : '');
 
 // Datos de ejemplo del aspirante
 
@@ -35,6 +36,10 @@ export default function DetalleAspirante() {
   const dniDorsoInputRef = useRef<HTMLInputElement>(null)
   const [isUploadingImage, setIsUploadingImage] = useState<"dniFrente" | "dniDorso" | null>(null)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  
+  // Estado para manejar los archivos seleccionados para subir
+  const [dniFrenteFile, setDniFrenteFile] = useState<File | null>(null);
+  const [dniDorsoFile, setDniDorsoFile] = useState<File | null>(null);
 
   // VALIDACIONES
   const validateStep = (step: number): boolean => {
@@ -195,6 +200,14 @@ export default function DetalleAspirante() {
         horas_diarias: data.horas_diarias || "",
         descripcion_trabajo: data.descripcion_trabajo || "",
         personas_cargo: data.personas_cargo || "",
+        documentos: {
+          dniFrente: data.documentos?.dniFrente || null,
+          dniDorso: data.documentos?.dniDorso || null,
+          dniFrenteUrl: data.dniFrenteUrl || null,
+          dniDorsoUrl: data.dniDorsoUrl || null,
+          dniFrenteNombre: data.dniFrenteNombre || "",
+          dniDorsoNombre: data.dniDorsoNombre || ""
+        }
       })
     } catch (error) {
       console.error("❌ Error:", error)
@@ -224,37 +237,49 @@ export default function DetalleAspirante() {
     return;
   }
 
-    try {
-      // Clono formData para no modificar el estado directamente
-      const payload = { ...formData };
-      // Eliminamos 'carrera' porque el backend no lo necesita
-      // en la ruta de actualización. La carrera se gestiona a través de la preinscripción.
-      delete payload.carrera;
+  const data = new FormData();
 
-      const res = await fetch(`http://localhost:3000/aspirante/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        const errorMessage = errorData.message || 'Error desconocido del servidor.';
-        const detailedMessage = Array.isArray(errorMessage) ? errorMessage.join(', ') : errorMessage;
-        throw new Error(detailedMessage);
-      }
-
-      const updatedAspirante = await res.json();
-      setFormData(updatedAspirante);
-      setIsEditing(false);
-      alert('Cambios guardados con éxito');
-    } catch (error: any) {
-      console.error('Error guardando aspirante:', error);
-      alert(`Hubo un error al guardar los cambios: ${error.message}`);
+  // Agregamos todos los campos del formulario al FormData
+  // Omitimos 'documentos' y 'carrera' que no se envían en el body
+  Object.keys(formData).forEach(key => {
+    if (key !== 'id' && key !== 'documentos' && key !== 'carrera' && formData[key] !== null) {
+      // Aseguramos que los booleanos se envíen como strings 'true' o 'false'
+      const value = typeof formData[key] === 'boolean' ? String(formData[key]) : formData[key];
+      data.append(key, value);
     }
-  };
+  });
+
+  // Adjuntamos los nuevos archivos si fueron seleccionados
+  if (dniFrenteFile) {
+    data.append('dniFrente', dniFrenteFile);
+  }
+  if (dniDorsoFile) {
+    data.append('dniDorso', dniDorsoFile);
+  }
+
+  try {
+    const res = await fetch(`http://localhost:3000/aspirante/${id}`, {
+      method: 'PUT',
+      // NO establecemos Content-Type, el navegador lo hará automáticamente para FormData
+      body: data,
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      const errorMessage = errorData.message || 'Error desconocido del servidor.';
+      const detailedMessage = Array.isArray(errorMessage) ? errorMessage.join(', ') : errorMessage;
+      throw new Error(detailedMessage);
+    }
+
+    const updatedAspirante = await res.json();
+    setFormData(updatedAspirante); // Actualizamos con los datos del servidor
+    setIsEditing(false);
+    alert('Cambios guardados con éxito');
+  } catch (error: any) {
+    console.error('Error guardando aspirante:', error);
+    alert(`Hubo un error al guardar los cambios: ${error.message}`);
+  }
+};
 
   const handleEdit = () => {
     setIsEditing(true)
@@ -266,73 +291,27 @@ export default function DetalleAspirante() {
     }
   }
 
-  const handleImageUpload = async (file: File, documentType: "dniFrente" | "dniDorso") => {
-    if (!file || !formData) return
-
-    // Validar tipo de archivo
-    if (!file.type.startsWith("image/")) {
-      alert("Por favor seleccione un archivo de imagen válido")
-      return
-    }
-
-    // Validar tamaño (máximo 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert("El archivo es demasiado grande. Máximo 5MB permitido.")
-      return
-    }
-
-    setIsUploadingImage(documentType)
-
-    try {
-      // Crear FormData para enviar el archivo
-      const formDataUpload = new FormData()
-      formDataUpload.append("file", file)
-      formDataUpload.append("documentType", documentType)
-      formDataUpload.append("aspiranteId", id ?? "")
-
-      // Aquí conectarías con tu API de NestJS para subir la imagen
-      // GASTÓN
-      const response = await fetch(`/api/aspirantes/${id}/documentos`, {
-        method: "POST",
-        body: formDataUpload,
-      })
-
-      if (!response.ok) {
-        throw new Error("Error al subir la imagen")
-      }
-
-      const result = await response.json()
-
-      // Actualizar el estado con la nueva URL de la imagen desde el servidor
-      setFormData((prev: any) =>
-        prev
-          ? {
-              ...prev,
-              documentos: {
-                ...prev.documentos,
-                [documentType]: result.imageUrl, // URL devuelta por el servidor
-              },
-            }
-          : prev,
-      )
-
-      console.log(`Imagen ${documentType} subida:`, result)
-      alert("Imagen actualizada correctamente")
-    } catch (error) {
-      console.error("Error al subir imagen:", error)
-      alert("Error al subir la imagen. Intente nuevamente.")
-    } finally {
-      setIsUploadingImage(null)
-    }
-  }
-
   const handleFileInputChange = (
     event: React.ChangeEvent<HTMLInputElement>,
     documentType: "dniFrente" | "dniDorso",
   ) => {
     const file = event.target.files?.[0]
     if (file) {
-      handleImageUpload(file, documentType)
+      // Guardamos el archivo en el estado correspondiente
+      if (documentType === 'dniFrente') {
+        setDniFrenteFile(file);
+      } else {
+        setDniDorsoFile(file);
+      }
+      // Mostramos una vista previa local de la imagen seleccionada
+      const previewUrl = URL.createObjectURL(file);
+      const urlKey = documentType === 'dniFrente' ? 'dniFrenteUrl' : 'dniDorsoUrl';
+      const nameKey = documentType === 'dniFrente' ? 'dniFrenteNombre' : 'dniDorsoNombre';
+
+      setFormData((prev: any) => ({
+        ...prev,
+        documentos: { ...prev.documentos, [urlKey]: previewUrl, [nameKey]: file.name },
+      }));
     }
   }
 
@@ -345,12 +324,177 @@ export default function DetalleAspirante() {
   }
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData((prev: typeof formData) => ({ ...prev, [field]: value }));
-    // Opcional: validación en tiempo real solo si está editando
-    if (isEditing) {
-      const step = activeTab === "datos" ? 1 : activeTab === "estudios" ? 2 : activeTab === "laboral" ? 3 : activeTab === "documentacion" ? 4 : 1;
-      validateStep(step);
+    // Calcula el nuevo estado antes de setearlo
+    let newFormData = { ...formData, [field]: value };
+
+    // Limpiar campos relacionados cuando se cambia a "No"
+    if (field === "completo_nivel_medio" && value === "No") {
+      newFormData.anio_ingreso_medio = "";
+      newFormData.anio_egreso_medio = "";
+      newFormData.provincia_medio = "";
+      newFormData.titulo_medio = "";
     }
+
+    if (field === "completo_nivel_superior" && value === "No") {
+      newFormData.carrera_superior = "";
+      newFormData.institucion_superior = "";
+      newFormData.provincia_superior = "";
+      newFormData.anio_ingreso_superior = "";
+      newFormData.anio_egreso_superior = "";
+    }
+
+    // Limpiar año de egreso si se cambia a "En curso"
+    if (field === "completo_nivel_superior" && value === "En curso") {
+      newFormData.anio_egreso_superior = "";
+    }
+
+    if (field === "trabajo" && value === "No") {
+      newFormData.horas_diarias = "";
+      newFormData.descripcion_trabajo = "";
+    }
+
+    setFormData(newFormData);
+
+    // Validación en tiempo real usando el nuevo estado
+    if (isEditing) {
+      const step =
+        activeTab === "datos" ? 1 :
+        activeTab === "estudios" ? 2 :
+        activeTab === "laboral" ? 3 :
+        activeTab === "documentacion" ? 4 : 1;
+      validateStepWithData(step, newFormData);
+    }
+  }
+
+  // Nueva función que acepta el formData a validar
+  const validateStepWithData = (step: number, data: any): boolean => {
+    const newErrors: Record<string, string> = {}
+
+    if (step === 1) {
+     if (!data.nombre) {
+    newErrors.nombre = "El nombre es requerido"
+      } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(data.nombre)) {
+        newErrors.nombre = "El nombre solo puede contener letras"
+      }
+      if (!data.apellido) {
+        newErrors.apellido = "El apellido es requerido"
+      } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(data.apellido)) {
+        newErrors.apellido = "El apellido solo puede contener letras"
+      }
+      if (!data.dni) newErrors.dni = "El DNI es requerido"
+      else if (!/^\d{8}$/.test(data.dni)) {
+        newErrors.dni = "El DNI debe tener 8 digitos"
+      } else if (isNaN(Number(data.dni))) {
+        newErrors.dni = "El DNI debe ser un número"
+      }
+      if (!data.cuil) newErrors.cuil = "El CUIL/CUIT es requerido"
+      else if (!/^\d{11}$/.test(data.cuil)) {
+        newErrors.cuil = "El CUIL/CUIT debe tener 11 digitos"
+      } else if (isNaN(Number(data.cuil))) {
+        newErrors.cuil = "El CUIL/CUIT debe ser un número"
+      }
+      if (!data.domicilio) newErrors.domicilio = "El domicilio es requerido"
+      if (!data.localidad) newErrors.localidad = "La localidad es requerida"
+      if (!data.barrio) newErrors.barrio = "El barrio es requerido"
+      if (!data.codigo_postal) newErrors.codigo_postal = "El código postal es requerido"
+      else if (!/^\d{4}$/.test(data.codigo_postal)) {
+        newErrors.codigo_postal = "El código postal debe tener 4 digitos"
+      } else if (isNaN(Number(data.codigo_postal))) {
+        newErrors.codigo_postal = "El código postal debe ser un número"
+      }
+      if (!data.telefono) newErrors.telefono = "El teléfono es requerido"
+      else if (!/^\d{10,15}$/.test(data.telefono)) {
+        newErrors.telefono = "El teléfono debe tener entre 10 y 15 digitos"
+      } else if (isNaN(Number(data.telefono))) {
+        newErrors.telefono = "El teléfono debe ser un número"
+      }
+      if (!data.email) {
+        newErrors.email = "El email es requerido"
+      } else if (
+        !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(data.email)
+      ) {
+        newErrors.email = "El email no es válido"
+      }
+      if (!data.fecha_nacimiento) newErrors.fecha_nacimiento = "La fecha de nacimiento es requerida"
+      else {
+        const today = new Date()
+        const birthDate = new Date(data.fecha_nacimiento)
+        if (birthDate >= today) {
+          newErrors.fecha_nacimiento = "La fecha de nacimiento no puede ser hoy o en el futuro"
+        }
+      }
+      if (!data.ciudad_nacimiento) newErrors.ciudad_nacimiento = "La ciudad de nacimiento es requerida"
+      if (!data.provincia_nacimiento) newErrors.provincia_nacimiento = "La provincia es requerida"
+      if (!data.sexo) newErrors.sexo = "El sexo es requerido"
+      if(!data.carrera) newErrors.carrera = "La carrera es requerida"
+
+    }
+
+    if (step === 2) {
+      if (!data.completo_nivel_medio) newErrors.completo_nivel_medio = "Debe indicar si completó el nivel medio";
+      if (data.completo_nivel_medio === "Sí") {
+        if (!data.anio_ingreso_medio) newErrors.anio_ingreso_medio = "El año de ingreso es requerido";
+        else if (Number(data.anio_ingreso_medio) < 1900) newErrors.anio_ingreso_medio = "El año de ingreso debe ser mayor a 1900";
+        else if (Number(data.anio_ingreso_medio) > new Date().getFullYear()) newErrors.anio_ingreso_medio = "El año de ingreso no puede ser mayor al año actual";
+        else if (isNaN(Number(data.anio_ingreso_medio))) newErrors.anio_ingreso_medio = "El año de ingreso debe ser un número";
+        if (!data.anio_egreso_medio) newErrors.anio_egreso_medio = "El año de egreso es requerido";
+        else if (Number(data.anio_egreso_medio) < 1900) newErrors.anio_egreso_medio = "El año de egreso debe ser mayor a 1900";
+        else if (Number(data.anio_egreso_medio) > new Date().getFullYear()) newErrors.anio_egreso_medio = "El año de egreso no puede ser mayor al año actual";
+        else if (data.anio_ingreso_medio && Number(data.anio_egreso_medio) < Number(data.anio_ingreso_medio)) {
+          newErrors.anio_egreso_medio = "El año de egreso no puede ser menor al año de ingreso";
+        }
+        else if (isNaN(Number(data.anio_egreso_medio))) newErrors.anio_egreso_medio = "El año de egreso debe ser un número";
+        if (!data.provincia_medio) newErrors.provincia_medio = "La provincia es requerida";
+        if (!data.titulo_medio) newErrors.titulo_medio = "El título es requerido";
+      }
+      else if (data.completo_nivel_medio === "No") {  
+        newErrors.anio_ingreso_medio = "";
+        newErrors.anio_egreso_medio = "";
+        newErrors.provincia_medio = "";
+        newErrors.titulo_medio = "";
+      }
+
+      if (!data.completo_nivel_superior) newErrors.completo_nivel_superior = "Debe indicar si completó el nivel superior"
+      if (data.completo_nivel_superior === "Sí") {
+        if (!data.carrera_superior) newErrors.carrera_superior = "La carrera es requerida"
+        if (!data.institucion_superior) newErrors.institucion_superior = "La institución es requerida"
+        if (!data.provincia_superior) newErrors.provincia_superior = "La provincia es requerida"
+        if (!data.anio_ingreso_superior) newErrors.anio_ingreso_superior = "El año de ingreso es requerido"
+        else if (Number(data.anio_ingreso_superior) < 1900) newErrors.anio_ingreso_superior = "El año de ingreso debe ser mayor a 1900"
+        else if (Number(data.anio_ingreso_superior) > new Date().getFullYear()) newErrors.anio_ingreso_superior = "El año de ingreso no puede ser mayor al año actual"
+        else if (isNaN(Number(data.anio_ingreso_superior))) newErrors.anio_ingreso_superior = "El año de ingreso debe ser un número"
+        if (!data.anio_egreso_superior) newErrors.anio_egreso_superior = "El año de egreso es requerido"
+        else if (Number(data.anio_egreso_superior) < 1900) newErrors.anio_egreso_superior = "El año de egreso debe ser mayor a 1900"
+        else if (Number(data.anio_egreso_superior) > new Date().getFullYear()) newErrors.anio_egreso_superior = "El año de egreso no puede ser mayor al año actual"
+        else if (data.anio_ingreso_superior && Number(data.anio_egreso_superior) < Number(data.anio_ingreso_superior)) {
+          newErrors.anio_egreso_superior = "El año de egreso no puede ser menor al año de ingreso";
+        }
+        else if (isNaN(Number(data.anio_egreso_superior))) newErrors.anio_egreso_superior = "El año de egreso debe ser un número";
+      }
+      if (data.completo_nivel_superior === "En curso") {
+        if (!data.carrera_superior) newErrors.carrera_superior = "La carrera es requerida"
+        if (!data.institucion_superior) newErrors.institucion_superior = "La institución es requerida"
+        if (!data.provincia_superior) newErrors.provincia_superior = "La provincia es requerida"
+        if (!data.anio_ingreso_superior) newErrors.anio_ingreso_superior = "El año de ingreso es requerido"
+      }
+    }
+
+    if (step === 3) {
+      // Validaciones de situación laboral y responsabilidades
+      if (data.trabajo === "Sí") {
+        if (!data.horas_diarias) {
+          newErrors.horas_diarias = "Las horas diarias son requeridas";
+        } else if (isNaN(Number(data.horas_diarias)) || Number(data.horas_diarias) <= 0) {
+          newErrors.horas_diarias = "Las horas diarias deben ser un número mayor a 0";
+        }
+        if (!data.descripcion_trabajo) {
+          newErrors.descripcion_trabajo = "La descripción del trabajo es requerida";
+        }
+      }
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
   }
 
   const renderTabContent = () => {
@@ -570,7 +714,8 @@ export default function DetalleAspirante() {
                 <Input
                   value={formData.anio_ingreso_medio || ""}
                   onChange={(e) => handleInputChange("anio_ingreso_medio", e.target.value)}
-                  className="w-full"
+                  className={`w-full ${formData.completo_nivel_medio === "No" ? "bg-gray-100 cursor-not-allowed" : ""}`}
+                  disabled={formData.completo_nivel_medio === "No"}
                 />
               ) : (
                 <div className="text-blue-600 font-medium">{formData.anio_ingreso_medio}</div>
@@ -583,7 +728,8 @@ export default function DetalleAspirante() {
                 <Input
                   value={formData.anio_egreso_medio || ""}
                   onChange={(e) => handleInputChange("anio_egreso_medio", e.target.value)}
-                  className="w-full"
+                  className={`w-full ${formData.completo_nivel_medio === "No" ? "bg-gray-100 cursor-not-allowed" : ""}`}
+                  disabled={formData.completo_nivel_medio === "No"}
                 />
               ) : (
                 <div className="text-blue-600 font-medium">{formData.anio_egreso_medio}</div>
@@ -596,7 +742,8 @@ export default function DetalleAspirante() {
                 <Input
                   value={formData.provincia_medio || ""}
                   onChange={(e) => handleInputChange("provincia_medio", e.target.value)}
-                  className="w-full"
+                  className={`w-full ${formData.completo_nivel_medio === "No" ? "bg-gray-100 cursor-not-allowed" : ""}`}
+                  disabled={formData.completo_nivel_medio === "No"}
                 />
               ) : (
                 <div className="text-blue-600 font-medium">{formData.provincia_medio}</div>
@@ -609,7 +756,8 @@ export default function DetalleAspirante() {
                 <Input
                   value={formData.titulo_medio || ""}
                   onChange={(e) => handleInputChange("titulo_medio", e.target.value)}
-                  className="w-full"
+                  className={`w-full ${formData.completo_nivel_medio === "No" ? "bg-gray-100 cursor-not-allowed" : ""}`}
+                  disabled={formData.completo_nivel_medio === "No"}
                 />
               ) : (
                 <div className="text-blue-600 font-medium">{formData.titulo_medio}</div>
@@ -639,7 +787,8 @@ export default function DetalleAspirante() {
                 <Input
                   value={formData.carrera_superior || ""}
                   onChange={(e) => handleInputChange("carrera_superior", e.target.value)}
-                  className="w-full"
+                  className={`w-full ${formData.completo_nivel_superior === "No" ? "bg-gray-100 cursor-not-allowed" : ""}`}
+                  disabled={formData.completo_nivel_superior === "No"}
                 />
               ) : (
                 <div className="text-blue-600 font-medium">{formData.carrera_superior}</div>
@@ -652,7 +801,8 @@ export default function DetalleAspirante() {
                 <Input
                   value={formData.institucion_superior || ""}
                   onChange={(e) => handleInputChange("institucion_superior", e.target.value)}
-                  className="w-full"
+                  className={`w-full ${formData.completo_nivel_superior === "No" ? "bg-gray-100 cursor-not-allowed" : ""}`}
+                  disabled={formData.completo_nivel_superior === "No"}
                 />
               ) : (
                 <div className="text-blue-600 font-medium">{formData.institucion_superior}</div>
@@ -665,7 +815,8 @@ export default function DetalleAspirante() {
                 <Input
                   value={formData.provincia_superior || ""}
                   onChange={(e) => handleInputChange("provincia_superior", e.target.value)}
-                  className="w-full"
+                  className={`w-full ${formData.completo_nivel_superior === "No" ? "bg-gray-100 cursor-not-allowed" : ""}`}
+                  disabled={formData.completo_nivel_superior === "No"}
                 />
               ) : (
                 <div className="text-blue-600 font-medium">{formData.provincia_superior}</div>
@@ -678,7 +829,8 @@ export default function DetalleAspirante() {
                 <Input
                   value={formData.anio_ingreso_superior || ""}
                   onChange={(e) => handleInputChange("anio_ingreso_superior", e.target.value)}
-                  className="w-full"
+                  className={`w-full ${formData.completo_nivel_superior === "No" ? "bg-gray-100 cursor-not-allowed" : ""}`}
+                  disabled={formData.completo_nivel_superior === "No"}
                 />
               ) : (
                 <div className="text-blue-600 font-medium">{formData.anio_ingreso_superior}</div>
@@ -691,7 +843,8 @@ export default function DetalleAspirante() {
                 <Input
                   value={formData.anio_egreso_superior || ""}
                   onChange={(e) => handleInputChange("anio_egreso_superior", e.target.value)}
-                  className="w-full"
+                  className={`w-full ${(formData.completo_nivel_superior === "No" || formData.completo_nivel_superior === "En curso") ? "bg-gray-100 cursor-not-allowed" : ""}`}
+                  disabled={formData.completo_nivel_superior === "No" || formData.completo_nivel_superior === "En curso"}
                 />
               ) : (
                 <div className="text-blue-600 font-medium">{formData.anio_egreso_superior}</div>
@@ -725,7 +878,8 @@ export default function DetalleAspirante() {
                 <Input
                   value={formData.horas_diarias || ""}
                   onChange={(e) => handleInputChange("horas_diarias", e.target.value)}
-                  className="w-full"
+                  className={`w-full ${formData.trabajo === "No" ? "bg-gray-100 cursor-not-allowed" : ""}`}
+                  disabled={formData.trabajo === "No"}
                 />
               ) : (
                 <div className="text-blue-600 font-medium">{formData.horas_diarias}</div>
@@ -738,7 +892,8 @@ export default function DetalleAspirante() {
                 <Input
                   value={formData.descripcion_trabajo || ""}
                   onChange={(e) => handleInputChange("descripcion_trabajo", e.target.value)}
-                  className="w-full"
+                  className={`w-full ${formData.trabajo === "No" ? "bg-gray-100 cursor-not-allowed" : ""}`}
+                  disabled={formData.trabajo === "No"}
                 />
               ) : (
                 <div className="text-blue-600 font-medium">{formData.descripcion_trabajo}</div>
@@ -789,12 +944,12 @@ export default function DetalleAspirante() {
               <div className="space-y-3">
                 <h4 className="text-md font-medium text-gray-700">DNI - Frente</h4>
                 <div className="relative group">
-                  {formData.documentos && formData.documentos.dniFrente ? (
+                  {formData.documentos?.dniFrenteUrl ? (
                     <img
-                      src={formData.documentos.dniFrente || "/placeholder.svg"}
+                      src={formData.documentos?.dniFrenteUrl ? `http://localhost:3000${formData.documentos.dniFrenteUrl}` : "/placeholder.svg"}
                       alt="DNI Frente"
                       className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                      onClick={() => !isEditing && handleViewImage(formData.documentos.dniFrente)}
+                      onClick={() => !isEditing && handleViewImage(`http://localhost:3000${formData.documentos.dniFrenteUrl}`)}
                     />
                   ) : (
                     <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
@@ -803,6 +958,13 @@ export default function DetalleAspirante() {
                         <p className="text-sm">No hay imagen disponible</p>
                       </div>
                     </div>
+                  )}
+
+                  {/* Mostrar nombre del archivo si existe */}
+                  {formData.documentos?.dniFrenteUrl && (
+                    <p className="text-sm text-gray-700 truncate mt-1">
+                      {formData.documentos.dniFrenteUrl.split('/').pop()}
+                    </p>
                   )}
 
                   {/* Overlay para modo edición */}
@@ -857,10 +1019,10 @@ export default function DetalleAspirante() {
                     </Button>
                   ) : (
                     <Button
-                      onClick={() => handleViewImage(formData.documentos?.dniFrente)}
+                      onClick={() => window.open(`http://localhost:3000${formData.documentos.dniFrenteUrl}`, "_blank")}
                       variant="outline"
                       className="flex-1 text-sm"
-                      disabled={!formData.documentos || !formData.documentos.dniFrente}
+                      disabled={!formData.documentos?.dniFrenteUrl}
                     >
                       <Eye className="w-4 h-4 mr-2" />
                       Ver
@@ -873,12 +1035,12 @@ export default function DetalleAspirante() {
               <div className="space-y-3">
                 <h4 className="text-md font-medium text-gray-700">DNI - Dorso</h4>
                 <div className="relative group">
-                  {formData.documentos && formData.documentos.dniDorso ? (
+                  {formData.documentos?.dniDorsoUrl ? (
                     <img
-                      src={formData.documentos.dniDorso || "/placeholder.svg"}
+                      src={formData.documentos?.dniDorsoUrl ? `http://localhost:3000${formData.documentos.dniDorsoUrl}` : "/placeholder.svg"}
                       alt="DNI Dorso"
                       className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                      onClick={() => !isEditing && handleViewImage(formData.documentos.dniDorso)}
+                      onClick={() => !isEditing && handleViewImage(`http://localhost:3000${formData.documentos.dniDorsoUrl}`)}
                     />
                   ) : (
                     <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
@@ -887,6 +1049,12 @@ export default function DetalleAspirante() {
                         <p className="text-sm">No hay imagen disponible</p>
                       </div>
                     </div>
+                  )}
+
+                  {formData.documentos?.dniDorsoUrl && (
+                    <p className="text-sm text-gray-700 truncate">
+                      {formData.documentos.dniDorsoUrl.split('/').pop()}
+                    </p>
                   )}
 
                   {/* Overlay para modo edición */}
@@ -941,14 +1109,15 @@ export default function DetalleAspirante() {
                     </Button>
                   ) : (
                     <Button
-                      onClick={() => handleViewImage(formData.documentos?.dniDorso)}
+                      onClick={() => window.open(`http://localhost:3000${formData.documentos.dniDorsoUrl}`, "_blank")}
                       variant="outline"
                       className="flex-1 text-sm"
-                      disabled={!formData.documentos || !formData.documentos.dniDorso}
+                      disabled={!formData.documentos?.dniDorsoUrl}
                     >
                       <Eye className="w-4 h-4 mr-2" />
                       Ver
                     </Button>
+
                   )}
                 </div>
               </div>

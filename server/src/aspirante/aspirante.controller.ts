@@ -144,6 +144,8 @@ export class AspiranteController {
       {
         ...aspirante,
         carrera,
+        dniFrenteUrl: aspirante.dniFrenteUrl,
+        dniDorsoUrl: aspirante.dniDorsoUrl,
       },
       {
         excludeExtraneousValues: true,
@@ -154,17 +156,66 @@ export class AspiranteController {
   }
 
   @Put(':id')
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'dniFrente', maxCount: 1 },
+        { name: 'dniDorso', maxCount: 1 },
+      ],
+      {
+        storage: diskStorage({
+          destination: './uploads/documentos',
+          filename: (
+            req: any,
+            file: Express.Multer.File,
+            cb: (error: Error | null, filename: string) => void,
+          ) => {
+            if (
+              'originalname' in file &&
+              typeof file.originalname === 'string'
+            ) {
+              const uniqueSuffix =
+                Date.now() + '-' + Math.round(Math.random() * 1e9);
+              const ext = extname(file.originalname);
+              cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
+            } else {
+              cb(new Error('Archivo inválido'), ''); //línea válida para tipado
+            }
+          },
+        }),
+        limits: {
+          fileSize: 5 * 1024 * 1024, // 5MB
+        },
+        fileFilter: (req, file, cb) => {
+          const allowed = /jpg|jpeg|png/;
+          const ext = extname(file.originalname).toLowerCase();
+          if (allowed.test(ext)) {
+            cb(null, true);
+          } else {
+            cb(new Error('Solo se permiten archivos JPG o PNG'), false);
+          }
+        },
+      },
+    ),
+  )
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateAspiranteDto: UpdateAspiranteDto,
+    @UploadedFiles()
+    files?: {
+      dniFrente?: Express.Multer.File[];
+      dniDorso?: Express.Multer.File[];
+    },
   ) {
-    const updated = await this.aspiranteService.update(id, updateAspiranteDto);
+    const updated = await this.aspiranteService.update(
+      id,
+      updateAspiranteDto,
+      files,
+    );
 
     if (!updated) {
       throw new NotFoundException('Aspirante no encontrado');
     }
-    // Después de actualizar, volvemos a buscar el aspirante para devolverlo
-    // con el formato legible
     return this.findOne(id);
   }
 }

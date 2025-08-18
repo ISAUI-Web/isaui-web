@@ -1,11 +1,9 @@
 "use client"
 
-<<<<<<< Updated upstream
-import { useState } from "react"
-=======
+
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
->>>>>>> Stashed changes
+
 import { Card } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
@@ -33,6 +31,25 @@ import {
 import logo from "../assets/logo.png"
 import logo2 from "../assets/logo2.png"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
+
+// URL base para API
+const API_BASE_URL_CARRERA = "http://localhost:3000/carrera";
+const API_BASE_URL_USUARIO = "http://localhost:3000/usuario";
+
+type Carrera = {
+  id: number;
+  nombre: string;
+  cupoMaximo: number;
+  cupoActual: number;
+};
+
+// Función para transformar datos del backend a formato frontend
+const mapCarreraFromApi = (c: any): Carrera => ({
+  id: c.id,
+  nombre: c.nombre,
+  cupoMaximo: c.cupo_maximo,
+  cupoActual: c.cupo_actual,
+});
 
 // Datos de ejemplo para carreras
 const carrerasData = [
@@ -67,10 +84,10 @@ const menuItems = [
 ]
 
 const roles = [
-  { value: "administrador", label: "Administrador" },
-  { value: "secretaria", label: "Secretaria" },
-  { value: "coordinador", label: "Coordinador" },
-]
+  { value: "ADMIN_GENERAL", label: "Administrador general" },
+  { value: "GESTOR_ACADEMICO", label: "Gestor académico" },
+  { value: "PROFESOR", label: "Profesor" },
+];
 
 export default function Mantenimiento() {
   const navigate = useNavigate()
@@ -80,7 +97,7 @@ export default function Mantenimiento() {
   const [expandedSubmenu, setExpandedSubmenu] = useState<string | null>(null)
 
   // Estados para carreras
-  const [carreras, setCarreras] = useState(carrerasData)
+  const [carreras, setCarreras] = useState<Carrera[]>([])
   const [editingCarrera, setEditingCarrera] = useState<number | null>(null)
   const [newCarrera, setNewCarrera] = useState({ nombre: "", cupoMaximo: 0 })
   const [showNewCarreraForm, setShowNewCarreraForm] = useState(false)
@@ -88,8 +105,32 @@ export default function Mantenimiento() {
   // Estados para usuarios
   const [usuarios, setUsuarios] = useState(usuariosData)
   const [editingUsuario, setEditingUsuario] = useState<number | null>(null)
-  const [newUsuario, setNewUsuario] = useState({ usuario: "", email: "", password: "", rol: "" })
+  const [newUsuario, setNewUsuario] = useState({ usuario: "", email: "", rol: "" })
   const [showNewUsuarioForm, setShowNewUsuarioForm] = useState(false)
+
+  useEffect(() => {
+    fetch(API_BASE_URL_CARRERA)
+      .then((res) => res.json())
+      .then((data) => setCarreras(data.map(mapCarreraFromApi)))
+      .catch((err) => console.error("Error cargando carreras:", err));
+  }, []);
+
+  // Mapper para usuarios del backend -> frontend
+  const mapUsuarioFromApi = (u: any) => ({
+    id: u.id,
+    usuario: u.nombre_usuario,
+    email: u.correo,
+    rol: u.rol,
+    activo: true,
+  });
+
+  // Cargar usuarios desde backend
+  useEffect(() => {
+    fetch(API_BASE_URL_USUARIO)
+      .then((res) => res.json())
+      .then((data) => setUsuarios(data.map(mapUsuarioFromApi)))
+      .catch((err) => console.error("Error cargando usuarios:", err));
+  }, []);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
@@ -149,51 +190,51 @@ export default function Mantenimiento() {
     }
 
     try {
-      // Aquí conectarías con tu API de NestJS
-      const response = await fetch("/api/carreras", {
+      const response = await fetch(API_BASE_URL_CARRERA, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newCarrera),
-      })
+        body: JSON.stringify({
+          nombre: newCarrera.nombre,
+          cupo_maximo: newCarrera.cupoMaximo,
+          cupo_actual: newCarrera.cupoMaximo,
+        }),
+      });
 
       if (!response.ok) throw new Error("Error al crear carrera")
 
-      const nuevaCarrera = await response.json()
-      setCarreras([...carreras, { ...nuevaCarrera, id: Date.now() }])
-      setNewCarrera({ nombre: "", cupoMaximo: 0 })
-      setShowNewCarreraForm(false)
-      alert("Carrera creada correctamente")
+      const creada = mapCarreraFromApi(await response.json());
+      setCarreras([...carreras, creada]);
+      setNewCarrera({ nombre: "", cupoMaximo: 0 });
+      setShowNewCarreraForm(false);
+      alert("Carrera creada correctamente");
     } catch (error) {
-      console.error("Error:", error)
-      // Simulación local
-      const nuevaCarrera = { ...newCarrera, id: Date.now() }
-      setCarreras([...carreras, nuevaCarrera])
-      setNewCarrera({ nombre: "", cupoMaximo: 0 })
-      setShowNewCarreraForm(false)
-      alert("Carrera creada correctamente")
+      console.error(error);
+      alert("Error al crear carrera");
     }
   }
 
   const handleUpdateCarrera = async (id: number, updatedData: any) => {
     try {
       // Aquí conectarías con tu API de NestJS
-      const response = await fetch(`/api/carreras/${id}`, {
+      const response = await fetch(`${API_BASE_URL_CARRERA}/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedData),
-      })
+        body: JSON.stringify({
+          nombre: updatedData.nombre,
+          cupo_maximo: updatedData.cupoMaximo,
+          cupo_actual: updatedData.cupoActual,
+        }),
+      });
 
       if (!response.ok) throw new Error("Error al actualizar carrera")
 
-      setCarreras(carreras.map((c) => (c.id === id ? { ...c, ...updatedData } : c)))
-      setEditingCarrera(null)
-      alert("Carrera actualizada correctamente")
+      const actualizada = mapCarreraFromApi(await response.json());
+      setCarreras(carreras.map((c) => (c.id === id ? actualizada : c)));
+      setEditingCarrera(null);
+      alert("Carrera actualizada correctamente");
     } catch (error) {
-      console.error("Error:", error)
-      // Simulación local
-      setCarreras(carreras.map((c) => (c.id === id ? { ...c, ...updatedData } : c)))
-      setEditingCarrera(null)
-      alert("Carrera actualizada correctamente")
+      console.error(error);
+      alert("Error al actualizar carrera");
     }
   }
 
@@ -202,9 +243,7 @@ export default function Mantenimiento() {
 
     try {
       // Aquí conectarías con tu API de NestJS
-      const response = await fetch(`/api/carreras/${id}`, {
-        method: "DELETE",
-      })
+      const response = await fetch(`${API_BASE_URL_CARRERA}/${id}`, { method: "DELETE" });
 
       if (!response.ok) throw new Error("Error al eliminar carrera")
 
@@ -212,65 +251,75 @@ export default function Mantenimiento() {
       alert("Carrera eliminada correctamente")
     } catch (error) {
       console.error("Error:", error)
-      // Simulación local
-      setCarreras(carreras.filter((c) => c.id !== id))
-      alert("Carrera eliminada correctamente")
+      alert("Error al eliminar carrera");
     }
   }
 
   // Funciones para usuarios
   const handleCreateUsuario = async () => {
-    if (!newUsuario.usuario.trim() || !newUsuario.email.trim() || !newUsuario.password.trim() || !newUsuario.rol) {
+    if (!newUsuario.usuario.trim() || !newUsuario.email.trim() || !newUsuario.rol) {
       alert("Por favor complete todos los campos")
       return
     }
 
     try {
-      // Aquí conectarías con tu API de NestJS
-      const response = await fetch("/api/usuarios", {
+      const response = await fetch(API_BASE_URL_USUARIO, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newUsuario),
-      })
+        body: JSON.stringify({
+          nombre_usuario: newUsuario.usuario,
+          correo: newUsuario.email,
+          rol: newUsuario.rol,
+        }),
+      });
 
-      if (!response.ok) throw new Error("Error al crear usuario")
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error("Error al crear usuario: " + text);
+      }
 
-      const nuevoUsuario = await response.json()
-      setUsuarios([...usuarios, { ...nuevoUsuario, id: Date.now(), activo: true }])
-      setNewUsuario({ usuario: "", email: "", password: "", rol: "" })
-      setShowNewUsuarioForm(false)
-      alert("Usuario creado correctamente")
+      const creado = await response.json();
+      setUsuarios([...usuarios, mapUsuarioFromApi(creado)]);
+      setNewUsuario({ usuario: "", email: "", rol: "" });
+      setShowNewUsuarioForm(false);
+      alert("Usuario creado correctamente (contraseña por defecto: 1234)");
     } catch (error) {
-      console.error("Error:", error)
-      // Simulación local
-      const nuevoUsuario = { ...newUsuario, id: Date.now(), activo: true }
-      setUsuarios([...usuarios, nuevoUsuario])
-      setNewUsuario({ usuario: "", email: "", password: "", rol: "" })
-      setShowNewUsuarioForm(false)
-      alert("Usuario creado correctamente")
+      console.error("Error:", error);
+      // fallback local (si querés seguir con simulación)
+      const nuevoUsuario = { ...newUsuario, id: Date.now(), activo: true };
+      setUsuarios([...usuarios, nuevoUsuario]);
+      setNewUsuario({ usuario: "", email: "", rol: "" });
+      setShowNewUsuarioForm(false);
+      alert("Usuario creado correctamente (simulado)");
     }
   }
 
   const handleUpdateUsuario = async (id: number, updatedData: any) => {
     try {
-      // Aquí conectarías con tu API de NestJS
-      const response = await fetch(`/api/usuarios/${id}`, {
+      // Construyo el payload sólo con las llaves backend
+      const payload: any = {};
+      if (updatedData.usuario !== undefined) payload.nombre_usuario = updatedData.usuario;
+      if (updatedData.email !== undefined) payload.correo = updatedData.email;
+      if (updatedData.rol !== undefined) payload.rol = updatedData.rol;
+
+      const response = await fetch(`${API_BASE_URL_USUARIO}/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedData),
-      })
+        body: JSON.stringify(payload),
+      });
 
-      if (!response.ok) throw new Error("Error al actualizar usuario")
+      if (!response.ok) throw new Error("Error al actualizar usuario");
 
-      setUsuarios(usuarios.map((u) => (u.id === id ? { ...u, ...updatedData } : u)))
-      setEditingUsuario(null)
-      alert("Usuario actualizado correctamente")
+      const actualizado = await response.json(); // backend user
+      setUsuarios(usuarios.map((u) => (u.id === id ? mapUsuarioFromApi(actualizado) : u)));
+      setEditingUsuario(null);
+      alert("Usuario actualizado correctamente");
     } catch (error) {
-      console.error("Error:", error)
-      // Simulación local
-      setUsuarios(usuarios.map((u) => (u.id === id ? { ...u, ...updatedData } : u)))
-      setEditingUsuario(null)
-      alert("Usuario actualizado correctamente")
+      console.error("Error:", error);
+      // fallback local
+      setUsuarios(usuarios.map((u) => (u.id === id ? { ...u, ...updatedData } : u)));
+      setEditingUsuario(null);
+      alert("Usuario actualizado correctamente (simulado)");
     }
   }
 
@@ -278,20 +327,31 @@ export default function Mantenimiento() {
     if (!confirm("¿Está seguro de que desea eliminar este usuario?")) return
 
     try {
-      // Aquí conectarías con tu API de NestJS
-      const response = await fetch(`/api/usuarios/${id}`, {
-        method: "DELETE",
-      })
+      const response = await fetch(`${API_BASE_URL_USUARIO}/${id}`, { method: "DELETE" });
 
-      if (!response.ok) throw new Error("Error al eliminar usuario")
+      if (!response.ok) throw new Error("Error al eliminar usuario");
 
-      setUsuarios(usuarios.filter((u) => u.id !== id))
-      alert("Usuario eliminado correctamente")
+      setUsuarios(usuarios.filter((u) => u.id !== id));
+      alert("Usuario eliminado correctamente");
     } catch (error) {
-      console.error("Error:", error)
-      // Simulación local
-      setUsuarios(usuarios.filter((u) => u.id !== id))
-      alert("Usuario eliminado correctamente")
+      console.error("Error:", error);
+      // fallback local
+      setUsuarios(usuarios.filter((u) => u.id !== id));
+      alert("Usuario eliminado correctamente (simulado)");
+    }
+  }
+
+  const handleResetPassword = async (id: number) => {
+    if (!confirm("¿Querés reiniciar la contraseña a '1234' para este usuario?")) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL_USUARIO}/${id}/reset-password`, { method: "PUT" });
+      if (!response.ok) throw new Error("Error al resetear contraseña");
+
+      alert("Contraseña reiniciada a '1234'");
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Error al resetear contraseña");
     }
   }
 
@@ -441,15 +501,6 @@ export default function Mantenimiento() {
               />
             </div>
             <div>
-              <Label>Contraseña</Label>
-              <Input
-                type="password"
-                value={newUsuario.password}
-                onChange={(e) => setNewUsuario({ ...newUsuario, password: e.target.value })}
-                placeholder="Contraseña segura"
-              />
-            </div>
-            <div>
               <Label>Rol</Label>
               <Select value={newUsuario.rol} onValueChange={(value) => setNewUsuario({ ...newUsuario, rol: value })}>
                 <SelectTrigger>
@@ -542,11 +593,20 @@ export default function Mantenimiento() {
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
+
                       <Button
                         onClick={() => handleDeleteUsuario(usuario.id)}
                         className="bg-red-500 hover:bg-red-600 text-white p-2"
                       >
                         <Trash2 className="w-4 h-4" />
+                      </Button>
+
+                      <Button
+                        onClick={() => handleResetPassword(usuario.id)}
+                        className="bg-yellow-500 hover:bg-yellow-600 text-white p-2"
+                        title="Resetear contraseña a 1234"
+                      >
+                        RESET
                       </Button>
                     </div>
                   </td>

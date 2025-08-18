@@ -13,7 +13,7 @@ export default function Principal() {
       <div className="absolute right-0 top-0 h-full w-16 bg-[#274357]"></div>
 
       {/* Botón de ingreso admin */}
-      <div className="absolute top-4 right-4 md:top-10 md:right-10">
+      <div className="absolute top-4 right-4 md:top-10 md:right-20">
         <Link to="/login">
             <Button variant="outline" className="bg-slate-800/80 text-white hover:bg-slate-700 border-none">
             Ingreso Admin

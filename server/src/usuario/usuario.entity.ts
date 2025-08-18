@@ -1,5 +1,11 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
+export enum RolUsuario {
+  ADMIN_GENERAL = 'ADMIN_GENERAL',
+  GESTOR_ACADEMICO = 'GESTOR_ACADEMICO',
+  PROFESOR = 'PROFESOR',
+}
+
 @Entity()
 export class Usuario {
   @PrimaryGeneratedColumn()
@@ -14,6 +20,9 @@ export class Usuario {
   @Column()
   contraseña_hash: string;
 
-  @Column()
-  rol: string; // Ejemplo: "admin", "moderador", etc.
+  @Column({
+    type: 'enum',
+    enum: RolUsuario,
+  })
+  rol: RolUsuario;
 }

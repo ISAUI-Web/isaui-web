@@ -107,4 +107,18 @@ export class ConstanciaService {
       }
     }
   }
+  
+  async enviarNotificacionEstado(toEmail: string, nombre: string, nuevoEstado: string) {
+  try {
+    await this.transporter.sendMail({
+      from: `"Instituto ISAUI" <${process.env.SMTP_USER}>`,
+      to: toEmail,
+      subject: `Actualización de estado de preinscripción`,
+      text: `Hola ${nombre},\n\nTu estado de preinscripción ha sido actualizado a: ${nuevoEstado}.\n\nSaludos,\nInstituto ISAUI`,
+    });
+  } catch (error: unknown) {
+    console.error('Error enviando mail de estado:', error);
+    throw new InternalServerErrorException('No se pudo enviar el mail de notificación');
+  }
+}
 }

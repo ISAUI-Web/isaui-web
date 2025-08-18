@@ -32,7 +32,7 @@ interface AspiranteItem {
   apellido: string;
   dni: string;
   carrera: string;
-  estado: string;
+  estado_preinscripcion: string;
 }
 
 
@@ -141,14 +141,6 @@ const handleMenuItemClick = (itemId: string) => {
         navigate("/admin");
     }
   }
-<<<<<<< Updated upstream
- }
-  const handleConfirmar = (id: number) => {
-    setAspirantes((prev) => prev.map((asp) => (asp.id === id ? { ...asp, estado: "confirmado" } : asp)))
-=======
-
-  setIsMenuOpen(false);
-}
 
  const handleEstado = async (id: number, nuevoEstado: "en espera" | "confirmado" | "rechazado") => {
   try {
@@ -170,19 +162,45 @@ const handleMenuItemClick = (itemId: string) => {
   } catch (error) {
     console.error(error);
     alert(`No se pudo cambiar el estado a ${nuevoEstado}`);
->>>>>>> Stashed changes
   }
 
-  const handleRechazar = (id: number) => {
-    setAspirantes((prev) => prev.map((asp) => (asp.id === id ? { ...asp, estado: "rechazado" } : asp)))
+
+ const handleEstado = async (id: number, nuevoEstado: "en espera" | "confirmado" | "rechazado") => {
+  try {
+    const res = await fetch(`http://localhost:3000/aspirante/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ estado_preinscripcion: nuevoEstado })
+    });
+
+    if (!res.ok) throw new Error(`Error al cambiar estado a ${nuevoEstado}`);
+
+    setAspirantes((prev) =>
+      prev.map((asp) =>
+        asp.id === id ? { ...asp, estado_preinscripcion: nuevoEstado } : asp
+      )
+    );
+  } catch (error) {
+    console.error(error);
+    alert(`No se pudo cambiar el estado a ${nuevoEstado}`);
   }
+};
+  // const handleConfirmar = (id: number) => {
+  //   setAspirantes((prev) => prev.map((asp) => (asp.id === id ? { ...asp, estado: "confirmado" } : asp)))
+  // }
+
+  // const handleRechazar = (id: number) => {
+  //   setAspirantes((prev) => prev.map((asp) => (asp.id === id ? { ...asp, estado: "rechazado" } : asp)))
+  // }
 
   const handleVer = (id: number) => {
     navigate(`/detAspirante/${id}`)
   }
-  const handleWaiting = (id: number) => {
-    setAspirantes((prev) => prev.map((asp) => (asp.id === id ? { ...asp, estado: "pendiente" } : asp)))
-  }
+  // const handleWaiting = (id: number) => {
+  //   setAspirantes((prev) => prev.map((asp) => (asp.id === id ? { ...asp, estado: "pendiente" } : asp)))
+  // }
 
 
   if (loading) return <p className="text-white">Cargando aspirantes...</p>
@@ -332,23 +350,23 @@ const handleMenuItemClick = (itemId: string) => {
                         <td className="py-2 px-3">
                           <div className="flex justify-center gap-1">
                             <Button
-                              onClick={() => handleWaiting(aspirante.id)}
+                              onClick={() => handleEstado(aspirante.id, "en espera")}
                               className="bg-yellow-500 hover:bg-yellow-600 text-white p-1.5 rounded-lg"
-                              disabled={aspirante.estado === "pendiente"}
+                              disabled={aspirante.estado_preinscripcion === "en espera"}
                             >
                               <Clock className="w-4 h-4" />
                             </Button>
                             <Button
-                              onClick={() => handleConfirmar(aspirante.id)}
+                              onClick={() => handleEstado(aspirante.id, "confirmado")}
                               className="bg-green-500 hover:bg-green-600 text-white p-1.5 rounded-lg"
-                              disabled={aspirante.estado === "confirmado"}
+                              disabled={aspirante.estado_preinscripcion === "confirmado"}
                             >
                               <Check className="w-4 h-4" />
                             </Button>
                             <Button
-                              onClick={() => handleRechazar(aspirante.id)}
+                              onClick={() => handleEstado(aspirante.id, "rechazado")}
                               className="bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-lg"
-                              disabled={aspirante.estado === "rechazado"}
+                              disabled={aspirante.estado_preinscripcion === "rechazado"}
                             >
                               <XIcon className="w-4 h-4" />
                             </Button>
