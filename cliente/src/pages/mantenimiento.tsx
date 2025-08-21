@@ -89,6 +89,15 @@ const roles = [
   { value: "PROFESOR", label: "Profesor" },
 ];
 
+// Limites y normalización
+const NOMBRE_MAX = 100;
+const normalizeName = (s: string) =>
+  s
+    ?.normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // saca acentos
+    .trim()
+    .toLowerCase();
+
 export default function Mantenimiento() {
   const navigate = useNavigate()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -101,6 +110,7 @@ export default function Mantenimiento() {
   const [editingCarrera, setEditingCarrera] = useState<number | null>(null)
   const [newCarrera, setNewCarrera] = useState({ nombre: "", cupoMaximo: 0 })
   const [showNewCarreraForm, setShowNewCarreraForm] = useState(false)
+  const [errors, setErrors] = useState<{ nombre?: string; cupoMaximo?: string }>({});
 
   // Estados para usuarios
   const [usuarios, setUsuarios] = useState(usuariosData)
@@ -184,9 +194,29 @@ export default function Mantenimiento() {
 }
   // Funciones para carreras
   const handleCreateCarrera = async () => {
-    if (!newCarrera.nombre.trim() || newCarrera.cupoMaximo <= 0) {
-      alert("Por favor complete todos los campos correctamente")
-      return
+    const nombre = newCarrera.nombre.trim();
+    const cupo = Number(newCarrera.cupoMaximo);
+
+    if (!nombre) {
+      alert("El nombre es obligatorio");
+      return;
+    }
+    if (nombre.length > NOMBRE_MAX) {
+      alert(`El nombre no puede superar ${NOMBRE_MAX} caracteres`);
+      return;
+    }
+    if (!Number.isFinite(cupo) || cupo < 0) {
+      alert("El cupo máximo debe ser 0 o mayor");
+      return;
+    }
+
+    // Duplicados (case/acentos-insensible)
+    const existe = carreras.some(
+      (c) => normalizeName(c.nombre) === normalizeName(nombre)
+    );
+    if (existe) {
+      alert("Ya existe una carrera con ese nombre");
+      return;
     }
 
     try {
@@ -200,20 +230,55 @@ export default function Mantenimiento() {
         }),
       });
 
-      if (!response.ok) throw new Error("Error al crear carrera")
+      if (!response.ok) {
+        let msg = "Error al crear carrera";
+        try {
+          const err = await response.json();
+          msg = (Array.isArray(err.message) ? err.message[0] : err.message) || msg;
+        } catch {}
+        throw new Error(msg);
+      }
 
       const creada = mapCarreraFromApi(await response.json());
       setCarreras([...carreras, creada]);
       setNewCarrera({ nombre: "", cupoMaximo: 0 });
       setShowNewCarreraForm(false);
       alert("Carrera creada correctamente");
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert("Error al crear carrera");
+      alert(error?.message || "Error al crear carrera");
     }
   }
 
   const handleUpdateCarrera = async (id: number, updatedData: any) => {
+    const nombre = (updatedData.nombre ?? "").trim();
+    const cupo = Number(updatedData.cupoMaximo);
+
+    // nombre obligatorio y longitud
+    if (!nombre) {
+      alert("El nombre es obligatorio");
+      return;
+    }
+    if (nombre.length > NOMBRE_MAX) {
+      alert(`El nombre no puede superar ${NOMBRE_MAX} caracteres`);
+      return;
+    }
+
+    // cupo no negativo
+    if (!Number.isFinite(cupo) || cupo < 0) {
+      alert("El cupo máximo debe ser 0 o mayor");
+      return;
+    }
+
+    // duplicados (excluyendo la propia carrera)
+    const existe = carreras.some(
+      (c) => c.id !== id && normalizeName(c.nombre) === normalizeName(nombre)
+    );
+    if (existe) {
+      alert("Ya existe una carrera con ese nombre");
+      return;
+    }
+
     try {
       // Aquí conectarías con tu API de NestJS
       const response = await fetch(`${API_BASE_URL_CARRERA}/${id}`, {
@@ -226,15 +291,22 @@ export default function Mantenimiento() {
         }),
       });
 
-      if (!response.ok) throw new Error("Error al actualizar carrera")
+      if (!response.ok) {
+        let msg = "Error al actualizar carrera";
+        try {
+          const err = await response.json();
+          msg = (Array.isArray(err.message) ? err.message[0] : err.message) || msg;
+        } catch {}
+        throw new Error(msg);
+      }
 
       const actualizada = mapCarreraFromApi(await response.json());
       setCarreras(carreras.map((c) => (c.id === id ? actualizada : c)));
       setEditingCarrera(null);
       alert("Carrera actualizada correctamente");
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert("Error al actualizar carrera");
+      alert(error?.message || "Error al actualizar carrera");
     }
   }
 
@@ -379,6 +451,7 @@ export default function Mantenimiento() {
                 value={newCarrera.nombre}
                 onChange={(e) => setNewCarrera({ ...newCarrera, nombre: e.target.value })}
                 placeholder="Ej: DESARROLLO DE SOFTWARE"
+                maxLength={NOMBRE_MAX}
               />
             </div>
             <div>
@@ -388,6 +461,8 @@ export default function Mantenimiento() {
                 value={newCarrera.cupoMaximo}
                 onChange={(e) => setNewCarrera({ ...newCarrera, cupoMaximo: Number.parseInt(e.target.value) })}
                 placeholder="Ej: 30"
+                min={0}                       
+                step={1}
               />
             </div>
           </div>
@@ -422,6 +497,7 @@ export default function Mantenimiento() {
                       <Input
                         defaultValue={carrera.nombre}
                         onBlur={(e) => handleUpdateCarrera(carrera.id, { ...carrera, nombre: e.target.value })}
+                        maxLength={NOMBRE_MAX}
                       />
                     ) : (
                       <span className="font-medium">{carrera.nombre}</span>
@@ -435,6 +511,8 @@ export default function Mantenimiento() {
                         onBlur={(e) =>
                           handleUpdateCarrera(carrera.id, { ...carrera, cupoMaximo: Number.parseInt(e.target.value) })
                         }
+                        min={0}
+                        step={1}
                       />
                     ) : (
                       <span>{carrera.cupoMaximo}</span>

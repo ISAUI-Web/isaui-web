@@ -1,6 +1,8 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, ParseIntPipe, BadRequestException } from '@nestjs/common';
 import { CarreraService } from './carrera.service';
 import { Carrera } from './carrera.entity';
+import { CreateCarreraDto } from './dto/create-carrera.dto';
+import { UpdateCarreraDto } from './dto/update-carrera.dto';
 
 @Controller('carrera')
 export class CarreraController {
@@ -12,22 +14,16 @@ export class CarreraController {
   }
 
   @Post()
-  async create(
-    @Body('nombre') nombre: string,
-    @Body('cupo_maximo', ParseIntPipe) cupo_maximo: number,
-    @Body('cupo_actual', ParseIntPipe) cupo_actual: number,
-  ): Promise<Carrera> {
-    return this.carreraService.create({ nombre, cupo_maximo, cupo_actual });
+  async create(@Body() data: CreateCarreraDto): Promise<Carrera> {
+    return this.carreraService.create(data);
   }
 
   @Put(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @Body('nombre') nombre: string,
-    @Body('cupo_maximo', ParseIntPipe) cupo_maximo: number,
-    @Body('cupo_actual', ParseIntPipe) cupo_actual: number,
+    @Body() data: UpdateCarreraDto,
   ): Promise<Carrera> {
-    return this.carreraService.update(id, { nombre, cupo_maximo, cupo_actual });
+    return this.carreraService.update(id, data);
   }
 
   @Delete(':id')

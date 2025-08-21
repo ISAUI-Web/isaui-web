@@ -63,6 +63,14 @@ export class CarreraService implements OnApplicationBootstrap {
   }
 
   async create(data: Partial<Carrera>): Promise<Carrera> {
+    // 🚫 Verificar duplicado
+    const existente = await this.carreraRepository.findOne({
+      where: { nombre: data.nombre },
+    });
+    if (existente) {
+      throw new Error(`La carrera "${data.nombre}" ya existe`);
+    }
+
     const nuevaCarrera = this.carreraRepository.create(data);
     return this.carreraRepository.save(nuevaCarrera);
   }
@@ -72,6 +80,15 @@ export class CarreraService implements OnApplicationBootstrap {
     if (!carrera) {
       throw new NotFoundException(`Carrera con ID ${id} no encontrada`);
     }
+
+    // 🚫 Validar nombre duplicado
+    if (data.nombre) {
+      const existente = await this.carreraRepository.findOne({ where: { nombre: data.nombre } });
+      if (existente && existente.id !== id) {
+        throw new Error(`Ya existe otra carrera con el nombre "${data.nombre}"`);
+      }
+    }
+
     Object.assign(carrera, data);
     return this.carreraRepository.save(carrera);
   }
