@@ -11,11 +11,8 @@ export class Usuario {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ unique: true }) // 🚀 Ahora es único
   nombre_usuario: string;
-
-  @Column({ unique: true })
-  correo: string;
 
   @Column()
   contraseña_hash: string;
