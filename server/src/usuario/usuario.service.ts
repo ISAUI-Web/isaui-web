@@ -54,9 +54,16 @@ export class UsuarioService {
   }
 
   async create(data: CreateUsuarioDto): Promise<Usuario> {
+    // Verificar duplicado
+    const existe = await this.usuarioRepo.findOne({
+      where: { nombre_usuario: data.nombre_usuario },
+    });
+    if (existe) {
+      throw new Error(`El usuario "${data.nombre_usuario}" ya existe`);
+    }
+
     const usuario = new Usuario();
     usuario.nombre_usuario = data.nombre_usuario;
-    usuario.correo = data.correo;
     usuario.rol = data.rol;
 
     // Contraseña por defecto "1234" hasheada
@@ -70,11 +77,20 @@ export class UsuarioService {
   async update(id: number, data: UpdateUsuarioDto): Promise<Usuario> {
     const usuario = await this.usuarioRepo.findOneBy({ id });
     if (!usuario) {
-      throw new Error('Usuario no encontrado');
+      throw new NotFoundException('Usuario no encontrado');
     }
 
-    if (data.nombre_usuario) usuario.nombre_usuario = data.nombre_usuario;
-    if (data.correo) usuario.correo = data.correo;
+    if (data.nombre_usuario) {
+      // Validar que no se repita el nombre de usuario
+      const existe = await this.usuarioRepo.findOne({
+        where: { nombre_usuario: data.nombre_usuario },
+      });
+      if (existe && existe.id !== id) {
+        throw new Error(`El usuario "${data.nombre_usuario}" ya existe`);
+      }
+      usuario.nombre_usuario = data.nombre_usuario;
+    }
+
     if (data.rol) usuario.rol = data.rol;
 
     return this.usuarioRepo.save(usuario);

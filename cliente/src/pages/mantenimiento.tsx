@@ -61,9 +61,9 @@ const carrerasData = [
 
 // Datos de ejemplo para usuarios
 const usuariosData = [
-  { id: 1, usuario: "admin", email: "admin@isau.edu.ar", rol: "administrador", activo: true },
-  { id: 2, usuario: "secretaria1", email: "secretaria1@isau.edu.ar", rol: "secretaria", activo: true },
-  { id: 3, usuario: "coordinador1", email: "coord1@isau.edu.ar", rol: "coordinador", activo: true },
+  { id: 1, usuario: "admin", rol: "administrador", activo: true },
+  { id: 2, usuario: "secretaria1", rol: "secretaria", activo: true },
+  { id: 3, usuario: "coordinador1", rol: "coordinador", activo: true },
 ]
 
 const menuItems = [
@@ -115,7 +115,7 @@ export default function Mantenimiento() {
   // Estados para usuarios
   const [usuarios, setUsuarios] = useState(usuariosData)
   const [editingUsuario, setEditingUsuario] = useState<number | null>(null)
-  const [newUsuario, setNewUsuario] = useState({ usuario: "", email: "", rol: "" })
+  const [newUsuario, setNewUsuario] = useState({ usuario: "", rol: "" })
   const [showNewUsuarioForm, setShowNewUsuarioForm] = useState(false)
 
   useEffect(() => {
@@ -329,9 +329,19 @@ export default function Mantenimiento() {
 
   // Funciones para usuarios
   const handleCreateUsuario = async () => {
-    if (!newUsuario.usuario.trim() || !newUsuario.email.trim() || !newUsuario.rol) {
+    if (!newUsuario.usuario.trim() || !newUsuario.rol) {
       alert("Por favor complete todos los campos")
       return
+    }
+
+    // Validación duplicados (case-insensitive para evitar "Admin" vs "admin")
+    const existe = usuarios.some(
+      (u) => u.usuario.toLowerCase() === newUsuario.usuario.trim().toLowerCase()
+    );
+
+    if (existe) {
+      alert("Ya existe un usuario con ese nombre");
+      return;
     }
 
     try {
@@ -340,7 +350,6 @@ export default function Mantenimiento() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           nombre_usuario: newUsuario.usuario,
-          correo: newUsuario.email,
           rol: newUsuario.rol,
         }),
       });
@@ -352,7 +361,7 @@ export default function Mantenimiento() {
 
       const creado = await response.json();
       setUsuarios([...usuarios, mapUsuarioFromApi(creado)]);
-      setNewUsuario({ usuario: "", email: "", rol: "" });
+      setNewUsuario({ usuario: "", rol: "" });
       setShowNewUsuarioForm(false);
       alert("Usuario creado correctamente (contraseña por defecto: 1234)");
     } catch (error) {
@@ -360,18 +369,31 @@ export default function Mantenimiento() {
       // fallback local (si querés seguir con simulación)
       const nuevoUsuario = { ...newUsuario, id: Date.now(), activo: true };
       setUsuarios([...usuarios, nuevoUsuario]);
-      setNewUsuario({ usuario: "", email: "", rol: "" });
+      setNewUsuario({ usuario: "", rol: "" });
       setShowNewUsuarioForm(false);
       alert("Usuario creado correctamente (simulado)");
     }
   }
 
   const handleUpdateUsuario = async (id: number, updatedData: any) => {
+    // Validación duplicados (case-insensitive)
+    if (updatedData.usuario) {
+      const existe = usuarios.some(
+        (u) =>
+          u.id !== id && // no comparar con el mismo usuario
+          u.usuario.toLowerCase() === updatedData.usuario.trim().toLowerCase()
+      );
+
+      if (existe) {
+        alert("Ya existe un usuario con ese nombre");
+        return;
+      }
+    }
+
     try {
       // Construyo el payload sólo con las llaves backend
       const payload: any = {};
       if (updatedData.usuario !== undefined) payload.nombre_usuario = updatedData.usuario;
-      if (updatedData.email !== undefined) payload.correo = updatedData.email;
       if (updatedData.rol !== undefined) payload.rol = updatedData.rol;
 
       const response = await fetch(`${API_BASE_URL_USUARIO}/${id}`, {
@@ -570,15 +592,6 @@ export default function Mantenimiento() {
               />
             </div>
             <div>
-              <Label>Email</Label>
-              <Input
-                type="email"
-                value={newUsuario.email}
-                onChange={(e) => setNewUsuario({ ...newUsuario, email: e.target.value })}
-                placeholder="Ej: admin@isau.edu.ar"
-              />
-            </div>
-            <div>
               <Label>Rol</Label>
               <Select value={newUsuario.rol} onValueChange={(value) => setNewUsuario({ ...newUsuario, rol: value })}>
                 <SelectTrigger>
@@ -613,7 +626,6 @@ export default function Mantenimiento() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700">Usuario</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700">Email</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700">Rol</th>
                 <th className="text-center py-3 px-4 font-semibold text-gray-700">Acciones</th>
               </tr>
@@ -629,17 +641,6 @@ export default function Mantenimiento() {
                       />
                     ) : (
                       <span className="font-medium">{usuario.usuario}</span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4">
-                    {editingUsuario === usuario.id ? (
-                      <Input
-                        type="email"
-                        defaultValue={usuario.email}
-                        onBlur={(e) => handleUpdateUsuario(usuario.id, { ...usuario, email: e.target.value })}
-                      />
-                    ) : (
-                      <span>{usuario.email}</span>
                     )}
                   </td>
                   <td className="py-3 px-4">
