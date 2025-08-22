@@ -43,9 +43,9 @@ export default function Principal() {
                   </Button>
               </Link>
 
-              <Link to="">
+              <Link to="/loginDNI">
                   <Button
-                    disabled = {true}
+                    //disabled = {true} Para desactivarlo
                     variant="outline"
                     className="w-full bg-white hover:bg-gray-100 text-slate-800 font-medium text-lg py-6"
                     style={{ marginTop: '1rem' }}
