@@ -58,6 +58,7 @@ export class AspiranteService {
         apellido: aspirante.apellido,
         dni: aspirante.dni,
         carrera: pre.carrera?.nombre || 'Sin carrera',
+        estado_preinscripcion: pre.estado || 'Sin estado',
       })),
     );
   }
@@ -97,40 +98,47 @@ export class AspiranteService {
       dniDorso?: Express.Multer.File[];
     },
   ): Promise<Aspirante> {
-    const aspirante = await this.aspiranteRepository.findOne({ where: { id } });
+    // Se carga la relación con preinscripciones para asegurar que leemos el estado correcto.
+    const aspirante = await this.aspiranteRepository.findOne({
+      where: { id },
+      relations: ['preinscripciones'],
+    });
 
     if (!aspirante) {
       throw new NotFoundException(`No se encontró el aspirante con ID ${id}`);
     }
 
-    const estadoAnterior = aspirante.estado_preinscripcion; // Guardamos el estado anterior
+    // La fuente de verdad para el estado es la tabla de preinscripción.
+    const estadoAnterior = aspirante.preinscripciones?.[0]?.estado;
 
-    const updated = this.aspiranteRepository.merge(
-      aspirante,
-      updateAspiranteDto,
-    );
+    // Separamos el estado del resto de los datos para no guardarlo en la tabla de aspirantes.
+    const { estado_preinscripcion, ...datosAspirante } = updateAspiranteDto;
+
+    const updated = this.aspiranteRepository.merge(aspirante, datosAspirante);
     const saved = await this.aspiranteRepository.save(updated);
 
     // Si se subieron nuevos archivos, los guardamos.
-    // El servicio de documentos debería manejar la lógica de reemplazar si ya existen.
     if (archivos && (archivos.dniFrente?.length || archivos.dniDorso?.length)) {
       await this.documentoService.guardarDocumentosAspirante(saved, archivos);
     }
 
-    // Enviar email solo si el estado cambió
-    if (
-      updateAspiranteDto.estado_preinscripcion &&
-      updateAspiranteDto.estado_preinscripcion !== estadoAnterior &&
-      saved.email
-    ) {
-      try {
-        await this.constanciaService.enviarNotificacionEstado(
-          saved.email,
-          `${saved.nombre} ${saved.apellido}`,
-          saved.estado_preinscripcion,
-        );
-      } catch (error) {
-        console.error('Error al enviar email de cambio de estado:', error);
+    // Se actualiza el estado en la tabla 'preinscripcion' si ha cambiado.
+    if (estado_preinscripcion && estado_preinscripcion !== estadoAnterior) {
+      await this.preinscripcionService.updateEstadoForAspirante(
+        id,
+        estado_preinscripcion,
+      );
+
+      if (saved.email) {
+        try {
+          await this.constanciaService.enviarNotificacionEstado(
+            saved.email,
+            `${saved.nombre} ${saved.apellido}`,
+            estado_preinscripcion,
+          );
+        } catch (error) {
+          console.error('Error al enviar email de cambio de estado:', error);
+        }
       }
     }
 

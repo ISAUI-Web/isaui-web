@@ -665,13 +665,18 @@ export default function DetalleAspirante() {
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">ESTADO DE PREINSCRIPCIÓN</Label>
               {isEditing ? (
-                <Input
-                  value={formData.estado_preinscripcion || ""}
+                <select
+                  value={formData.estado_preinscripcion || "pendiente"}
                   onChange={(e) => handleInputChange("estado_preinscripcion", e.target.value)}
-                  className="w-full"
-                />
+                  className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
+                >
+                  <option value="pendiente">Pendiente</option>
+                  <option value="en espera">En Espera</option>
+                  <option value="confirmado">Confirmado</option>
+                  <option value="rechazado">Rechazado</option>
+                </select>
               ) : (
-                <div className="text-blue-600 font-medium">{formData.estado_preinscripcion}</div>
+                <div className="text-blue-600 font-medium capitalize">{formData.estado_preinscripcion}</div>
               )}
             </div>
             <div>
