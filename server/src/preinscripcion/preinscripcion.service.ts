@@ -50,4 +50,16 @@ export class PreinscripcionService {
 
     return saved;
   }
+
+  async updateEstadoForAspirante(aspiranteId: number, estado: string) {
+    // Asumimos que un aspirante solo tiene una preinscripción activa a la vez.
+    const preinscripcion = await this.preinscripcionRepository.findOne({
+      where: { aspirante: { id: aspiranteId } },
+    });
+
+    if (preinscripcion) {
+      preinscripcion.estado = estado;
+      await this.preinscripcionRepository.save(preinscripcion);
+    }
+  }
 }

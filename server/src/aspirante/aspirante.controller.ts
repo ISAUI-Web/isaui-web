@@ -136,14 +136,16 @@ export class AspiranteController {
       throw new NotFoundException(`Aspirante con ID ${id} no encontrado`);
     }
 
-    const carrera =
-      aspirante.preinscripciones?.[0]?.carrera?.nombre || 'Sin carrera';
+    const preinscripcion = aspirante.preinscripciones?.[0];
+    const carrera = preinscripcion?.carrera?.nombre || 'Sin carrera';
+    const estado_preinscripcion = preinscripcion?.estado || 'Sin estado';
 
     const aspiranteLegible = plainToInstance(
       DetalleAspiranteDto,
       {
         ...aspirante,
         carrera,
+        estado_preinscripcion,
         dniFrenteUrl: aspirante.dniFrenteUrl,
         dniDorsoUrl: aspirante.dniDorsoUrl,
       },

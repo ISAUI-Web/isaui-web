@@ -154,16 +154,22 @@ const handleEstado = async (id: number, nuevoEstado: "en espera" | "confirmado" 
       body: JSON.stringify({ estado_preinscripcion: nuevoEstado })
     });
 
-    if (!res.ok) throw new Error(`Error al cambiar estado a ${nuevoEstado}`);
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ message: `Error al cambiar estado a ${nuevoEstado}` }));
+      throw new Error(errorData.message);
+    }
 
+    const updatedAspirante: AspiranteItem = await res.json();
     setAspirantes((prev) =>
       prev.map((asp) =>
-        asp.id === id ? { ...asp, estado_preinscripcion: nuevoEstado } : asp
+        asp.id === id ? { ...asp, ...updatedAspirante } : asp
       )
     );
+    alert("Estado actualizado exitosamente");
   } catch (error) {
-    console.error(error);
-    alert(`No se pudo cambiar el estado a ${nuevoEstado}`);
+    const errorMessage = error instanceof Error ? error.message : `No se pudo cambiar el estado a ${nuevoEstado}`;
+    console.error(errorMessage);
+    alert(errorMessage);
   }
 };
   // const handleConfirmar = (id: number) => {
