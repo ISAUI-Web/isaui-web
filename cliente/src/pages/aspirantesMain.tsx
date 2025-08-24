@@ -80,6 +80,7 @@ export default function AdminAspirantes() {
       })
       .then((data) => {
         setAspirantes(data);
+        console.log("👉 Aspirantes:", data);
         setLoading(false);
       })
       .catch((err) => {
@@ -90,6 +91,9 @@ export default function AdminAspirantes() {
   }, []);
 
   const carrerasUnicas = Array.from(new Set(aspirantes.map(a => a.carrera)));
+  const estadosUnicos = Array.from(
+  new Set(aspirantes.map(a => a.estado_preinscripcion))
+);
   
   const filteredAspirantes = aspirantes.filter((asp) =>
     `${asp.nombre} ${asp.apellido} ${asp.dni} ${asp.carrera}`
@@ -326,9 +330,9 @@ const handleEstado = async (id: number, nuevoEstado: "en espera" | "confirmado" 
           className="pl-3 pr-8 py-2 rounded-full border-0 focus:ring-2 focus:ring-blue-500"
         >
           <option value="">Todos los estados</option>
-          <option value="en espera">En espera</option>
-          <option value="confirmado">Confirmado</option>
-          <option value="rechazado">Rechazado</option>
+          {estadosUnicos.map((estado) => (
+            <option key={estado} value={estado}>{estado}</option>
+          ))}
         </select>
 
 
