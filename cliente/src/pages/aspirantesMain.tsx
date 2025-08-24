@@ -68,6 +68,8 @@ export default function AdminAspirantes() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
+  const [filterCarrera, setFilterCarrera] = useState("");
+  const [filterEstado, setFilterEstado] = useState("");
 
 
   useEffect(() => {
@@ -86,12 +88,16 @@ export default function AdminAspirantes() {
         setLoading(false);
       });
   }, []);
+
+  const carrerasUnicas = Array.from(new Set(aspirantes.map(a => a.carrera)));
   
   const filteredAspirantes = aspirantes.filter((asp) =>
     `${asp.nombre} ${asp.apellido} ${asp.dni} ${asp.carrera}`
       .toLowerCase()
       .includes(searchTerm.toLowerCase())
   )
+  .filter((asp) => (filterCarrera ? asp.carrera === filterCarrera : true))
+  .filter((asp) => (filterEstado ? asp.estado_preinscripcion === filterEstado : true));
   
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
@@ -294,6 +300,31 @@ const handleEstado = async (id: number, nuevoEstado: "en espera" | "confirmado" 
               </button>
             </div>
           </div>
+          
+           {/* Filtro por Carrera */}
+        <select
+          value={filterCarrera}
+          onChange={(e) => setFilterCarrera(e.target.value)}
+          className="pl-3 pr-8 py-2 rounded-full border-0 focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Todas las carreras</option>
+          {carrerasUnicas.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+
+        {/* Filtro por Estado */}
+        <select
+          value={filterEstado}
+          onChange={(e) => setFilterEstado(e.target.value)}
+          className="pl-3 pr-8 py-2 rounded-full border-0 focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Todos los estados</option>
+          <option value="en espera">En espera</option>
+          <option value="confirmado">Confirmado</option>
+          <option value="rechazado">Rechazado</option>
+        </select>
+
 
           {/* Aspirantes Table */}
           <Card className="bg-white shadow-xl overflow-hidden">
@@ -369,3 +400,6 @@ const handleEstado = async (id: number, nuevoEstado: "en espera" | "confirmado" 
     </div>
   )
 }
+
+
+
