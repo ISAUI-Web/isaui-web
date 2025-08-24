@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Card } from "../components/ui/card"
 import { Input } from "../components/ui/input"
 import { Button } from "../components/ui/button"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select"
 import {
   Menu,
   X,
@@ -303,38 +304,32 @@ const handleEstado = async (id: number, nuevoEstado: "en espera" | "confirmado" 
                 placeholder="¿A quien estás buscando?"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-4 pr-12 py-3 rounded-full bg-white border-0 focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-4 pr-12 py-3 rounded-full bg-white border-0 focus:ring-2 focus:ring-blue-500 text-gray-600 text-xl font-sans"
               />
-              <button className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">
-                <X className="w-5 h-5" />
-              </button>
             </div>
+            {/* Filtro por Carrera */}
+            <select
+              value={filterCarrera}
+              onChange={(e) => setFilterCarrera(e.target.value)}
+              className="w-full h-9 max-w-xs pl-4 pr-12 rounded-full bg-white border-0 focus:ring-2 focus:ring-blue-500 text-gray-600 text-sm font-sans"
+            >
+              <option value="">Todas las carreras</option>
+              {carrerasUnicas.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+            {/* Filtro por Estado */}
+            <select
+              value={filterEstado}
+              onChange={(e) => setFilterEstado(e.target.value)}
+              className="w-full h-9 max-w-xs pl-4 pr-12 rounded-full bg-white border-0 focus:ring-2 focus:ring-blue-500 text-gray-600 text-sm font-sans"
+            >
+              <option value="">Todos los estados</option>
+              {estadosUnicos.map((estado) => (
+                <option key={estado} value={estado}>{estado}</option>
+              ))}
+            </select>
           </div>
-          
-           {/* Filtro por Carrera */}
-        <select
-          value={filterCarrera}
-          onChange={(e) => setFilterCarrera(e.target.value)}
-          className="pl-3 pr-8 py-2 rounded-full border-0 focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">Todas las carreras</option>
-          {carrerasUnicas.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
-
-        {/* Filtro por Estado */}
-        <select
-          value={filterEstado}
-          onChange={(e) => setFilterEstado(e.target.value)}
-          className="pl-3 pr-8 py-2 rounded-full border-0 focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">Todos los estados</option>
-          {estadosUnicos.map((estado) => (
-            <option key={estado} value={estado}>{estado}</option>
-          ))}
-        </select>
-
 
           {/* Aspirantes Table */}
           <Card className="bg-white shadow-xl overflow-hidden">
