@@ -89,22 +89,6 @@ export default function FormMatriculacion() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FileUpload
-                label="DNI - FRENTE *"
-                field="dniFrente"
-                file={formData.dniFrente}
-                error={errors.dniFrente}
-                onChange={handleFileChange}
-              />
-              <FileUpload
-                label="DNI - DORSO *"
-                field="dniDorso"
-                file={formData.dniDorso}
-                error={errors.dniDorso}
-                onChange={handleFileChange}
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FileUpload
                 label="CUS *"
                 field="cus"
                 file={formData.cus}

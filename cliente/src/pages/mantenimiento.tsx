@@ -517,8 +517,8 @@ export default function Mantenimiento() {
                   <td className="py-3 px-4">
                     {editingCarrera === carrera.id ? (
                       <Input
-                        defaultValue={carrera.nombre}
-                        onBlur={(e) => handleUpdateCarrera(carrera.id, { ...carrera, nombre: e.target.value })}
+                        value={newCarrera.nombre}
+                        onChange={(e) => setNewCarrera({ ...newCarrera, nombre: e.target.value })}
                         maxLength={NOMBRE_MAX}
                       />
                     ) : (
@@ -529,10 +529,8 @@ export default function Mantenimiento() {
                     {editingCarrera === carrera.id ? (
                       <Input
                         type="number"
-                        defaultValue={carrera.cupoMaximo}
-                        onBlur={(e) =>
-                          handleUpdateCarrera(carrera.id, { ...carrera, cupoMaximo: Number.parseInt(e.target.value) })
-                        }
+                        value={newCarrera.cupoMaximo}
+                        onChange={(e) => setNewCarrera({ ...newCarrera, cupoMaximo: Number.parseInt(e.target.value) })}
                         min={0}
                         step={1}
                       />
@@ -542,18 +540,45 @@ export default function Mantenimiento() {
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex justify-center gap-2">
-                      <Button
-                        onClick={() => setEditingCarrera(editingCarrera === carrera.id ? null : carrera.id)}
-                        className="bg-blue-500 hover:bg-blue-600 text-white p-2"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        onClick={() => handleDeleteCarrera(carrera.id)}
-                        className="bg-red-500 hover:bg-red-600 text-white p-2"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      {editingCarrera === carrera.id ? (
+                        <>
+                          <Button
+                            onClick={() => {
+                              handleUpdateCarrera(carrera.id, newCarrera);
+                            }}
+                            className="bg-green-500 hover:bg-green-600 text-white p-2"
+                          >
+                            <Save className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setEditingCarrera(null);
+                              setNewCarrera({ nombre: carrera.nombre, cupoMaximo: carrera.cupoMaximo });
+                            }}
+                            className="bg-gray-400 hover:bg-gray-500 text-white p-2"
+                          >
+                            Cancelar
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button
+                            onClick={() => {
+                              setEditingCarrera(carrera.id);
+                              setNewCarrera({ nombre: carrera.nombre, cupoMaximo: carrera.cupoMaximo });
+                            }}
+                            className="bg-blue-500 hover:bg-blue-600 text-white p-2"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            onClick={() => handleDeleteCarrera(carrera.id)}
+                            className="bg-red-500 hover:bg-red-600 text-white p-2"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -636,8 +661,8 @@ export default function Mantenimiento() {
                   <td className="py-3 px-4">
                     {editingUsuario === usuario.id ? (
                       <Input
-                        defaultValue={usuario.usuario}
-                        onBlur={(e) => handleUpdateUsuario(usuario.id, { ...usuario, usuario: e.target.value })}
+                        value={newUsuario.usuario}
+                        onChange={(e) => setNewUsuario({ ...newUsuario, usuario: e.target.value })}
                       />
                     ) : (
                       <span className="font-medium">{usuario.usuario}</span>
@@ -646,11 +671,11 @@ export default function Mantenimiento() {
                   <td className="py-3 px-4">
                     {editingUsuario === usuario.id ? (
                       <Select
-                        defaultValue={usuario.rol}
-                        onValueChange={(value) => handleUpdateUsuario(usuario.id, { ...usuario, rol: value })}
+                        value={newUsuario.rol}
+                        onValueChange={(value) => setNewUsuario({ ...newUsuario, rol: value })}
                       >
                         <SelectTrigger>
-                          <SelectValue />
+                          <SelectValue placeholder="Seleccionar rol" />
                         </SelectTrigger>
                         <SelectContent>
                           {roles.map((rol) => (
@@ -666,27 +691,50 @@ export default function Mantenimiento() {
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex justify-center gap-2">
-                      <Button
-                        onClick={() => setEditingUsuario(editingUsuario === usuario.id ? null : usuario.id)}
-                        className="bg-blue-500 hover:bg-blue-600 text-white p-2"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-
-                      <Button
-                        onClick={() => handleDeleteUsuario(usuario.id)}
-                        className="bg-red-500 hover:bg-red-600 text-white p-2"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-
-                      <Button
-                        onClick={() => handleResetPassword(usuario.id)}
-                        className="bg-yellow-500 hover:bg-yellow-600 text-white p-2"
-                        title="Resetear contraseña a 1234"
-                      >
-                        RESET
-                      </Button>
+                      {editingUsuario === usuario.id ? (
+                        <>
+                          <Button
+                            onClick={() => handleUpdateUsuario(usuario.id, newUsuario)}
+                            className="bg-green-500 hover:bg-green-600 text-white p-2"
+                          >
+                            <Save className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setEditingUsuario(null);
+                              setNewUsuario({ usuario: usuario.usuario, rol: usuario.rol });
+                            }}
+                            className="bg-gray-400 hover:bg-gray-500 text-white p-2"
+                          >
+                            Cancelar
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button
+                            onClick={() => {
+                              setEditingUsuario(usuario.id);
+                              setNewUsuario({ usuario: usuario.usuario, rol: usuario.rol });
+                            }}
+                            className="bg-blue-500 hover:bg-blue-600 text-white p-2"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            onClick={() => handleDeleteUsuario(usuario.id)}
+                            className="bg-red-500 hover:bg-red-600 text-white p-2"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            onClick={() => handleResetPassword(usuario.id)}
+                            className="bg-yellow-500 hover:bg-yellow-600 text-white p-2"
+                            title="Resetear contraseña a 1234"
+                          >
+                            RESET
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
