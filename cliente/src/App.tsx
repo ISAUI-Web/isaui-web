@@ -27,7 +27,7 @@ export default function App() {
       <Route path="/cupos" element={<Cupos />} />
       <Route path="/legajo" element={<Legajo />} />
       <Route path="/reportes" element={<Reportes />} />
-      <Route path="/formMatriculacion" element={<FormMatriculacion />} />
+      <Route path="/formMatriculacion/:id" element={<FormMatriculacion />} />
       <Route path="/loginDNI" element={<LoginDni />} />
       {/* Podés agregar más rutas aquí */}
       {/* Podés agregar más rutas como <Route path="/" element={<Inicio />} /> */}

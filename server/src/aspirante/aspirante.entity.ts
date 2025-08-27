@@ -48,12 +48,6 @@ export class Aspirante {
   @Column()
   ciudad_nacimiento: string;
 
-  @Column({ default: 'pendiente' })
-  estado_preinscripcion: string;
-
-  @Column()
-  estado_matriculacion: string;
-
   // Nivel medio
   @Column({ type: 'varchar', length: 20, default: 'No' })
   completo_nivel_medio: string;
