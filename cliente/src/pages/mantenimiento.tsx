@@ -41,6 +41,7 @@ type Carrera = {
   nombre: string;
   cupoMaximo: number;
   cupoActual: number;
+  activo: boolean;
 };
 
 // Función para transformar datos del backend a formato frontend
@@ -49,6 +50,7 @@ const mapCarreraFromApi = (c: any): Carrera => ({
   nombre: c.nombre,
   cupoMaximo: c.cupo_maximo,
   cupoActual: c.cupo_actual,
+  activo: c.activo,
 });
 
 // Datos de ejemplo para carreras
@@ -310,22 +312,42 @@ export default function Mantenimiento() {
     }
   }
 
-  const handleDeleteCarrera = async (id: number) => {
-    if (!confirm("¿Está seguro de que desea eliminar esta carrera?")) return
+  // const handleDeleteCarrera = async (id: number) => {
+  //   if (!confirm("¿Está seguro de que desea eliminar esta carrera?")) return
 
-    try {
-      // Aquí conectarías con tu API de NestJS
-      const response = await fetch(`${API_BASE_URL_CARRERA}/${id}`, { method: "DELETE" });
+  //   try {
+  //     // Aquí conectarías con tu API de NestJS
+  //     const response = await fetch(`${API_BASE_URL_CARRERA}/${id}`, { method: "DELETE" });
 
-      if (!response.ok) throw new Error("Error al eliminar carrera")
+  //     if (!response.ok) throw new Error("Error al eliminar carrera")
 
-      setCarreras(carreras.filter((c) => c.id !== id))
-      alert("Carrera eliminada correctamente")
-    } catch (error) {
-      console.error("Error:", error)
-      alert("Error al eliminar carrera");
-    }
+  //     setCarreras(carreras.filter((c) => c.id !== id))
+  //     alert("Carrera eliminada correctamente")
+  //   } catch (error) {
+  //     console.error("Error:", error)
+  //     alert("Error al eliminar carrera");
+  //   }
+  // }
+
+  const handleToggleCarrera = async (id: number, activo: boolean) => {
+  try {
+    const response = await fetch(`${API_BASE_URL_CARRERA}/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ activo: !activo }),
+    });
+
+    if (!response.ok) throw new Error("Error al cambiar estado de la carrera");
+
+    const actualizada = mapCarreraFromApi(await response.json());
+    setCarreras(carreras.map((c) => (c.id === id ? actualizada : c)));
+
+    alert(`Carrera ${!activo ? "activada" : "desactivada"} correctamente`);
+  } catch (error) {
+    console.error("Error:", error);
+    alert("Error al cambiar estado de la carrera");
   }
+};
 
   // Funciones para usuarios
   const handleCreateUsuario = async () => {
@@ -509,6 +531,7 @@ export default function Mantenimiento() {
                 <th className="text-left py-3 px-4 font-semibold text-gray-700">Nombre</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700">Cupo Máximo</th>
                 <th className="text-center py-3 px-4 font-semibold text-gray-700">Acciones</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700">Estado</th>
               </tr>
             </thead>
             <tbody>
@@ -571,16 +594,27 @@ export default function Mantenimiento() {
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
-                          <Button
+                          {/* <Button
                             onClick={() => handleDeleteCarrera(carrera.id)}
                             className="bg-red-500 hover:bg-red-600 text-white p-2"
                           >
                             <Trash2 className="w-4 h-4" />
+                          </Button> */}
+                          <Button
+                            onClick={() => handleToggleCarrera(carrera.id, carrera.activo)}
+                            className={`${carrera.activo ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-500 hover:bg-green-600"} text-white p-2`}
+                          >
+                            {carrera.activo ? "Desactivar" : "Activar"}
                           </Button>
                         </>
                       )}
                     </div>
                   </td>
+                                      <td className="py-3 px-4">
+                      <span className={`px-2 py-1 rounded ${carrera.activo ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"}`}>
+                        {carrera.activo ? "Activa" : "Inactiva"}
+                      </span>
+                    </td>
                 </tr>
               ))}
             </tbody>
