@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ChevronLeft, ChevronRight, Upload, User, GraduationCap, FileText, ArrowLeft } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 
@@ -87,20 +87,6 @@ const initialFormData: FormData = {
   dniDorso: null,
   carrera_id: "",
 }
-
-const carreras = [
-  { id: 1, nombre: "Tecnicatura Superior en Desarrollo de Software" },
-  { id: 2, nombre: "Tecnicatura Superior en Diseño de Espacios" },
-  { id: 3, nombre: "Tecnicatura Superior en Turismo y Hotelería" },
-  { id: 4, nombre: "Tecnicatura Superior en Enfermería" },
-  { id: 5, nombre: "Tecnicatura Superior en Guía de Turismo" },
-  { id: 6, nombre: "Tecnicatura Superior en Guía de Trekking y Guía de Montaña" },
-];
-
-const carrerasOptions: UnifiedOption[] = carreras.map((c) => ({
-  value: c.id.toString(),
-  label: c.nombre,
-}));
 
 const provincias = [
   "Buenos Aires",
@@ -261,6 +247,33 @@ const FormField = ({
 
 
 export default function MultiStepForm() {
+
+  type Carrera = {
+  id: number;
+  nombre: string;
+  activo: boolean;
+};
+
+const [carreras, setCarreras] = useState<Carrera[]>([]);
+const [carrerasOptions, setCarrerasOptions] = useState<{ value: string; label: string }[]>([]);
+
+useEffect(() => {
+  const fetchCarreras = async () => {
+    const res = await fetch("http://localhost:3000/carrera"); // tu endpoint
+    const data: Carrera[] = await res.json();
+
+    // solo activas
+    const activas = data.filter(c => c.activo);
+
+    setCarreras(activas);
+    setCarrerasOptions(
+      activas.map(c => ({ value: c.id.toString(), label: c.nombre }))
+    );
+  };
+
+  fetchCarreras();
+}, []);
+
   const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState<FormData>(initialFormData)
   const [errors, setErrors] = useState<Record<string, string>>({})
