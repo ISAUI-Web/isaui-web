@@ -1,4 +1,4 @@
-import { IsString, IsInt, Min, MaxLength } from 'class-validator';
+import { IsString, IsInt, Min, MaxLength, IsBoolean } from 'class-validator';
 
 export class CreateCarreraDto {
   @IsString({ message: 'El nombre debe ser un texto' })
@@ -12,4 +12,7 @@ export class CreateCarreraDto {
   @IsInt({ message: 'El cupo actual debe ser un número entero' })
   @Min(0, { message: 'El cupo actual no puede ser negativo' })
   cupo_actual: number;
+
+  @IsBoolean()
+  activo: boolean;
 }

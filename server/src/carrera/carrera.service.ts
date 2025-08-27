@@ -61,6 +61,10 @@ export class CarreraService implements OnApplicationBootstrap {
   async findAll(): Promise<Carrera[]> {
     return this.carreraRepository.find();
   }
+  
+  async findOne(id: number): Promise<Carrera | null> {
+  return this.carreraRepository.findOne({ where: { id } });
+}
 
   async create(data: Partial<Carrera>): Promise<Carrera> {
     // 🚫 Verificar duplicado
