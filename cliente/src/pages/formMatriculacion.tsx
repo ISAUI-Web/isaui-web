@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Upload, FileText, ArrowLeftCircle, ArrowLeft } from "lucide-react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useParams, useLocation } from "react-router-dom"
 
 interface FormData {
   dniFrente: File | null
@@ -32,6 +32,9 @@ export default function FormMatriculacion() {
   const [formData, setFormData] = useState<FormData>(initialFormData)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const navigate = useNavigate();
+  const { id } = useParams()
+  const location = useLocation()
+  const { nombre, apellido } = location.state || {}
 
   const handleFileChange = (field: keyof FormData, file: File | null) => {
     setFormData((prev) => ({ ...prev, [field]: file }))
@@ -59,8 +62,34 @@ export default function FormMatriculacion() {
       alert("Debe completar todos los datos antes de enviar.");
       return;
     }
-    alert("¡Formulario enviado con éxito!");
-    // Aquí puedes agregar la lógica para enviar los archivos al backend
+
+    if (!id) {
+      alert("Error: no se encontró el ID del aspirante.")
+      return
+    }
+
+    try {
+      const data = new FormData()
+      data.append("aspirante_id", id) // 👈 mandamos el aspirante_id al backend
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value) data.append(key, value)
+      })
+
+      const response = await fetch(`http://localhost:3000/matricula/guardar-documentacion`, {
+        method: "POST",
+        body: data, // 👈 se manda como multipart/form-data
+      })
+
+      if (!response.ok) {
+        throw new Error("Error al enviar los documentos")
+      }
+
+      alert("¡Formulario enviado con éxito!")
+      navigate("/") // lo mandamos al inicio o a otra vista
+    } catch (err) {
+      console.error(err)
+      alert("Hubo un problema al enviar el formulario.")
+    } 
   }
 
    const handleBack = () => {
@@ -82,7 +111,7 @@ export default function FormMatriculacion() {
           <div className="bg-slate-800 rounded-lg p-4 text-center mb-8">
             <h2 className="text-white text-2xl font-semibold uppercase tracking-wider flex items-center justify-center gap-2">
               <FileText className="w-8 h-8" />
-              DOCUMENTACIÓN
+              DOCUMENTACIÓN DE {apellido}, {nombre}
             </h2>
           </div>
           {/* Documentación */}
