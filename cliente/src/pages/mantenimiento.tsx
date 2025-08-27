@@ -602,7 +602,7 @@ export default function Mantenimiento() {
                           </Button> */}
                           <Button
                             onClick={() => handleToggleCarrera(carrera.id, carrera.activo)}
-                            className={`${carrera.activo ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-500 hover:bg-green-600"} text-white p-2`}
+                            className={`w-24 h-10 flex items-center justify-center rounded-lg ${carrera.activo ? 'bg-red-500' : 'bg-green-500'}`}
                           >
                             {carrera.activo ? "Desactivar" : "Activar"}
                           </Button>

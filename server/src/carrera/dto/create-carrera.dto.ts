@@ -12,7 +12,4 @@ export class CreateCarreraDto {
   @IsInt({ message: 'El cupo actual debe ser un número entero' })
   @Min(0, { message: 'El cupo actual no puede ser negativo' })
   cupo_actual: number;
-
-  @IsBoolean()
-  activo: boolean;
 }
