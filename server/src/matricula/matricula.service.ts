@@ -93,4 +93,10 @@ export class MatriculaService {
 
     return this.matriculaRepository.save(nuevaMatricula);
   }
+
+  async findAll(): Promise<Matricula[]> {
+    return this.matriculaRepository.find({
+      relations: ['aspirante', 'carrera'],
+    });
+  }  
 }
