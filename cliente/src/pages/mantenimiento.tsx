@@ -439,24 +439,6 @@ export default function Mantenimiento() {
     }
   }
 
-  // const handleDeleteUsuario = async (id: number) => {
-  //   if (!confirm("¿Está seguro de que desea eliminar este usuario?")) return
-
-  //   try {
-  //     const response = await fetch(`${API_BASE_URL_USUARIO}/${id}`, { method: "DELETE" });
-
-  //     if (!response.ok) throw new Error("Error al eliminar usuario");
-
-  //     setUsuarios(usuarios.filter((u) => u.id !== id));
-  //     alert("Usuario eliminado correctamente");
-  //   } catch (error) {
-  //     console.error("Error:", error);
-  //     // fallback local
-  //     setUsuarios(usuarios.filter((u) => u.id !== id));
-  //     alert("Usuario eliminado correctamente (simulado)");
-  //   }
-  // }
-
   const handleToggleUsuario = async (id: number, activo: boolean) => {
   try {
     const response = await fetch(`${API_BASE_URL_USUARIO}/${id}/activo`, {
@@ -467,8 +449,8 @@ export default function Mantenimiento() {
 
     if (!response.ok) throw new Error("Error al cambiar estado del usuario");
 
-    const actualizada = await response.json();
-    setUsuarios(prev => prev.map(u => (u.id === id ? actualizada : u)));
+    const actualizada = mapUsuarioFromApi(await response.json());
+    setUsuarios(usuarios.map((u) => (u.id === id ? actualizada : u)));
 
     alert(`Usuario ${!activo ? "activado" : "desactivado"} correctamente`);
   } catch (error) {
@@ -476,7 +458,6 @@ export default function Mantenimiento() {
     alert("Error al cambiar estado del usuario");
   }
 };
-  
 
   const handleResetPassword = async (id: number) => {
     if (!confirm("¿Querés reiniciar la contraseña a '1234' para este usuario?")) return;
