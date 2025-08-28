@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get } from '@nestjs/common';
 import { MatriculaService } from './matricula.service';
 
 @Controller('matricula')
@@ -8,5 +8,10 @@ export class MatriculaController {
   @Post('iniciar')
   async iniciarMatricula(@Body('dni') dni: string) {
     return this.matriculaService.validarAccesoMatricula(dni);
+  }
+
+  @Get()
+  async findAll() {
+    return this.matriculaService.findAll();
   }
 }
