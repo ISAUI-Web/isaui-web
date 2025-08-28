@@ -1,10 +1,8 @@
-import { useState } from "react"
-import { Upload, FileText, ArrowLeftCircle, ArrowLeft } from "lucide-react"
-import { useNavigate, useParams, useLocation } from "react-router-dom"
+import { useState } from "react";
+import { Upload, FileText, ArrowLeft } from "lucide-react";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 
 interface FormData {
-  dniFrente: File | null
-  dniDorso: File | null
   cus: File | null
   isa: File | null
   partida_nacimiento: File | null
@@ -16,8 +14,6 @@ interface FormData {
 }
 
 const initialFormData: FormData = {
-  dniFrente: null,
-  dniDorso: null,
   cus: null,
   isa: null,
   partida_nacimiento: null,
@@ -30,11 +26,12 @@ const initialFormData: FormData = {
 
 export default function FormMatriculacion() {
   const [formData, setFormData] = useState<FormData>(initialFormData)
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({})
   const navigate = useNavigate();
   const { id } = useParams()
   const location = useLocation()
   const { nombre, apellido } = location.state || {}
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleFileChange = (field: keyof FormData, file: File | null) => {
     setFormData((prev) => ({ ...prev, [field]: file }))
@@ -44,22 +41,32 @@ export default function FormMatriculacion() {
   }
 
   const validate = () => {
-    const newErrors: Record<string, string> = {}
-    if (!formData.dniFrente) newErrors.dniFrente = "La foto del frente del DNI es requerida"
-    if (!formData.dniDorso) newErrors.dniDorso = "La foto del dorso del DNI es requerida"
-    if (!formData.cus) newErrors.cus = "La foto del CUS es requerida"
-    if (!formData.foto_carnet) newErrors.foto_carnet = "La foto carnet es requerida"
-    if (!formData.isa) newErrors.isa = "La foto del ISA es requerida"
-    if (!formData.partida_nacimiento) newErrors.partida_nacimiento = "La foto de la partida de nacimiento es requerida"
-    if (!formData.analitico) newErrors.analitico = "La foto del analítico es requerida"
-    if (!formData.grupo_sanguineo) newErrors.grupo_sanguineo = "La foto del certificado de grupo sanguíneo es requerida"
+    const newErrors: Partial<Record<keyof FormData, string>> = {}
+    // Campos obligatorios
+    const requiredFields: (keyof FormData)[] = [
+      "cus", "foto_carnet", "isa", "partida_nacimiento", "analitico", "grupo_sanguineo"
+    ];
+
+    requiredFields.forEach(field => {
+      if (!formData[field]) {
+        newErrors[field] = "Este documento es requerido";
+      }
+    });
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = async () => {
     if (!validate()) {
-      alert("Debe completar todos los datos antes de enviar.");
+      alert("Debe completar todos los campos obligatorios (*) antes de enviar.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    if (!id) {
+      alert("No se pudo identificar al aspirante. Por favor, regrese e intente de nuevo.");
       return;
     }
 
@@ -70,14 +77,13 @@ export default function FormMatriculacion() {
 
     try {
       const data = new FormData()
-      data.append("aspirante_id", id) // 👈 mandamos el aspirante_id al backend
       Object.entries(formData).forEach(([key, value]) => {
         if (value) data.append(key, value)
       })
 
-      const response = await fetch(`http://localhost:3000/matricula/guardar-documentacion`, {
+      const response = await fetch(`http://localhost:3000/documento/upload/aspirante/${id}`, {
         method: "POST",
-        body: data, // 👈 se manda como multipart/form-data
+        body: data, // se manda como multipart/form-data
       })
 
       if (!response.ok) {
@@ -195,9 +201,10 @@ export default function FormMatriculacion() {
             <div className="flex justify-center mt-8">
               <button
                 onClick={handleSubmit}
-                className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors"
+                disabled={isSubmitting}
+                className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed"
               >
-                Enviar Formulario
+                {isSubmitting ? 'Enviando...' : 'Enviar Formulario'}
               </button>
             </div>
           </div>
