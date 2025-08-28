@@ -1,4 +1,4 @@
-import { IsString, IsInt, Min, MaxLength } from 'class-validator';
+import { IsString, IsInt, Min, MaxLength, IsBoolean } from 'class-validator';
 
 export class CreateCarreraDto {
   @IsString({ message: 'El nombre debe ser un texto' })

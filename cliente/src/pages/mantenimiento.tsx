@@ -41,6 +41,7 @@ type Carrera = {
   nombre: string;
   cupoMaximo: number;
   cupoActual: number;
+  activo: boolean;
 };
 
 // Función para transformar datos del backend a formato frontend
@@ -49,6 +50,7 @@ const mapCarreraFromApi = (c: any): Carrera => ({
   nombre: c.nombre,
   cupoMaximo: c.cupo_maximo,
   cupoActual: c.cupo_actual,
+  activo: c.activo,
 });
 
 // Datos de ejemplo para carreras
@@ -131,7 +133,7 @@ export default function Mantenimiento() {
     usuario: u.nombre_usuario,
     email: u.correo,
     rol: u.rol,
-    activo: true,
+    activo: u.activo,
   });
 
   // Cargar usuarios desde backend
@@ -310,22 +312,42 @@ export default function Mantenimiento() {
     }
   }
 
-  const handleDeleteCarrera = async (id: number) => {
-    if (!confirm("¿Está seguro de que desea eliminar esta carrera?")) return
+  // const handleDeleteCarrera = async (id: number) => {
+  //   if (!confirm("¿Está seguro de que desea eliminar esta carrera?")) return
 
-    try {
-      // Aquí conectarías con tu API de NestJS
-      const response = await fetch(`${API_BASE_URL_CARRERA}/${id}`, { method: "DELETE" });
+  //   try {
+  //     // Aquí conectarías con tu API de NestJS
+  //     const response = await fetch(`${API_BASE_URL_CARRERA}/${id}`, { method: "DELETE" });
 
-      if (!response.ok) throw new Error("Error al eliminar carrera")
+  //     if (!response.ok) throw new Error("Error al eliminar carrera")
 
-      setCarreras(carreras.filter((c) => c.id !== id))
-      alert("Carrera eliminada correctamente")
-    } catch (error) {
-      console.error("Error:", error)
-      alert("Error al eliminar carrera");
-    }
+  //     setCarreras(carreras.filter((c) => c.id !== id))
+  //     alert("Carrera eliminada correctamente")
+  //   } catch (error) {
+  //     console.error("Error:", error)
+  //     alert("Error al eliminar carrera");
+  //   }
+  // }
+
+  const handleToggleCarrera = async (id: number, activo: boolean) => {
+  try {
+    const response = await fetch(`${API_BASE_URL_CARRERA}/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ activo: !activo }),
+    });
+
+    if (!response.ok) throw new Error("Error al cambiar estado de la carrera");
+
+    const actualizada = mapCarreraFromApi(await response.json());
+    setCarreras(carreras.map((c) => (c.id === id ? actualizada : c)));
+
+    alert(`Carrera ${!activo ? "activada" : "desactivada"} correctamente`);
+  } catch (error) {
+    console.error("Error:", error);
+    alert("Error al cambiar estado de la carrera");
   }
+};
 
   // Funciones para usuarios
   const handleCreateUsuario = async () => {
@@ -417,23 +439,25 @@ export default function Mantenimiento() {
     }
   }
 
-  const handleDeleteUsuario = async (id: number) => {
-    if (!confirm("¿Está seguro de que desea eliminar este usuario?")) return
+  const handleToggleUsuario = async (id: number, activo: boolean) => {
+  try {
+    const response = await fetch(`${API_BASE_URL_USUARIO}/${id}/activo`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ activo: !activo }),
+    });
 
-    try {
-      const response = await fetch(`${API_BASE_URL_USUARIO}/${id}`, { method: "DELETE" });
+    if (!response.ok) throw new Error("Error al cambiar estado del usuario");
 
-      if (!response.ok) throw new Error("Error al eliminar usuario");
+    const actualizada = mapUsuarioFromApi(await response.json());
+    setUsuarios(usuarios.map((u) => (u.id === id ? actualizada : u)));
 
-      setUsuarios(usuarios.filter((u) => u.id !== id));
-      alert("Usuario eliminado correctamente");
-    } catch (error) {
-      console.error("Error:", error);
-      // fallback local
-      setUsuarios(usuarios.filter((u) => u.id !== id));
-      alert("Usuario eliminado correctamente (simulado)");
-    }
+    alert(`Usuario ${!activo ? "activado" : "desactivado"} correctamente`);
+  } catch (error) {
+    console.error(error);
+    alert("Error al cambiar estado del usuario");
   }
+};
 
   const handleResetPassword = async (id: number) => {
     if (!confirm("¿Querés reiniciar la contraseña a '1234' para este usuario?")) return;
@@ -509,6 +533,7 @@ export default function Mantenimiento() {
                 <th className="text-left py-3 px-4 font-semibold text-gray-700">Nombre</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700">Cupo Máximo</th>
                 <th className="text-center py-3 px-4 font-semibold text-gray-700">Acciones</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700">Estado</th>
               </tr>
             </thead>
             <tbody>
@@ -572,15 +597,20 @@ export default function Mantenimiento() {
                             <Edit className="w-4 h-4" />
                           </Button>
                           <Button
-                            onClick={() => handleDeleteCarrera(carrera.id)}
-                            className="bg-red-500 hover:bg-red-600 text-white p-2"
+                            onClick={() => handleToggleCarrera(carrera.id, carrera.activo)}
+                            className={`w-24 h-10 flex items-center justify-center rounded-lg ${carrera.activo ? 'bg-red-500' : 'bg-green-500'}`}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            {carrera.activo ? "Desactivar" : "Activar"}
                           </Button>
                         </>
                       )}
                     </div>
                   </td>
+                                      <td className="py-3 px-4">
+                      <span className={`px-2 py-1 rounded ${carrera.activo ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"}`}>
+                        {carrera.activo ? "Activa" : "Inactiva"}
+                      </span>
+                    </td>
                 </tr>
               ))}
             </tbody>
@@ -653,6 +683,7 @@ export default function Mantenimiento() {
                 <th className="text-left py-3 px-4 font-semibold text-gray-700">Usuario</th>
                 <th className="text-left py-3 px-4 font-semibold text-gray-700">Rol</th>
                 <th className="text-center py-3 px-4 font-semibold text-gray-700">Acciones</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700">Estado</th>
               </tr>
             </thead>
             <tbody>
@@ -721,10 +752,12 @@ export default function Mantenimiento() {
                             <Edit className="w-4 h-4" />
                           </Button>
                           <Button
-                            onClick={() => handleDeleteUsuario(usuario.id)}
-                            className="bg-red-500 hover:bg-red-600 text-white p-2"
+                            onClick={() => handleToggleUsuario(usuario.id, usuario.activo)}
+                            className={`w-24 h-10 flex items-center justify-center rounded-lg ${
+                              usuario.activo ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'
+                            } text-white`}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            {usuario.activo ? 'Desactivar' : 'Activar'}
                           </Button>
                           <Button
                             onClick={() => handleResetPassword(usuario.id)}
@@ -736,6 +769,15 @@ export default function Mantenimiento() {
                         </>
                       )}
                     </div>
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <span
+                      className={`px-2 py-1 rounded ${
+                        usuario.activo ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"
+                      }`}
+                    >
+                      {usuario.activo ? "Activo" : "Inactivo"}
+                    </span>
                   </td>
                 </tr>
               ))}

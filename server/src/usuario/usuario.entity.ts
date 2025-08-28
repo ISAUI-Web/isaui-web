@@ -22,4 +22,7 @@ export class Usuario {
     enum: RolUsuario,
   })
   rol: RolUsuario;
+
+   @Column({ default: true })
+  activo: boolean;
 }

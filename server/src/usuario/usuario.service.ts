@@ -74,6 +74,7 @@ export class UsuarioService {
     return this.usuarioRepo.save(usuario);
   }
 
+    
   async update(id: number, data: UpdateUsuarioDto): Promise<Usuario> {
     const usuario = await this.usuarioRepo.findOneBy({ id });
     if (!usuario) {
@@ -109,6 +110,14 @@ export class UsuarioService {
 
     return this.usuarioRepo.save(usuario);
   }
+
+  async updateActivo(id: number, activo: boolean): Promise<Usuario> {
+  const usuario = await this.usuarioRepo.findOne({ where: { id } });
+  if (!usuario) throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
+
+  usuario.activo = activo; // asigna directamente lo que viene
+  return this.usuarioRepo.save(usuario); // guarda en DB y devuelve el usuario actualizado
+}
 
   async remove(id: number): Promise<void> {
     const result = await this.usuarioRepo.delete(id);
