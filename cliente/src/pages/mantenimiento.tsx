@@ -770,7 +770,7 @@ export default function Mantenimiento() {
                       )}
                     </div>
                   </td>
-                  <td className="py-3 px-4 text-center">
+                  <td className="py-3 px-4">
                     <span
                       className={`px-2 py-1 rounded ${
                         usuario.activo ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"
