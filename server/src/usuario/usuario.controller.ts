@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Put, Param, Delete } from '@nestjs/common';
+import { Controller, Patch, Post, Body, Get, Put, Param, Delete, ParseIntPipe, NotFoundException } from '@nestjs/common';
 import { UsuarioService } from './usuario.service';
 import { LoginUsuarioDto } from './dto/login-usuario.dto';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
@@ -17,7 +17,8 @@ export class UsuarioController {
       loginDto.contraseña,
     );
   }
-
+  
+  
   // 📌 CRUD
   @Get()
   async findAll(): Promise<Usuario[]> {
@@ -25,8 +26,10 @@ export class UsuarioController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: number): Promise<Usuario> {
-    return this.usuarioService.findOne(id);
+  async findOne(@Param('id', ParseIntPipe) id: number): Promise<Usuario> {
+    const usuario = await this.usuarioService.findOne(id);
+    if (!usuario) throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
+    return usuario;
   }
 
   @Post()
@@ -51,4 +54,13 @@ export class UsuarioController {
   async remove(@Param('id') id: number): Promise<void> {
     return this.usuarioService.remove(id);
   }
+
+
+  @Patch(':id/activo')
+async toggleActivo(
+  @Param('id', ParseIntPipe) id: number,
+  @Body('activo') activo: boolean,
+): Promise<Usuario> {
+  return this.usuarioService.updateActivo(id, activo);
+}
 }

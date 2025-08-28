@@ -101,9 +101,6 @@ export class Aspirante {
   @Column()
   personas_cargo: boolean;
 
-  @Column({ default: true })
-  activo: boolean;
-
   @OneToMany(() => Preinscripcion, (preinscripcion) => preinscripcion.aspirante)
   preinscripciones: Preinscripcion[];
 }
