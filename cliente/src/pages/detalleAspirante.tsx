@@ -221,7 +221,7 @@ export default function DetalleAspirante() {
   }
 
   const handleBack = () => {
-    navigate("/aspirantes")
+    navigate(-1)
   }
 
   const handleSave = async () => {
