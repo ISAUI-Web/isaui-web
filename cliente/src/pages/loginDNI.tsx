@@ -48,27 +48,26 @@ export default function LoginDni() {
     setError("")
 
     try {
-      // Aquí conectarías con tu API para verificar si el DNI existe en preinscripción
-      const response = await fetch(`/api/aspirantes/verificar-dni/${dni}`)
+      // 👉 Llamar a tu backend (ajustá la URL según tu setup: proxy, puerto, etc.)
+      const response = await fetch("http://localhost:3000/matricula/iniciar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dni }),
+      })
 
-      if (!response.ok) {
-        throw new Error("DNI no encontrado o no válido para matriculación")
+      const data = await response.json()
+
+      if (!response.ok || !data.ok) {
+        throw new Error(data.reason || "DNI no válido para matriculación")
       }
 
-      const aspirante = await response.json()
-
-      // Redirigir a la vista de subida de documentos con el DNI
-      Navigate(`/formMatriculacion/${dni}`)
-    } catch (error) {
+      // ✅ Todo OK, redirigir pasando el DNI (o id del aspirante si preferís)
+      Navigate(`/formMatriculacion/${data.aspirante.id}`, {
+        state: { nombre: data.aspirante.nombre, apellido: data.aspirante.apellido }
+      })
+    } catch (error: any) {
       console.error("Error al verificar DNI:", error)
-
-      // Simulación para desarrollo - remover en producción
-      if (dni === "43189371" || dni === "12345678") {
-        // DNI válido para pruebas
-        Navigate('/formMatriculacion')
-      } else {
-        setError("DNI no encontrado. Verifique que haya completado la preinscripción.")
-      }
+      setError(error.message || "DNI no válido")
     } finally {
       setIsLoading(false)
     }
