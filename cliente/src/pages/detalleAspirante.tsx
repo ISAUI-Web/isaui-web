@@ -7,7 +7,7 @@ import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
 import { Textarea } from "../components/ui/textarea"
 import { ArrowLeft, User, Save, Edit, Eye, X, Camera, Upload } from "lucide-react"
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 
 const API_BASE = 'http://localhost:3000';
 const abs = (u?: string | null) => (u ? (u.startsWith('http') ? u : `${API_BASE}${u}`) : '');
@@ -25,6 +25,7 @@ const tabs = [
 export default function DetalleAspirante() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const location = useLocation();
 
   const [activeTab, setActiveTab] = useState("datos")
   const [isEditing, setIsEditing] = useState(false)
@@ -221,7 +222,7 @@ export default function DetalleAspirante() {
   }
 
   const handleBack = () => {
-    navigate(-1)
+    navigate(location.state?.from || "/admin");
   }
 
   const handleSave = async () => {
@@ -383,6 +384,9 @@ export default function DetalleAspirante() {
       validate(newFormData, step);
     }
   }
+
+  const fromAspirantes = location.state?.from === "/aspirantes";
+const fromMatriculacion = location.state?.from === "/matriculacion";
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -854,7 +858,6 @@ export default function DetalleAspirante() {
         return (
           <div className="text-gray-500 text-center py-8 col-span-2">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Documentos del Aspirante</h3>
-
             {/* Inputs ocultos para subir archivos */}
             <input
               ref={dniFrenteInputRef}
@@ -870,8 +873,7 @@ export default function DetalleAspirante() {
               onChange={(e) => handleFileInputChange(e, "dniDorso")}
               className="hidden"
             />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className={`grid grid-cols-1 md:grid-cols-2 gap-6`}>
               {/* DNI Frente */}
               <div className="space-y-3">
                 <h4 className="text-md font-medium text-gray-700">DNI - Frente</h4>
@@ -1054,6 +1056,267 @@ export default function DetalleAspirante() {
                 </div>
               </div>
             </div>
+            {/* Mostrar otros documentos solo si viene de /matriculacion */}
+            {fromMatriculacion && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                {/* CUS */}
+            <div className="space-y-3">
+              <h4 className="text-md font-medium text-gray-700">CUS</h4>
+                  <div className="relative group">
+                    {formData.documentos?.cus ? (
+                      <img
+                        src={abs(formData.documentos.cus)}
+                        alt="CUS"
+                        className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                        onClick={() => handleViewImage(formData.documentos?.cus)}
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                        <div className="text-center text-gray-500">
+                          <Camera className="w-8 h-8 mx-auto mb-2" />
+                          <p className="text-sm">No hay imagen disponible</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => handleViewImage(formData.documentos?.cus)}
+                      variant="outline"
+                      className="flex-1 text-sm"
+                      disabled={!formData.documentos?.cus}
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Ver
+                    </Button>
+                  </div>
+            </div>
+                {/* FOTO CARNET */}
+                <div className="space-y-3">
+              <h4 className="text-md font-medium text-gray-700">Foto carnet 4x4</h4>
+                  <div className="relative group">
+                    {formData.documentos?.foto_carnet ? (
+                      <img
+                        src={abs(formData.documentos.foto_carnet)}
+                        alt="Foto Carnet"
+                        className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                        onClick={() => handleViewImage(formData.documentos?.foto_carnet)}
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                        <div className="text-center text-gray-500">
+                          <Camera className="w-8 h-8 mx-auto mb-2" />
+                          <p className="text-sm">No hay imagen disponible</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => handleViewImage(formData.documentos?.foto_carnet)}
+                      variant="outline"
+                      className="flex-1 text-sm"
+                      disabled={!formData.documentos?.foto_carnet}
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Ver
+                    </Button>
+                  </div>
+            </div>
+                {/* ISA */}
+                <div className="space-y-3">
+              <h4 className="text-md font-medium text-gray-700">ISA</h4>
+                  <div className="relative group">
+                    {formData.documentos?.isa ? (
+                      <img
+                        src={abs(formData.documentos.isa)}
+                        alt="ISA"
+                        className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                        onClick={() => handleViewImage(formData.documentos?.isa)}
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                        <div className="text-center text-gray-500">
+                          <Camera className="w-8 h-8 mx-auto mb-2" />
+                          <p className="text-sm">No hay imagen disponible</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => handleViewImage(formData.documentos?.isa)}
+                      variant="outline"
+                      className="flex-1 text-sm"
+                      disabled={!formData.documentos?.isa}
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Ver
+                    </Button>
+                  </div>
+            </div>
+                {/* PARTIDA DE NACIMIENTO */}
+                <div className="space-y-3">
+              <h4 className="text-md font-medium text-gray-700">Partida de nacimiento</h4>
+                  <div className="relative group">
+                    {formData.documentos?.partida_nacimiento ? (
+                      <img
+                        src={abs(formData.documentos.partida_nacimiento)}
+                        alt="Partida de nacimiento"
+                        className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                        onClick={() => handleViewImage(formData.documentos?.partida_nacimiento)}
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                        <div className="text-center text-gray-500">
+                          <Camera className="w-8 h-8 mx-auto mb-2" />
+                          <p className="text-sm">No hay imagen disponible</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => handleViewImage(formData.documentos?.partida_nacimiento)}
+                      variant="outline"
+                      className="flex-1 text-sm"
+                      disabled={!formData.documentos?.partida_nacimiento}
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Ver
+                    </Button>
+                  </div>
+            </div>
+                {/* ANALÍTICO SECUNDARIO */}
+                <div className="space-y-3">
+              <h4 className="text-md font-medium text-gray-700">Analítico Secundario</h4>
+                  <div className="relative group">
+                    {formData.documentos?.analitico_secundario ? (
+                      <img
+                        src={abs(formData.documentos.analitico_secundario)}
+                        alt="Analítico Secundario"
+                        className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                        onClick={() => handleViewImage(formData.documentos?.analitico_secundario)}
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                        <div className="text-center text-gray-500">
+                          <Camera className="w-8 h-8 mx-auto mb-2" />
+                          <p className="text-sm">No hay imagen disponible</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => handleViewImage(formData.documentos?.analitico_secundario)}
+                      variant="outline"
+                      className="flex-1 text-sm"
+                      disabled={!formData.documentos?.analitico_secundario}
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Ver
+                    </Button>
+                  </div>
+            </div>
+                {/* CERTIFICADO DE GRUPO SANGUÍNEO */}
+                <div className="space-y-3">
+              <h4 className="text-md font-medium text-gray-700">Certificado de grupo sanguíneo</h4>
+                  <div className="relative group">
+                    {formData.documentos?.grupo_sanguineo ? (
+                      <img
+                        src={abs(formData.documentos.grupo_sanguineo)}
+                        alt="Grupo Sanguíneo"
+                        className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                        onClick={() => handleViewImage(formData.documentos?.grupo_sanguineo)}
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                        <div className="text-center text-gray-500">
+                          <Camera className="w-8 h-8 mx-auto mb-2" />
+                          <p className="text-sm">No hay imagen disponible</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => handleViewImage(formData.documentos?.grupo_sanguineo)}
+                      variant="outline"
+                      className="flex-1 text-sm"
+                      disabled={!formData.documentos?.grupo_sanguineo}
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Ver
+                    </Button>
+                  </div>
+            </div>
+                {/* CUD */}
+                <div className="space-y-3">
+              <h4 className="text-md font-medium text-gray-700">CUD</h4>
+                  <div className="relative group">
+                    {formData.documentos?.cud ? (
+                      <img
+                        src={abs(formData.documentos.cud)}
+                        alt="CUD"
+                        className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                        onClick={() => handleViewImage(formData.documentos?.cud)}
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                        <div className="text-center text-gray-500">
+                          <Camera className="w-8 h-8 mx-auto mb-2" />
+                          <p className="text-sm">No hay imagen disponible</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => handleViewImage(formData.documentos?.cud)}
+                      variant="outline"
+                      className="flex-1 text-sm"
+                      disabled={!formData.documentos?.cud}
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Ver
+                    </Button>
+                  </div>
+            </div>
+                {/* EMMAC */}
+                <div className="space-y-3">
+                  <h4 className="text-md font-medium text-gray-700">EMMAC</h4>
+                  <div className="relative group">
+                    {formData.documentos?.emmac ? (
+                      <img
+                        src={abs(formData.documentos.emmac)}
+                        alt="EMMAC"
+                        className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                        onClick={() => handleViewImage(formData.documentos?.emmac)}
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                        <div className="text-center text-gray-500">
+                          <Camera className="w-8 h-8 mx-auto mb-2" />
+                          <p className="text-sm">No hay imagen disponible</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => handleViewImage(formData.documentos?.emmac)}
+                      variant="outline"
+                      className="flex-1 text-sm"
+                      disabled={!formData.documentos?.emmac}
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Ver
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         );
       default:
