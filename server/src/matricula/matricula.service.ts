@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Aspirante } from '../aspirante/aspirante.entity';
 import { Preinscripcion } from '../preinscripcion/preinscripcion.entity';
 import { Matricula } from './matricula.entity';
+import { ConstanciaService } from '../constancia/constancia.service';
 
 @Injectable()
 export class MatriculaService {
@@ -14,6 +15,7 @@ export class MatriculaService {
     private preinscripcionRepository: Repository<Preinscripcion>,
     @InjectRepository(Matricula)
     private matriculaRepository: Repository<Matricula>,
+    private readonly constanciaService: ConstanciaService,
   ) {}
 
   async validarAccesoMatricula(dni: string) {
@@ -53,46 +55,56 @@ export class MatriculaService {
   }
 
   async formalizarMatricula(aspiranteId: number): Promise<Matricula> {
-    // 1. Verificar si ya existe una matrícula para este aspirante
-    const matriculaExistente = await this.matriculaRepository.findOne({
-      where: { aspirante: { id: aspiranteId } },
-    });
+  // Verificar si ya existe una matrícula
+  const matriculaExistente = await this.matriculaRepository.findOne({
+    where: { aspirante: { id: aspiranteId } },
+  });
+  if (matriculaExistente) return matriculaExistente;
 
-    if (matriculaExistente) {
-      // Si ya existe, simplemente la retornamos para evitar duplicados.
-      return matriculaExistente;
-    }
+  // Buscar aspirante y preinscripción
+  const aspirante = await this.aspiranteRepository.findOne({
+    where: { id: aspiranteId },
+    relations: ['preinscripciones', 'preinscripciones.carrera'],
+  });
+  if (!aspirante) throw new NotFoundException(`Aspirante no encontrado`);
 
-    // 2. Buscar al aspirante y su preinscripción para obtener la carrera
-    const aspirante = await this.aspiranteRepository.findOne({
-      where: { id: aspiranteId },
-      relations: ['preinscripciones', 'preinscripciones.carrera'],
-    });
-
-    if (!aspirante) {
-      throw new NotFoundException(
-        `Aspirante con ID ${aspiranteId} no encontrado.`,
-      );
-    }
-
-    const preinscripcion = aspirante.preinscripciones?.[0];
-    if (!preinscripcion || !preinscripcion.carrera) {
-      throw new NotFoundException(
-        `No se encontró preinscripción o carrera asociada para el aspirante con ID ${aspiranteId}.`,
-      );
-    }
-
-    // 3. Crear el nuevo registro de matrícula
-    const nuevaMatricula = this.matriculaRepository.create({
-      aspirante,
-      carrera: preinscripcion.carrera,
-      fecha_matricula: new Date(),
-      estado: 'pendiente',
-      constancia_pdf: '', // Campo ignorado
-    });
-
-    return this.matriculaRepository.save(nuevaMatricula);
+  const preinscripcion = aspirante.preinscripciones?.[0];
+  if (!preinscripcion || !preinscripcion.carrera) {
+    throw new NotFoundException(`Preinscripción o carrera no encontrada`);
   }
+
+  // Crear nueva matrícula
+  const nuevaMatricula = this.matriculaRepository.create({
+    aspirante,
+    carrera: preinscripcion.carrera,
+    fecha_matricula: new Date(),
+    estado: 'pendiente',
+    constancia_pdf: '', // puedes guardar el nombre si querés
+  });
+
+  const savedMatricula = await this.matriculaRepository.save(nuevaMatricula);
+  console.log('Matricula creada', nuevaMatricula);
+  // --- GENERAR Y ENVIAR PDF ---
+  try {
+    console.log('Intento de enviar PDF');
+    const data = {
+      nombre: aspirante.nombre,
+      apellido: aspirante.apellido,
+      dni: aspirante.dni,
+      email: aspirante.email,
+      numeroRegistro: String(aspirante.id),
+      fechaPreinscripcion: new Date(preinscripcion.fecha_preinscripcion).toISOString().split('T')[0],
+      fechaMatriculacion: new Date(savedMatricula.fecha_matricula).toISOString().split('T')[0],
+    };
+
+    const pdf = await this.constanciaService.generarPDFMatriculacion(data);
+    await this.constanciaService.enviarEmailConPDFMatriculacion(pdf, aspirante.email);
+  } catch (error) {
+    console.error('Error enviando constancia PDF:', error);
+  }
+  console.log('Fin');
+  return savedMatricula;
+}
 
   async findAll(): Promise<Matricula[]> {
     return this.matriculaRepository.find({

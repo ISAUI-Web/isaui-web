@@ -90,12 +90,23 @@ export default function FormMatriculacion() {
         throw new Error("Error al enviar los documentos")
       }
 
-      alert("¡Formulario enviado con éxito!")
-      navigate("/") // lo mandamos al inicio o a otra vista
+    // Llamar al endpoint de matrícula para generar la constancia y enviar el mail
+    const matriculaResponse = await fetch(`http://localhost:3000/matricula/formalizar/${id}`, {
+      method: "POST",
+    });
+
+    if (!matriculaResponse.ok) {
+      throw new Error("Error al formalizar la matrícula y enviar la constancia");
+    }
+
+    alert("¡Formulario enviado y mail de constancia enviado con éxito!");
+    navigate("/");
     } catch (err) {
       console.error(err)
       alert("Hubo un problema al enviar el formulario.")
-    } 
+    } finally {
+    setIsSubmitting(false);
+  }
   }
 
    const handleBack = () => {
