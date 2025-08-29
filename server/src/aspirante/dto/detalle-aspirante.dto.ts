@@ -84,4 +84,28 @@ export class DetalleAspiranteDto {
 
   @Expose()
   dniDorsoNombre: string;
+
+  @Expose()
+  cusUrl: string;
+
+  @Expose()
+  isaUrl: string;
+
+  @Expose()
+  partida_nacimientoUrl: string;
+
+  @Expose()
+  analiticoUrl: string;
+
+  @Expose()
+  grupo_sanguineoUrl: string;
+
+  @Expose()
+  cudUrl: string;
+
+  @Expose()
+  emmacUrl: string;
+
+  @Expose()
+  foto_carnetUrl: string;
 }

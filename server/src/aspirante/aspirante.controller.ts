@@ -149,8 +149,6 @@ export class AspiranteController {
         carrera,
         estado_preinscripcion,
         estado_matriculacion,
-        dniFrenteUrl: aspirante.dniFrenteUrl,
-        dniDorsoUrl: aspirante.dniDorsoUrl,
       },
       {
         excludeExtraneousValues: true,
