@@ -70,24 +70,40 @@ export class DocumentoService {
     ]);
   }
 
-  async getDocumentosByAspiranteId(aspiranteId: number) {
+  async getDocumentosByAspiranteId(
+    aspiranteId: number,
+  ): Promise<{ [key: string]: { url: string } | null }> {
     // Buscar todos los documentos asociados al aspirante
     const documentos = await this.documentoRepository.find({
       where: { aspirante: { id: aspiranteId } },
     });
 
-    // Buscar el DNI frente y dorso
-    const dniFrente = documentos.find((doc) => doc.tipo === 'DNI Frente');
-    const dniDorso = documentos.find((doc) => doc.tipo === 'DNI Dorso');
+    const documentosMapeados: { [key: string]: { url: string } | null } = {};
 
-    return {
-      dniFrente: dniFrente
-        ? { url: `/uploads/documentos/${dniFrente.archivo_pdf}` }
-        : null,
-      dniDorso: dniDorso
-        ? { url: `/uploads/documentos/${dniDorso.archivo_pdf}` }
-        : null,
+    // Mapeo de 'tipo' en BD a 'key' en el frontend
+    const tipoToKeyMap: { [key: string]: string } = {
+      'DNI Frente': 'dniFrente',
+      'DNI Dorso': 'dniDorso',
+      CUS: 'cus',
+      ISA: 'isa',
+      'Partida de Nacimiento': 'partida_nacimiento',
+      'Analítico Nivel Secundario': 'analitico',
+      'Certificado de Grupo Sanguíneo': 'grupo_sanguineo',
+      CUD: 'cud',
+      EMMAC: 'emmac',
+      'Foto Carnet 4x4': 'foto_carnet',
     };
+
+    documentos.forEach((doc) => {
+      const key = tipoToKeyMap[doc.tipo];
+      if (key) {
+        documentosMapeados[key] = {
+          url: `/uploads/documentos/${doc.archivo_pdf}`,
+        };
+      }
+    });
+
+    return documentosMapeados;
   }
 
   async guardarDocumentosMatriculacion(

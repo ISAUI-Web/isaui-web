@@ -201,12 +201,18 @@ export default function DetalleAspirante() {
         descripcion_trabajo: data.descripcion_trabajo || "",
         personas_cargo: data.personas_cargo === true || data.personas_cargo === 'Sí' ? 'Sí' : 'No',
         documentos: {
-          dniFrente: data.documentos?.dniFrente || null,
-          dniDorso: data.documentos?.dniDorso || null,
           dniFrenteUrl: data.dniFrenteUrl || null,
           dniDorsoUrl: data.dniDorsoUrl || null,
           dniFrenteNombre: data.dniFrenteNombre || "",
-          dniDorsoNombre: data.dniDorsoNombre || ""
+          dniDorsoNombre: data.dniDorsoNombre || "",
+          cusUrl: data.cusUrl || null,
+          isaUrl: data.isaUrl || null,
+          partida_nacimientoUrl: data.partida_nacimientoUrl || null,
+          analiticoUrl: data.analiticoUrl || null,
+          grupo_sanguineoUrl: data.grupo_sanguineoUrl || null,
+          cudUrl: data.cudUrl || null,
+          emmacUrl: data.emmacUrl || null,
+          foto_carnetUrl: data.foto_carnetUrl || null,
         }
       })
     } catch (error) {
@@ -920,7 +926,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                         ) : (
                           <>
                             <Upload className="w-4 h-4" />
-                            {formData.documentos && formData.documentos.dniFrente ? "Cambiar imagen" : "Subir imagen"}
+                            {formData.documentos?.dniFrenteUrl ? "Cambiar imagen" : "Subir imagen"}
                           </>
                         )}
                       </Button>
@@ -928,10 +934,10 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                   )}
 
                   {/* Overlay para modo vista */}
-                  {!isEditing && formData.documentos && formData.documentos.dniFrente && (
+                  {!isEditing && formData.documentos?.dniFrenteUrl && (
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
                       <Button
-                        onClick={() => handleViewImage(formData.documentos.dniFrente)}
+                        onClick={() => handleViewImage(abs(formData.documentos.dniFrenteUrl))}
                         className="bg-white/90 hover:bg-white text-gray-800 p-2 rounded-full"
                       >
                         <Eye className="w-4 h-4" />
@@ -950,13 +956,13 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       <Camera className="w-4 h-4 mr-2" />
                       {isUploadingImage === "dniFrente"
                         ? "Subiendo..."
-                        : formData.documentos && formData.documentos.dniFrente
+                        : formData.documentos?.dniFrenteUrl
                           ? "Cambiar"
                           : "Subir"}
                     </Button>
                   ) : (
                     <Button
-                      onClick={() => window.open(`http://localhost:3000${formData.documentos.dniFrenteUrl}`, "_blank")}
+                      onClick={() => window.open(abs(formData.documentos.dniFrenteUrl), "_blank")}
                       variant="outline"
                       className="flex-1 text-sm"
                       disabled={!formData.documentos?.dniFrenteUrl}
@@ -1010,7 +1016,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                         ) : (
                           <>
                             <Upload className="w-4 h-4" />
-                            {formData.documentos && formData.documentos.dniDorso ? "Cambiar imagen" : "Subir imagen"}
+                            {formData.documentos?.dniDorsoUrl ? "Cambiar imagen" : "Subir imagen"}
                           </>
                         )}
                       </Button>
@@ -1018,10 +1024,10 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                   )}
 
                   {/* Overlay para modo vista */}
-                  {!isEditing && formData.documentos && formData.documentos.dniDorso && (
+                  {!isEditing && formData.documentos?.dniDorsoUrl && (
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
                       <Button
-                        onClick={() => handleViewImage(formData.documentos.dniDorso)}
+                        onClick={() => handleViewImage(abs(formData.documentos.dniDorsoUrl))}
                         className="bg-white/90 hover:bg-white text-gray-800 p-2 rounded-full"
                       >
                         <Eye className="w-4 h-4" />
@@ -1040,13 +1046,13 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       <Camera className="w-4 h-4 mr-2" />
                       {isUploadingImage === "dniDorso"
                         ? "Subiendo..."
-                        : formData.documentos && formData.documentos.dniDorso
+                        : formData.documentos?.dniDorsoUrl
                           ? "Cambiar"
                           : "Subir"}
                     </Button>
                   ) : (
                     <Button
-                      onClick={() => window.open(`http://localhost:3000${formData.documentos.dniDorsoUrl}`, "_blank")}
+                      onClick={() => window.open(abs(formData.documentos.dniDorsoUrl), "_blank")}
                       variant="outline"
                       className="flex-1 text-sm"
                       disabled={!formData.documentos?.dniDorsoUrl}
@@ -1066,12 +1072,12 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
             <div className="space-y-3">
               <h4 className="text-md font-medium text-gray-700">CUS</h4>
                   <div className="relative group">
-                    {formData.documentos?.cus ? (
+                    {formData.documentos?.cusUrl ? (
                       <img
-                        src={abs(formData.documentos.cus)}
+                        src={abs(formData.documentos.cusUrl)}
                         alt="CUS"
                         className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                        onClick={() => handleViewImage(formData.documentos?.cus)}
+                        onClick={() => handleViewImage(abs(formData.documentos.cusUrl))}
                       />
                     ) : (
                       <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
@@ -1082,12 +1088,17 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       </div>
                     )}
                   </div>
+                  {formData.documentos?.cusUrl && (
+                    <p className="text-sm text-gray-700 truncate mt-1">
+                      {formData.documentos.cusUrl.split('/').pop()}
+                    </p>
+                  )}
                   <div className="flex gap-2">
                     <Button
-                      onClick={() => handleViewImage(formData.documentos?.cus)}
+                      onClick={() => window.open(abs(formData.documentos.cusUrl), "_blank")}
                       variant="outline"
                       className="flex-1 text-sm"
-                      disabled={!formData.documentos?.cus}
+                      disabled={!formData.documentos?.cusUrl}
                     >
                       <Eye className="w-4 h-4 mr-2" />
                       Ver
@@ -1098,12 +1109,12 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                 <div className="space-y-3">
               <h4 className="text-md font-medium text-gray-700">Foto carnet 4x4</h4>
                   <div className="relative group">
-                    {formData.documentos?.foto_carnet ? (
+                    {formData.documentos?.foto_carnetUrl ? (
                       <img
-                        src={abs(formData.documentos.foto_carnet)}
+                        src={abs(formData.documentos.foto_carnetUrl)}
                         alt="Foto Carnet"
                         className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                        onClick={() => handleViewImage(formData.documentos?.foto_carnet)}
+                        onClick={() => handleViewImage(abs(formData.documentos.foto_carnetUrl))}
                       />
                     ) : (
                       <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
@@ -1114,12 +1125,17 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       </div>
                     )}
                   </div>
+                  {formData.documentos?.foto_carnetUrl && (
+                    <p className="text-sm text-gray-700 truncate mt-1">
+                      {formData.documentos.foto_carnetUrl.split('/').pop()}
+                    </p>
+                  )}
                   <div className="flex gap-2">
                     <Button
-                      onClick={() => handleViewImage(formData.documentos?.foto_carnet)}
+                      onClick={() => window.open(abs(formData.documentos.foto_carnetUrl), "_blank")}
                       variant="outline"
                       className="flex-1 text-sm"
-                      disabled={!formData.documentos?.foto_carnet}
+                      disabled={!formData.documentos?.foto_carnetUrl}
                     >
                       <Eye className="w-4 h-4 mr-2" />
                       Ver
@@ -1130,12 +1146,12 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                 <div className="space-y-3">
               <h4 className="text-md font-medium text-gray-700">ISA</h4>
                   <div className="relative group">
-                    {formData.documentos?.isa ? (
+                    {formData.documentos?.isaUrl ? (
                       <img
-                        src={abs(formData.documentos.isa)}
+                        src={abs(formData.documentos.isaUrl)}
                         alt="ISA"
                         className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                        onClick={() => handleViewImage(formData.documentos?.isa)}
+                        onClick={() => handleViewImage(abs(formData.documentos.isaUrl))}
                       />
                     ) : (
                       <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
@@ -1146,12 +1162,17 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       </div>
                     )}
                   </div>
+                  {formData.documentos?.isaUrl && (
+                    <p className="text-sm text-gray-700 truncate mt-1">
+                      {formData.documentos.isaUrl.split('/').pop()}
+                    </p>
+                  )}
                   <div className="flex gap-2">
                     <Button
-                      onClick={() => handleViewImage(formData.documentos?.isa)}
+                      onClick={() => window.open(abs(formData.documentos.isaUrl), "_blank")}
                       variant="outline"
                       className="flex-1 text-sm"
-                      disabled={!formData.documentos?.isa}
+                      disabled={!formData.documentos?.isaUrl}
                     >
                       <Eye className="w-4 h-4 mr-2" />
                       Ver
@@ -1162,12 +1183,12 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                 <div className="space-y-3">
               <h4 className="text-md font-medium text-gray-700">Partida de nacimiento</h4>
                   <div className="relative group">
-                    {formData.documentos?.partida_nacimiento ? (
+                    {formData.documentos?.partida_nacimientoUrl ? (
                       <img
-                        src={abs(formData.documentos.partida_nacimiento)}
+                        src={abs(formData.documentos.partida_nacimientoUrl)}
                         alt="Partida de nacimiento"
                         className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                        onClick={() => handleViewImage(formData.documentos?.partida_nacimiento)}
+                        onClick={() => handleViewImage(abs(formData.documentos.partida_nacimientoUrl))}
                       />
                     ) : (
                       <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
@@ -1178,12 +1199,17 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       </div>
                     )}
                   </div>
+                  {formData.documentos?.partida_nacimientoUrl && (
+                    <p className="text-sm text-gray-700 truncate mt-1">
+                      {formData.documentos.partida_nacimientoUrl.split('/').pop()}
+                    </p>
+                  )}
                   <div className="flex gap-2">
                     <Button
-                      onClick={() => handleViewImage(formData.documentos?.partida_nacimiento)}
+                      onClick={() => window.open(abs(formData.documentos.partida_nacimientoUrl), "_blank")}
                       variant="outline"
                       className="flex-1 text-sm"
-                      disabled={!formData.documentos?.partida_nacimiento}
+                      disabled={!formData.documentos?.partida_nacimientoUrl}
                     >
                       <Eye className="w-4 h-4 mr-2" />
                       Ver
@@ -1194,12 +1220,12 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                 <div className="space-y-3">
               <h4 className="text-md font-medium text-gray-700">Analítico Secundario</h4>
                   <div className="relative group">
-                    {formData.documentos?.analitico_secundario ? (
+                    {formData.documentos?.analiticoUrl ? (
                       <img
-                        src={abs(formData.documentos.analitico_secundario)}
+                        src={abs(formData.documentos.analiticoUrl)}
                         alt="Analítico Secundario"
                         className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                        onClick={() => handleViewImage(formData.documentos?.analitico_secundario)}
+                        onClick={() => handleViewImage(abs(formData.documentos.analiticoUrl))}
                       />
                     ) : (
                       <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
@@ -1210,12 +1236,17 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       </div>
                     )}
                   </div>
+                  {formData.documentos?.analiticoUrl && (
+                    <p className="text-sm text-gray-700 truncate mt-1">
+                      {formData.documentos.analiticoUrl.split('/').pop()}
+                    </p>
+                  )}
                   <div className="flex gap-2">
                     <Button
-                      onClick={() => handleViewImage(formData.documentos?.analitico_secundario)}
+                      onClick={() => window.open(abs(formData.documentos.analiticoUrl), "_blank")}
                       variant="outline"
                       className="flex-1 text-sm"
-                      disabled={!formData.documentos?.analitico_secundario}
+                      disabled={!formData.documentos?.analiticoUrl}
                     >
                       <Eye className="w-4 h-4 mr-2" />
                       Ver
@@ -1226,12 +1257,12 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                 <div className="space-y-3">
               <h4 className="text-md font-medium text-gray-700">Certificado de grupo sanguíneo</h4>
                   <div className="relative group">
-                    {formData.documentos?.grupo_sanguineo ? (
+                    {formData.documentos?.grupo_sanguineoUrl ? (
                       <img
-                        src={abs(formData.documentos.grupo_sanguineo)}
+                        src={abs(formData.documentos.grupo_sanguineoUrl)}
                         alt="Grupo Sanguíneo"
                         className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                        onClick={() => handleViewImage(formData.documentos?.grupo_sanguineo)}
+                        onClick={() => handleViewImage(abs(formData.documentos.grupo_sanguineoUrl))}
                       />
                     ) : (
                       <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
@@ -1242,12 +1273,17 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       </div>
                     )}
                   </div>
+                  {formData.documentos?.grupo_sanguineoUrl && (
+                    <p className="text-sm text-gray-700 truncate mt-1">
+                      {formData.documentos.grupo_sanguineoUrl.split('/').pop()}
+                    </p>
+                  )}
                   <div className="flex gap-2">
                     <Button
-                      onClick={() => handleViewImage(formData.documentos?.grupo_sanguineo)}
+                      onClick={() => window.open(abs(formData.documentos.grupo_sanguineoUrl), "_blank")}
                       variant="outline"
                       className="flex-1 text-sm"
-                      disabled={!formData.documentos?.grupo_sanguineo}
+                      disabled={!formData.documentos?.grupo_sanguineoUrl}
                     >
                       <Eye className="w-4 h-4 mr-2" />
                       Ver
@@ -1258,12 +1294,12 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                 <div className="space-y-3">
               <h4 className="text-md font-medium text-gray-700">CUD</h4>
                   <div className="relative group">
-                    {formData.documentos?.cud ? (
+                    {formData.documentos?.cudUrl ? (
                       <img
-                        src={abs(formData.documentos.cud)}
+                        src={abs(formData.documentos.cudUrl)}
                         alt="CUD"
                         className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                        onClick={() => handleViewImage(formData.documentos?.cud)}
+                        onClick={() => handleViewImage(abs(formData.documentos.cudUrl))}
                       />
                     ) : (
                       <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
@@ -1274,12 +1310,17 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       </div>
                     )}
                   </div>
+                  {formData.documentos?.cudUrl && (
+                    <p className="text-sm text-gray-700 truncate mt-1">
+                      {formData.documentos.cudUrl.split('/').pop()}
+                    </p>
+                  )}
                   <div className="flex gap-2">
                     <Button
-                      onClick={() => handleViewImage(formData.documentos?.cud)}
+                      onClick={() => window.open(abs(formData.documentos.cudUrl), "_blank")}
                       variant="outline"
                       className="flex-1 text-sm"
-                      disabled={!formData.documentos?.cud}
+                      disabled={!formData.documentos?.cudUrl}
                     >
                       <Eye className="w-4 h-4 mr-2" />
                       Ver
@@ -1290,12 +1331,12 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                 <div className="space-y-3">
                   <h4 className="text-md font-medium text-gray-700">EMMAC</h4>
                   <div className="relative group">
-                    {formData.documentos?.emmac ? (
+                    {formData.documentos?.emmacUrl ? (
                       <img
-                        src={abs(formData.documentos.emmac)}
+                        src={abs(formData.documentos.emmacUrl)}
                         alt="EMMAC"
                         className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                        onClick={() => handleViewImage(formData.documentos?.emmac)}
+                        onClick={() => handleViewImage(abs(formData.documentos.emmacUrl))}
                       />
                     ) : (
                       <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
@@ -1306,12 +1347,17 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       </div>
                     )}
                   </div>
+                  {formData.documentos?.emmacUrl && (
+                    <p className="text-sm text-gray-700 truncate mt-1">
+                      {formData.documentos.emmacUrl.split('/').pop()}
+                    </p>
+                  )}
                   <div className="flex gap-2">
                     <Button
-                      onClick={() => handleViewImage(formData.documentos?.emmac)}
+                      onClick={() => window.open(abs(formData.documentos.emmacUrl), "_blank")}
                       variant="outline"
                       className="flex-1 text-sm"
-                      disabled={!formData.documentos?.emmac}
+                      disabled={!formData.documentos?.emmacUrl}
                     >
                       <Eye className="w-4 h-4 mr-2" />
                       Ver

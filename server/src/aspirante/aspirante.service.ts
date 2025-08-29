@@ -73,20 +73,22 @@ export class AspiranteService {
 
     if (!aspirante) throw new NotFoundException('Aspirante no encontrado');
 
-    // Traer documentos
+    // Traer todos los documentos
     const documentos =
       await this.documentoService.getDocumentosByAspiranteId(id);
 
-    // Crear objeto con URLs
+    // Crear un objeto plano con las URLs y nombres de los documentos
+    const documentosData: { [key: string]: string | null } = {};
+    for (const key in documentos) {
+      const doc = documentos[key];
+      documentosData[`${key}Url`] = doc?.url || null;
+      documentosData[`${key}Nombre`] =
+        doc?.url?.split('/').pop() || 'No hay imagen disponible';
+    }
+
     const aspiranteConDocumentos = {
       ...aspirante,
-      dniFrenteUrl: documentos.dniFrente?.url || null,
-      dniDorsoUrl: documentos.dniDorso?.url || null,
-      dniFrenteNombre:
-        documentos.dniFrente?.url.split('/').pop() ||
-        'No hay imagen disponible',
-      dniDorsoNombre:
-        documentos.dniDorso?.url.split('/').pop() || 'No hay imagen disponible',
+      ...documentosData,
     };
 
     return aspiranteConDocumentos;
