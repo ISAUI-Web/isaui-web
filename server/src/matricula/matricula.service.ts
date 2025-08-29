@@ -110,5 +110,43 @@ export class MatriculaService {
     return this.matriculaRepository.find({
       relations: ['aspirante', 'carrera'],
     });
-  }  
+  }
+
+  async updateEstadoForAspirante(aspiranteId: number, estado: string) {
+    const matricula = await this.matriculaRepository.findOne({
+      where: { aspirante: { id: aspiranteId } },
+      relations: ['aspirante'], // Cargar la relación para obtener datos del aspirante
+    });
+
+    if (!matricula) {
+      throw new NotFoundException(
+        `No se encontró matrícula para el aspirante con ID ${aspiranteId}`,
+      );
+    }
+
+    const estadoAnterior = matricula.estado;
+
+    if (estado && estado !== estadoAnterior) {
+      matricula.estado = estado;
+      await this.matriculaRepository.save(matricula);
+
+      const aspirante = matricula.aspirante;
+      if (aspirante && aspirante.email) {
+        try {
+          await this.constanciaService.enviarNotificacionEstado(
+            aspirante.email,
+            `${aspirante.nombre} ${aspirante.apellido}`,
+            estado,
+            'matriculación',
+          );
+        } catch (error) {
+          console.error(
+            'Error al enviar email de cambio de estado de matriculación:',
+            error,
+          );
+        }
+      }
+    }
+    return matricula;
+  }
 }

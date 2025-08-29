@@ -153,7 +153,10 @@ export class ConstanciaService {
     });
   }
 
-  async enviarEmailConPDFMatriculacion(pdfBuffer: Buffer, toEmail: string): Promise<void> {
+  async enviarEmailConPDFMatriculacion(
+    pdfBuffer: Buffer,
+    toEmail: string,
+  ): Promise<void> {
     try {
       await this.transporter.sendMail({
         from: `"Instituto ISAUI" <${process.env.SMTP_USER}>`,
@@ -176,17 +179,26 @@ export class ConstanciaService {
       }
     }
   }
-  async enviarNotificacionEstado(toEmail: string, nombre: string, nuevoEstado: string) {
-  try {
-    await this.transporter.sendMail({
-      from: `"Instituto ISAUI" <${process.env.SMTP_USER}>`,
-      to: toEmail,
-      subject: `Actualización de estado de preinscripción`,
-      text: `Hola ${nombre},\n\nTu estado de preinscripción ha sido actualizado a: ${nuevoEstado}.\n\nSaludos,\nInstituto ISAUI`,
-    });
-  } catch (error: unknown) {
-    console.error('Error enviando mail de estado:', error);
-    throw new InternalServerErrorException('No se pudo enviar el mail de notificación');
+  async enviarNotificacionEstado(
+    toEmail: string,
+    nombre: string,
+    nuevoEstado: string,
+    contexto: 'preinscripción' | 'matriculación',
+  ) {
+    try {
+      const subject = `Actualización de estado de ${contexto}`;
+      const text = `Hola ${nombre},\n\nTu estado de ${contexto} ha sido actualizado a: ${nuevoEstado}.\n\nSaludos,\nInstituto ISAUI`;
+      await this.transporter.sendMail({
+        from: `"Instituto ISAUI" <${process.env.SMTP_USER}>`,
+        to: toEmail,
+        subject,
+        text,
+      });
+    } catch (error: unknown) {
+      console.error('Error enviando mail de estado:', error);
+      throw new InternalServerErrorException(
+        'No se pudo enviar el mail de notificación',
+      );
+    }
   }
-}
 }

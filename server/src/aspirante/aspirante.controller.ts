@@ -139,6 +139,8 @@ export class AspiranteController {
     const preinscripcion = aspirante.preinscripciones?.[0];
     const carrera = preinscripcion?.carrera?.nombre || 'Sin carrera';
     const estado_preinscripcion = preinscripcion?.estado || 'Sin estado';
+    const matricula = aspirante.matriculas?.[0];
+    const estado_matriculacion = matricula?.estado || 'No matriculado';
 
     const aspiranteLegible = plainToInstance(
       DetalleAspiranteDto,
@@ -146,6 +148,7 @@ export class AspiranteController {
         ...aspirante,
         carrera,
         estado_preinscripcion,
+        estado_matriculacion,
         dniFrenteUrl: aspirante.dniFrenteUrl,
         dniDorsoUrl: aspirante.dniDorsoUrl,
       },

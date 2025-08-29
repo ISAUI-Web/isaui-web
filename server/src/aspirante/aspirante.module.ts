@@ -6,6 +6,7 @@ import { AspiranteController } from './aspirante.controller';
 import { DocumentoModule } from '../documento/documento.module';
 import { PreinscripcionModule } from '../preinscripcion/preinscripcion.module';
 import { ConstanciaModule } from '../constancia/constancia.module';
+import { MatriculaModule } from '../matricula/matricula.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { ConstanciaModule } from '../constancia/constancia.module';
     DocumentoModule,
     PreinscripcionModule,
     ConstanciaModule,
+    MatriculaModule,
   ],
   controllers: [AspiranteController],
   providers: [AspiranteService],

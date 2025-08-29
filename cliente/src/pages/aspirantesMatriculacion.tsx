@@ -156,45 +156,34 @@ const handleMenuItemClick = (itemId: string) => {
 };
 
 // Move handleEstado outside handleMenuItemClick and keep only one definition
-const handleEstado = async (id: number, nuevoEstado: "en espera" | "confirmado" | "rechazado") => {
+const handleEstado = async (aspiranteId: number, nuevoEstado: "en espera" | "confirmado" | "rechazado") => {
   try {
-    const res = await fetch(`http://localhost:3000/matricula/${id}`, {
+    const res = await fetch(`http://localhost:3000/matricula/${aspiranteId}/estado`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ estado: nuevoEstado })
     });
 
     if (!res.ok) {
-      const errorData = await res.json().catch(() => ({ message: `Error al cambiar estado a ${nuevoEstado}` }));
+      const errorData = await res.json().catch(() => ({ message: `Error al cambiar el estado` }));
       throw new Error(errorData.message);
     }
 
     const updatedMatricula: MatriculaItem = await res.json();
     setMatriculas(prev =>
-      prev.map(m => m.id === id ? { ...m, ...updatedMatricula } : m)
+      prev.map(m => m.id === updatedMatricula.id ? { ...m, estado: updatedMatricula.estado } : m)
     );
     alert("Estado actualizado exitosamente");
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : `No se pudo cambiar el estado a ${nuevoEstado}`;
+    const errorMessage = error instanceof Error ? error.message : `No se pudo cambiar el estado`;
     console.error(errorMessage);
     alert(errorMessage);
   }
 };
 
-  // const handleConfirmar = (id: number) => {
-  //   setAspirantes((prev) => prev.map((asp) => (asp.id === id ? { ...asp, estado: "confirmado" } : asp)))
-  // }
-
-  // const handleRechazar = (id: number) => {
-  //   setAspirantes((prev) => prev.map((asp) => (asp.id === id ? { ...asp, estado: "rechazado" } : asp)))
-  // }
-
   const handleVer = (id: number) => {
     navigate(`/detAspirante/${id}`, { state: { from: "/matriculacion" } });
   }
-  // const handleWaiting = (id: number) => {
-  //   setAspirantes((prev) => prev.map((asp) => (asp.id === id ? { ...asp, estado: "pendiente" } : asp)))
-  // }
 
 
   if (loading) return <p className="text-white">Cargando aspirantes...</p>
@@ -363,21 +352,21 @@ const handleEstado = async (id: number, nuevoEstado: "en espera" | "confirmado" 
                         <td className="py-2 px-3">
                           <div className="flex justify-center gap-1">
                             <Button
-                              onClick={() => handleEstado(m.id, "en espera")}
+                              onClick={() => handleEstado(m.aspirante.id, "en espera")}
                               className="bg-yellow-500 hover:bg-yellow-600 text-white p-1.5 rounded-lg"
                               disabled={m.estado === "en espera"}
                             >
                               <Clock className="w-4 h-4" />
                             </Button>
                             <Button
-                              onClick={() => handleEstado(m.id, "confirmado")}
+                              onClick={() => handleEstado(m.aspirante.id, "confirmado")}
                               className="bg-green-500 hover:bg-green-600 text-white p-1.5 rounded-lg"
                               disabled={m.estado === "confirmado"}
                             >
                               <Check className="w-4 h-4" />
                             </Button>
                             <Button
-                              onClick={() => handleEstado(m.id, "rechazado")}
+                              onClick={() => handleEstado(m.aspirante.id, "rechazado")}
                               className="bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-lg"
                               disabled={m.estado === "rechazado"}
                             >

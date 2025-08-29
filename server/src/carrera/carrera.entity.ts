@@ -15,7 +15,7 @@ export class Carrera {
   @Column({ name: 'cupo_actual' })
   cupo_actual: number;
 
-   @Column({ default: true })
+  @Column({ default: true })
   activo: boolean;
 
   @OneToMany(() => Preinscripcion, (preinscripcion) => preinscripcion.carrera)

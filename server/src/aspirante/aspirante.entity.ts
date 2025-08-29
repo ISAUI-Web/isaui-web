@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { Preinscripcion } from '../preinscripcion/preinscripcion.entity';
+import { Matricula } from '../matricula/matricula.entity';
 
 @Entity()
 export class Aspirante {
@@ -97,4 +98,7 @@ export class Aspirante {
 
   @OneToMany(() => Preinscripcion, (preinscripcion) => preinscripcion.aspirante)
   preinscripciones: Preinscripcion[];
+
+  @OneToMany(() => Matricula, (matricula) => matricula.aspirante)
+  matriculas: Matricula[];
 }

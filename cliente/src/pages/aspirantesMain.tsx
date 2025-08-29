@@ -194,6 +194,7 @@ const handleEstado = async (id: number, nuevoEstado: "en espera" | "confirmado" 
   const handleVer = (id: number) => {
     navigate(`/detAspirante/${id}`, { state: { from: "/aspirantes" } });
   }
+
   // const handleWaiting = (id: number) => {
   //   setAspirantes((prev) => prev.map((asp) => (asp.id === id ? { ...asp, estado: "pendiente" } : asp)))
   // }

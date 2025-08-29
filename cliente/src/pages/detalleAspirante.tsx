@@ -25,7 +25,7 @@ const tabs = [
 export default function DetalleAspirante() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const location = useLocation();
+   const location = useLocation();
 
   const [activeTab, setActiveTab] = useState("datos")
   const [isEditing, setIsEditing] = useState(false)
@@ -221,10 +221,13 @@ export default function DetalleAspirante() {
   return <div className="text-white text-center mt-10">Cargando datos del aspirante...</div>
   }
 
-  const handleBack = () => {
-    navigate(location.state?.from || "/admin");
-  }
 
+
+  const handleBack = () => {
+      // Si existe un "from", vuelve ahí. Si no, vuelve a aspirantes por defecto
+      navigate(location.state?.from || "/admin");
+    }
+  
   const handleSave = async () => {
     const step =
     activeTab === "datos" ? 1 :
