@@ -332,7 +332,7 @@ const handleEstado = async (id: number, nuevoEstado: "en espera" | "confirmado" 
           {/* Aspirantes Table */}
           <Card className="bg-white shadow-xl overflow-hidden">
             <div className="p-4">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">LISTA DE ASPIRANTES</h2>
+              <h2 className="text-xl font-bold text-gray-800 mb-4">LISTA DE ASPIRANTES MATRICULADOS</h2>
 
               <div className="overflow-x-auto">
                 <table className="w-full">
