@@ -7,7 +7,7 @@ import { UpdateCarreraDto } from './dto/update-carrera.dto';
 @Controller('carrera')
 export class CarreraController {
   constructor(private readonly carreraService: CarreraService) {}
-  
+
   @Get()
   async findAll(): Promise<Carrera[]> {
     return this.carreraService.findAll();
@@ -18,7 +18,7 @@ export class CarreraController {
     const carrera = await this.carreraService.findOne(id);
     if (!carrera) throw new NotFoundException(`Carrera con ID ${id} no encontrada`);
     return carrera;
-}
+  }
 
   @Post()
   async create(@Body() data: CreateCarreraDto): Promise<Carrera> {
@@ -38,12 +38,32 @@ export class CarreraController {
     return this.carreraService.remove(id);
   }
 
+  // 🔹 PATCH para actualizar parcialmente (igual que tu anterior)
   @Patch(':id')
   async partialUpdate(
     @Param('id', ParseIntPipe) id: number,
     @Body() data: UpdateCarreraDto,
   ): Promise<Carrera> {
-    // Llama al mismo update del servicio, que ya acepta campos parciales
     return this.carreraService.update(id, data);
-}
+  }
+
+  // 🔹 PATCH para activar/desactivar carrera con validación de aspirantes
+  @Patch(':id/toggle')
+  async toggleCarrera(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('activo') activo: boolean,
+  ): Promise<Carrera> {
+    try {
+      return await this.carreraService.toggleCarrera(id, activo);
+    } catch (error: any) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  // 🔹 GET para contar aspirantes de la carrera
+  @Get(':id/aspirantes/count')
+  async contarAspirantes(@Param('id', ParseIntPipe) id: number) {
+    const count = await this.carreraService.contarAspirantes(id);
+    return { count };
+  }
 }

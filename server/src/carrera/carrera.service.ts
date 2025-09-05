@@ -1,13 +1,18 @@
-import { Injectable, NotFoundException, OnApplicationBootstrap } from '@nestjs/common';
+import { Injectable, NotFoundException, OnApplicationBootstrap, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Carrera } from './carrera.entity';
 import { Repository } from 'typeorm';
+import { Preinscripcion } from '../preinscripcion/preinscripcion.entity';
+
 
 @Injectable()
 export class CarreraService implements OnApplicationBootstrap {
   constructor(
     @InjectRepository(Carrera)
     private carreraRepository: Repository<Carrera>,
+
+     @InjectRepository(Preinscripcion)       
+    private preinscripcionRepository: Repository<Preinscripcion>, 
   ) {}
 
   async onApplicationBootstrap() {
@@ -103,4 +108,36 @@ export class CarreraService implements OnApplicationBootstrap {
       throw new NotFoundException(`Carrera con ID ${id} no encontrada`);
     }
   }
+
+   async contarAspirantes(carreraId: number): Promise<number> {
+  // Traemos todas las preinscripciones de esa carrera
+  const preinscripciones = await this.preinscripcionRepository.find({
+    where: { carrera: { id: carreraId } },
+    relations: ['aspirante', 'carrera'],
+  });
+
+  // Contamos aspirantes únicos
+  const aspirantesUnicos = new Set(preinscripciones.map(p => p.aspirante.id));
+  return aspirantesUnicos.size;
 }
+
+
+
+   async toggleCarrera(id: number, activo: boolean): Promise<Carrera> {
+  const carrera = await this.carreraRepository.findOne({ where: { id } });
+  if (!carrera) throw new NotFoundException('Carrera no encontrada');
+
+  // Intento de desactivar
+  if (activo && carrera.activo) {
+    const count = await this.contarAspirantes(id);
+    if (count > 0) {
+      throw new BadRequestException(
+        'No se puede desactivar la carrera: tiene aspirantes preinscriptos'
+      );
+    }
+  }
+
+  carrera.activo = !activo;
+  return this.carreraRepository.save(carrera);
+}
+};

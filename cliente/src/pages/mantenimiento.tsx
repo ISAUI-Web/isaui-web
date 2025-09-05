@@ -331,21 +331,37 @@ export default function Mantenimiento() {
 
   const handleToggleCarrera = async (id: number, activo: boolean) => {
   try {
-    const response = await fetch(`${API_BASE_URL_CARRERA}/${id}`, {
+    // Solo hacemos check si queremos desactivar
+    if (activo) {
+      const countResponse = await fetch(`${API_BASE_URL_CARRERA}/${id}/aspirantes/count`);
+      if (!countResponse.ok) throw new Error("Error al verificar aspirantes");
+
+      const { count } = await countResponse.json();
+      if (count > 0) {
+        alert("No se puede desactivar: la carrera tiene aspirantes preinscriptos");
+        return;
+      }
+    }
+
+    // Ahora sí hacemos el toggle usando el endpoint actualizado
+    const response = await fetch(`${API_BASE_URL_CARRERA}/${id}/toggle`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ activo: !activo }),
+      body: JSON.stringify({ activo }),
     });
 
-    if (!response.ok) throw new Error("Error al cambiar estado de la carrera");
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.message || "Error al cambiar estado de la carrera");
+    }
 
     const actualizada = mapCarreraFromApi(await response.json());
     setCarreras(carreras.map((c) => (c.id === id ? actualizada : c)));
 
-    alert(`Carrera ${!activo ? "activada" : "desactivada"} correctamente`);
-  } catch (error) {
+    alert(`Carrera ${activo ? "desactivada" : "activada"} correctamente`);
+  } catch (error: any) {
     console.error("Error:", error);
-    alert("Error al cambiar estado de la carrera");
+    alert(error.message);
   }
 };
 
