@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "../components/ui/card"
+import { Progress } from "../components/ui/progress"
 import {
   Menu,
   X,
@@ -13,17 +14,52 @@ import {
   FolderOpen,
   FileText,
   LogOut,
-  ChevronLeft,
-  ChevronRight,
-  ChevronDown,
   Settings,
-  Construction,
+  TrendingUp,
   AlertTriangle,
+  XCircle,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react"
-import logo from "../assets/logo.png"
-import logo2 from "../assets/logo2.png"
 import { useNavigate } from "react-router-dom"
 
+// Asegúrate de que las rutas sean correctas según tu estructura de archivos
+import logo from "../assets/logo.png"
+import logo2 from "../assets/logo2.png"
+
+// Datos de ejemplo para cupos de carreras (simplificado)
+const cuposData = [
+  {
+    id: 1,
+    nombre: "DESARROLLO DE SOFTWARE",
+    cupoMaximo: 30,
+    cupoOcupado: 25,
+  },
+  {
+    id: 2,
+    nombre: "ADMINISTRACIÓN",
+    cupoMaximo: 25,
+    cupoOcupado: 18,
+  },
+  {
+    id: 3,
+    nombre: "ENFERMERÍA",
+    cupoMaximo: 20,
+    cupoOcupado: 20,
+  },
+  {
+    id: 4,
+    nombre: "CONTABILIDAD",
+    cupoMaximo: 15,
+    cupoOcupado: 8,
+  },
+  {
+    id: 5,
+    nombre: "TÉCNICO EN TURISMO",
+    cupoMaximo: 20,
+    cupoOcupado: 12,
+  },
+]
 
 type MenuItem = {
   icon: React.ElementType;
@@ -50,63 +86,116 @@ const menuItems: MenuItem[] = [
 ]
 
 export default function Cupos() {
+
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [currentImageIndex, setCurrentImageIndex] = useState(0)
-  const [activeSection, setActiveSection] = useState("inicio")
+  const [activeSection, setActiveSection] = useState("cupos")
+  const [expandedSubmenu, setExpandedSubmenu] = useState<string | null>(null)
+  const [cupos, setCupos] = useState(cuposData)
+  const [isLoading, setIsLoading] = useState(true)
   const navigate = useNavigate()
-  
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen)
-  }
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminRemember")
-    localStorage.removeItem("adminUser")
-    alert("¡Sesión cerrada exitosamente!")
-    navigate("/login")
-  }
+  // Cargar datos de cupos desde la API
+  useEffect(() => {
+    const fetchCuposData = async () => {
+      try {
+        setIsLoading(true)
 
+        // Aquí conectarías con tu API de NestJS
+        const response = await fetch("/api/cupos")
 
-const [expandedSubmenu, setExpandedSubmenu] = useState<string | null>(null);
+        if (!response.ok) {
+          throw new Error("Error al cargar los datos de cupos")
+        }
 
-const handleMenuItemClick = (itemId: string) => {
-  setActiveSection(itemId);
+        const data = await response.json()
+        setCupos(data)
 
-  // Handle submenu toggle for "aspirantes"
-  if (itemId === "aspirantes") {
-    setExpandedSubmenu(expandedSubmenu === "aspirantes" ? null : "aspirantes");
-    return;
-  }
-
-  // Handle navigation for submenu items
-  if (itemId === "aspirantes-preinscripcion") {
-    navigate("/aspirantes");
-  } else if (itemId === "aspirantes-matriculacion") {
-    navigate("/matriculacion");
-  } else {
-    switch (itemId) {
-      case "inicio":
-        navigate("/admin");
-        break;
-      case "cupos":
-        navigate("/cupos");
-        break;
-      case "legajo":
-        navigate("/legajo");
-        break;
-      case "reportes":
-        navigate("/reportes");
-        break;
-      case "mantenimiento":
-        navigate("/mantenimiento");
-        break;
-      default:
-        navigate("/admin");
+        console.log("Datos de cupos cargados:", data)
+      } catch (error) {
+        console.error("Error al cargar cupos:", error)
+        // Usar datos de ejemplo como fallback
+        setCupos(cuposData)
+      } finally {
+        setIsLoading(false)
+      }
     }
+
+    fetchCuposData()
+  }, [])
+
+  const toggleMenu = () => {
+      setIsMenuOpen(!isMenuOpen)
+    }
+  
+    const handleLogout = () => {
+      localStorage.removeItem("adminRemember")
+      localStorage.removeItem("adminUser")
+      alert("¡Sesión cerrada exitosamente!")
+      navigate("/login")
+    }
+  
+
+  const handleMenuItemClick = (itemId: string) => {
+    setActiveSection(itemId);
+  
+    // Handle submenu toggle for "aspirantes"
+    if (itemId === "aspirantes") {
+      setExpandedSubmenu(expandedSubmenu === "aspirantes" ? null : "aspirantes");
+      return;
+    }
+  
+    // Handle navigation for submenu items
+    if (itemId === "aspirantes-preinscripcion") {
+      navigate("/aspirantes");
+    } else if (itemId === "aspirantes-matriculacion") {
+      navigate("/matriculacion");
+    } else {
+      switch (itemId) {
+        case "inicio":
+          navigate("/admin");
+          break;
+        case "cupos":
+          navigate("/cupos");
+          break;
+        case "legajo":
+          navigate("/legajo");
+          break;
+        case "reportes":
+          navigate("/reportes");
+          break;
+        case "mantenimiento":
+          navigate("/mantenimiento");
+          break;
+        default:
+          navigate("/admin");
+      }
+    }
+  
+    setIsMenuOpen(false);
   }
 
-  setIsMenuOpen(false);
-}
+  // Calcular estadísticas generales
+  const totalCupoMaximo = cupos.reduce((sum, carrera) => sum + carrera.cupoMaximo, 0)
+  const totalCupoOcupado = cupos.reduce((sum, carrera) => sum + carrera.cupoOcupado, 0)
+  const totalDisponibles = totalCupoMaximo - totalCupoOcupado
+  const porcentajeOcupacion = (totalCupoOcupado / totalCupoMaximo) * 100
+
+  const getStatusColor = (ocupado: number, maximo: number) => {
+    const porcentaje = (ocupado / maximo) * 100
+    if (porcentaje >= 100) return "text-red-600 bg-red-50"
+    if (porcentaje >= 80) return "text-orange-600 bg-orange-50"
+    if (porcentaje >= 60) return "text-yellow-600 bg-yellow-50"
+    return "text-green-600 bg-green-50"
+  }
+
+  const getProgressColor = (ocupado: number, maximo: number) => {
+    const porcentaje = (ocupado / maximo) * 100
+    if (porcentaje >= 100) return "bg-red-500"
+    if (porcentaje >= 80) return "bg-orange-500"
+    if (porcentaje >= 60) return "bg-yellow-500"
+    return "bg-green-500"
+  }
+
   return (
     <div className="min-h-screen bg-[#1F6680] from-teal-600 to-teal-800 relative">
       {/* Header */}
@@ -165,7 +254,7 @@ const handleMenuItemClick = (itemId: string) => {
                     </span>
                   )}
                 </button>
-                {/* Submenu */}
+                {/* Submenu - Submenu items */}
                 {item.submenu && expandedSubmenu === item.id && (
                   <div className="bg-[#1A5A75] ml-4">
                     {item.submenu.map((subItem) => (
@@ -200,39 +289,149 @@ const handleMenuItemClick = (itemId: string) => {
 
       {/* Main Content */}
       <main className="p-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           {/* Page Title */}
           <div className="mb-8 text-center">
-            <h2 className="text-white text-3xl font-bold mb-4">Gestión de Cupos</h2>
+            <h2 className="text-white text-3xl font-bold mb-4">Gestión de Cupos por Carrera</h2>
+            <p className="text-white/80 text-lg">Control de ocupación y disponibilidad de cupos</p>
           </div>
 
-          {/* Under Construction Card */}
-          <Card className="bg-white shadow-xl overflow-hidden">
-            <div className="p-12 text-center">
-              {/* Construction Icon */}
-              <div className="flex justify-center mb-6">
-                <div className="relative">
-                  <Construction className="w-24 h-24 text-orange-500" />
-                  <div className="absolute -top-2 -right-2">
-                    <AlertTriangle className="w-8 h-8 text-yellow-500" />
-                  </div>
+          {/* Estadísticas Generales */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <Card className="bg-white shadow-xl p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 text-sm font-medium">Total Cupos</p>
+                  <p className="text-3xl font-bold text-gray-900">{totalCupoMaximo}</p>
+                </div>
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <BarChart3 className="w-6 h-6 text-blue-600" />
                 </div>
               </div>
+            </Card>
 
-              {/* Title */}
-              <h3 className="text-3xl font-bold text-gray-800 mb-4">Vista en Desarrollo</h3>
-
-              {/* Description */}
-              <div className="max-w-2xl mx-auto mb-8">
-                <p className="text-gray-600 text-lg mb-4">
-                  La sección de <strong>Cupos</strong> está actualmente en proceso de desarrollo.
-                </p>
-                <p className="text-gray-500 text-base">
-                  Nuestro equipo está trabajando para implementar todas las funcionalidades necesarias para la gestión
-                  de cupos.
-                </p>
+            <Card className="bg-white shadow-xl p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 text-sm font-medium">Cupos Ocupados</p>
+                  <p className="text-3xl font-bold text-orange-600">{totalCupoOcupado}</p>
+                </div>
+                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-orange-600" />
+                </div>
               </div>
+            </Card>
 
+            <Card className="bg-white shadow-xl p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 text-sm font-medium">Cupos Disponibles</p>
+                  <p className="text-3xl font-bold text-green-600">{totalDisponibles}</p>
+                </div>
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                  <Users className="w-6 h-6 text-green-600" />
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Barra de Progreso General */}
+          <Card className="bg-white shadow-xl p-6 mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-800">Ocupación General</h3>
+              <span className="text-2xl font-bold text-gray-900">{porcentajeOcupacion.toFixed(1)}%</span>
+            </div>
+            <Progress value={porcentajeOcupacion} className="h-4 mb-2" />
+            <div className="flex justify-between text-sm text-gray-600">
+              <span>{totalCupoOcupado} ocupados</span>
+              <span>{totalDisponibles} disponibles</span>
+            </div>
+          </Card>
+
+          {/* Lista de Carreras */}
+          <Card className="bg-white shadow-xl overflow-hidden">
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-gray-800 mb-6">Cupos por Carrera</h3>
+
+              <div className="space-y-6">
+                {cupos.map((carrera) => {
+                  const porcentajeCarrera = (carrera.cupoOcupado / carrera.cupoMaximo) * 100
+                  const cupoDisponible = carrera.cupoMaximo - carrera.cupoOcupado
+
+                  return (
+                    <div key={carrera.id} className="border border-gray-200 rounded-lg p-6">
+                      {/* Header de la carrera */}
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-lg font-bold text-gray-900">{carrera.nombre}</h4>
+                        <div
+                          className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
+                            carrera.cupoOcupado,
+                            carrera.cupoMaximo,
+                          )}`}
+                        >
+                          {porcentajeCarrera >= 100
+                            ? "COMPLETO"
+                            : porcentajeCarrera >= 80
+                              ? "CASI LLENO"
+                              : "DISPONIBLE"}
+                        </div>
+                      </div>
+
+                      {/* Estadísticas de la carrera */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-blue-600">{carrera.cupoMaximo}</p>
+                          <p className="text-sm text-gray-600">Cupo Total</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-orange-600">{carrera.cupoOcupado}</p>
+                          <p className="text-sm text-gray-600">Ocupados</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-green-600">{cupoDisponible}</p>
+                          <p className="text-sm text-gray-600">Disponibles</p>
+                        </div>
+                      </div>
+
+                      {/* Barra de progreso */}
+                      <div className="mb-4">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm font-medium text-gray-700">Ocupación</span>
+                          <span className="text-sm font-bold text-gray-900">{porcentajeCarrera.toFixed(1)}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-3">
+                          <div
+                            className={`h-3 rounded-full transition-all duration-300 ${getProgressColor(
+                              carrera.cupoOcupado,
+                              carrera.cupoMaximo,
+                            )}`}
+                            style={{ width: `${Math.min(porcentajeCarrera, 100)}%` }}
+                          ></div>
+                        </div>
+                      </div>
+
+                      {/* Alertas */}
+                      {porcentajeCarrera >= 100 && (
+                        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                          <XCircle className="w-5 h-5 text-red-600" />
+                          <span className="text-red-800 text-sm font-medium">
+                            Cupo completo 
+                          </span>
+                        </div>
+                      )}
+
+                      {porcentajeCarrera >= 80 && porcentajeCarrera < 100 && (
+                        <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                          <AlertTriangle className="w-5 h-5 text-orange-600" />
+                          <span className="text-orange-800 text-sm font-medium">
+                            Cupo casi completo - Quedan {cupoDisponible} lugares disponibles
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           </Card>
         </div>
