@@ -31,6 +31,7 @@ export class AspiranteController {
       [
         { name: 'dniFrente', maxCount: 1 },
         { name: 'dniDorso', maxCount: 1 },
+        { name: 'cus', maxCount: 1 },
       ],
       {
         storage: diskStorage({
@@ -74,6 +75,7 @@ export class AspiranteController {
     files: {
       dniFrente?: Express.Multer.File[];
       dniDorso?: Express.Multer.File[];
+      cus?: Express.Multer.File[];
     },
   ) {
     try {
@@ -164,6 +166,7 @@ export class AspiranteController {
       [
         { name: 'dniFrente', maxCount: 1 },
         { name: 'dniDorso', maxCount: 1 },
+        { name: 'cus', maxCount: 1 },
       ],
       {
         storage: diskStorage({
@@ -208,6 +211,7 @@ export class AspiranteController {
     files?: {
       dniFrente?: Express.Multer.File[];
       dniDorso?: Express.Multer.File[];
+      cus?: Express.Multer.File[];
     },
   ) {
     const updated = await this.aspiranteService.update(

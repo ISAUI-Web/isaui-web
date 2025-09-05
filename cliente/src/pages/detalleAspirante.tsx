@@ -35,12 +35,14 @@ export default function DetalleAspirante() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const dniFrenteInputRef = useRef<HTMLInputElement>(null)
   const dniDorsoInputRef = useRef<HTMLInputElement>(null)
-  const [isUploadingImage, setIsUploadingImage] = useState<"dniFrente" | "dniDorso" | null>(null)
+  const cusInputRef = useRef<HTMLInputElement>(null)
+  const [isUploadingImage, setIsUploadingImage] = useState<"dniFrente" | "dniDorso" | "cus" | null>(null)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   
   // Estado para manejar los archivos seleccionados para subir
   const [dniFrenteFile, setDniFrenteFile] = useState<File | null>(null);
   const [dniDorsoFile, setDniDorsoFile] = useState<File | null>(null);
+  const [cusFile, setCusFile] = useState<File | null>(null);
 
   //  VALIDACIÓN UNIFICADA
   // Esta función centraliza toda la lógica de validación, eliminando la duplicación
@@ -256,8 +258,12 @@ export default function DetalleAspirante() {
     // 'documentos' es un objeto contenedor en el frontend.
     // Las claves de URL/nombre de documentos son enviadas por el backend para visualización,
     // pero no deben ser reenviadas en el body del PUT, ya que el DTO del backend no las espera.
-    const excludedKeys = ['id', 'documentos', 'carrera', 'dniFrenteUrl', 'dniDorsoUrl', 'dniFrenteNombre', 'dniDorsoNombre'];
-
+    const excludedKeys = [
+    'id', 'documentos', 'carrera',
+    'dniFrenteUrl', 'dniDorsoUrl', 'dniFrenteNombre', 'dniDorsoNombre',
+    'cusUrl', 'isaUrl', 'partida_nacimientoUrl', 'analiticoUrl',
+    'grupo_sanguineoUrl', 'cudUrl', 'emmacUrl', 'foto_carnetUrl'
+    ];
     if (!excludedKeys.includes(key) && formData[key] !== null) {
       // Aseguramos que los valores booleanos se envíen como strings 'true' o 'false',
       // que es como el backend los espera (gracias a los transformadores del DTO).
@@ -272,6 +278,9 @@ export default function DetalleAspirante() {
   }
   if (dniDorsoFile) {
     data.append('dniDorso', dniDorsoFile);
+  }
+  if (cusFile) {
+    data.append("cus", cusFile);
   }
 
   try {
@@ -318,36 +327,53 @@ export default function DetalleAspirante() {
     }
   }
 
-  const handleFileInputChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-    documentType: "dniFrente" | "dniDorso",
-  ) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      // Guardamos el archivo en el estado correspondiente
-      if (documentType === 'dniFrente') {
-        setDniFrenteFile(file);
-      } else {
-        setDniDorsoFile(file);
-      }
-      // Mostramos una vista previa local de la imagen seleccionada
-      const previewUrl = URL.createObjectURL(file);
-      const urlKey = documentType === 'dniFrente' ? 'dniFrenteUrl' : 'dniDorsoUrl';
-      const nameKey = documentType === 'dniFrente' ? 'dniFrenteNombre' : 'dniDorsoNombre';
+  // Tipo para documentos editables
+type DocumentoEditable = "dniFrente" | "dniDorso" | "cus";
 
-      setFormData((prev: any) => ({
-        ...prev,
-        documentos: { ...prev.documentos, [urlKey]: previewUrl, [nameKey]: file.name },
-      }));
+const handleFileInputChange = (
+  event: React.ChangeEvent<HTMLInputElement>,
+  documentType: DocumentoEditable
+) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  // Guardamos el archivo en el estado correspondiente
+  if (documentType === "dniFrente") setDniFrenteFile(file);
+  else if (documentType === "dniDorso") setDniDorsoFile(file);
+  else if (documentType === "cus") setCusFile(file);
+
+  // Preparamos las keys para formData y preview
+  const urlKey = documentType === "dniFrente"
+    ? "dniFrenteUrl"
+    : documentType === "dniDorso"
+      ? "dniDorsoUrl"
+      : "cusUrl";
+
+  const nameKey = documentType === "dniFrente"
+    ? "dniFrenteNombre"
+    : documentType === "dniDorso"
+      ? "dniDorsoNombre"
+      : "cusNombre";
+
+  // Actualizamos el estado del formulario con preview
+  setFormData((prev: typeof formData) => ({
+    ...prev,
+    documentos: {
+      ...prev.documentos,
+      [urlKey]: URL.createObjectURL(file),
+      [nameKey]: file.name
     }
-  }
+  }));
+};
 
-  const triggerFileInput = (documentType: "dniFrente" | "dniDorso") => {
+  const triggerFileInput = (documentType: "dniFrente" | "dniDorso" | "cus") => {
     if (documentType === "dniFrente") {
       dniFrenteInputRef.current?.click()
-    } else {
-      dniDorsoInputRef.current?.click()
-    }
+    } else if (documentType === "dniDorso") {
+    dniDorsoInputRef.current?.click()
+  } else if (documentType === "cus") {
+    cusInputRef.current?.click()
+  }
   }
 
   const handleInputChange = (field: string, value: string) => {
@@ -882,6 +908,13 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
               onChange={(e) => handleFileInputChange(e, "dniDorso")}
               className="hidden"
             />
+            <input
+              ref={cusInputRef}
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleFileInputChange(e, "cus")}
+              className="hidden"
+            />
             <div className={`grid grid-cols-1 md:grid-cols-2 gap-6`}>
               {/* DNI Frente */}
               <div className="space-y-3">
@@ -1093,55 +1126,81 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       {formData.documentos.cusUrl.split('/').pop()}
                     </p>
                   )}
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => window.open(abs(formData.documentos.cusUrl), "_blank")}
-                      variant="outline"
-                      className="flex-1 text-sm"
-                      disabled={!formData.documentos?.cusUrl}
-                    >
-                      <Eye className="w-4 h-4 mr-2" />
-                      Ver
-                    </Button>
-                  </div>
+
             </div>
-                {/* FOTO CARNET */}
-                <div className="space-y-3">
-              <h4 className="text-md font-medium text-gray-700">Foto carnet 4x4</h4>
-                  <div className="relative group">
-                    {formData.documentos?.foto_carnetUrl ? (
-                      <img
-                        src={abs(formData.documentos.foto_carnetUrl)}
-                        alt="Foto Carnet"
-                        className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                        onClick={() => handleViewImage(abs(formData.documentos.foto_carnetUrl))}
-                      />
-                    ) : (
-                      <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
-                        <div className="text-center text-gray-500">
-                          <Camera className="w-8 h-8 mx-auto mb-2" />
-                          <p className="text-sm">No hay imagen disponible</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  {formData.documentos?.foto_carnetUrl && (
-                    <p className="text-sm text-gray-700 truncate mt-1">
-                      {formData.documentos.foto_carnetUrl.split('/').pop()}
-                    </p>
-                  )}
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => window.open(abs(formData.documentos.foto_carnetUrl), "_blank")}
-                      variant="outline"
-                      className="flex-1 text-sm"
-                      disabled={!formData.documentos?.foto_carnetUrl}
-                    >
-                      <Eye className="w-4 h-4 mr-2" />
-                      Ver
-                    </Button>
-                  </div>
-            </div>
+                {/* CUS */}
+<div className="space-y-3">
+  <h4 className="text-md font-medium text-gray-700">CUS</h4>
+  <div className="relative group">
+    {formData.documentos?.cusUrl ? (
+      <img
+        src={abs(formData.documentos.cusUrl) || '/placeholder.svg'}
+        alt="CUS"
+        className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+        onClick={() => !isEditing && formData.documentos?.cusUrl && handleViewImage(abs(formData.documentos.cusUrl))}
+      />
+    ) : (
+      <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+        <div className="text-center text-gray-500">
+          <Camera className="w-8 h-8 mx-auto mb-2" />
+          <p className="text-sm">No hay imagen disponible</p>
+        </div>
+      </div>
+    )}
+
+    {/* Overlay para modo edición */}
+    {isEditing && (
+      <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center">
+        <Button
+          onClick={() => triggerFileInput("cus")}
+          disabled={isUploadingImage === "cus"}
+          className="bg-white/90 hover:bg-white text-gray-800 px-4 py-2 rounded-lg flex items-center gap-2"
+        >
+          {isUploadingImage === "cus" ? (
+            <>
+              <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
+              Subiendo...
+            </>
+          ) : (
+            <>
+              <Upload className="w-4 h-4" />
+              {formData.documentos?.cusUrl ? "Cambiar imagen" : "Subir imagen"}
+            </>
+          )}
+        </Button>
+      </div>
+    )}
+  </div>
+
+  {/* Nombre del archivo */}
+  {formData.documentos?.cusUrl && (
+    <p className="text-sm text-gray-700 truncate mt-1">
+      {formData.documentos.cusUrl.split('/').pop()}
+    </p>
+  )}
+
+  {/* Botón ver */}
+  <div className="flex gap-2">
+    <Button
+      onClick={() => window.open(abs(formData.documentos.cusUrl), "_blank")}
+      variant="outline"
+      className="flex-1 text-sm"
+      disabled={!formData.documentos?.cusUrl}
+    >
+      <Eye className="w-4 h-4 mr-2" />
+      Ver
+    </Button>
+  </div>
+
+  {/* Input oculto */}
+  <input
+    type="file"
+    ref={cusInputRef}
+    accept="image/*"
+    onChange={(e) => handleFileInputChange(e, "cus")}
+    className="hidden"
+  />
+</div>
                 {/* ISA */}
                 <div className="space-y-3">
               <h4 className="text-md font-medium text-gray-700">ISA</h4>
