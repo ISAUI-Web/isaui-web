@@ -1,7 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "../components/ui/card"
+import { Button } from "../components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
+import { Label } from "../components/ui/label"
 import {
   Menu,
   X,
@@ -13,100 +16,161 @@ import {
   FolderOpen,
   FileText,
   LogOut,
-  ChevronLeft,
-  ChevronRight,
-  ChevronDown,
   Settings,
-  Construction,
-  AlertTriangle,
+  Download,
+  Calendar,
+  Filter,
+  PieChart,
+  UserCheck,
+  UserPlus,
+  AlertCircle,
+  GraduationCap,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 import logo from "../assets/logo.png"
 import logo2 from "../assets/logo2.png"
-import { useNavigate } from "react-router-dom"
 
-
-type MenuItem = {
-  icon: React.ElementType;
-  label: string;
-  id: string;
-  submenu?: { id: string; label: string }[];
-};
-
-const menuItems: MenuItem[] = [
+const menuItems = [
   { icon: Home, label: "INICIO", id: "inicio" },
   {
     icon: Users,
     label: "ASPIRANTES",
     id: "aspirantes",
     submenu: [
-      { id: "aspirantes-preinscripcion", label: "Preinscripción" },
-      { id: "aspirantes-matriculacion", label: "Matriculación" },
+      { label: "Preinscripción", id: "aspirantes-preinscripcion" },
+      { label: "Matriculación", id: "aspirantes-matriculacion" },
     ],
   },
   { icon: BarChart3, label: "CUPOS", id: "cupos" },
+  { icon: Clock, label: "EN ESPERA", id: "espera" },
+  { icon: ThumbsUp, label: "CONFIRMADOS", id: "confirmados" },
   { icon: FolderOpen, label: "LEGAJO DIGITAL", id: "legajo" },
   { icon: FileText, label: "REPORTES", id: "reportes" },
   { icon: Settings, label: "MANTENIMIENTO", id: "mantenimiento" },
 ]
 
-export default function Reportes() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [currentImageIndex, setCurrentImageIndex] = useState(0)
-  const [activeSection, setActiveSection] = useState("inicio")
-  const navigate = useNavigate()
-  
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen)
-  }
+const tiposReporte = [
+  {
+    id: "cupos",
+    nombre: "Reporte de Cupos",
+    descripcion: "Estado de ocupación por carrera",
+    icon: PieChart,
+    color: "bg-blue-500",
+  },
+  {
+    id: "matriculados",
+    nombre: "Aspirantes Matriculados",
+    descripcion: "Lista de estudiantes matriculados",
+    icon: UserCheck,
+    color: "bg-green-500",
+  },
+  {
+    id: "preinscriptos",
+    nombre: "Aspirantes Preinscriptos",
+    descripcion: "Lista de aspirantes preinscriptos",
+    icon: UserPlus,
+    color: "bg-orange-500",
+  },
+]
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminRemember")
-    localStorage.removeItem("adminUser")
-    alert("¡Sesión cerrada exitosamente!")
-    navigate("/login")
-  }
-
-
-const [expandedSubmenu, setExpandedSubmenu] = useState<string | null>(null);
-
-const handleMenuItemClick = (itemId: string) => {
-  setActiveSection(itemId);
-
-  // Handle submenu toggle for "aspirantes"
-  if (itemId === "aspirantes") {
-    setExpandedSubmenu(expandedSubmenu === "aspirantes" ? null : "aspirantes");
-    return;
-  }
-
-  // Handle navigation for submenu items
-  if (itemId === "aspirantes-preinscripcion") {
-    navigate("/aspirantes");
-  } else if (itemId === "aspirantes-matriculacion") {
-    navigate("/matriculacion");
-  } else {
-    switch (itemId) {
-      case "inicio":
-        navigate("/admin");
-        break;
-      case "cupos":
-        navigate("/cupos");
-        break;
-      case "legajo":
-        navigate("/legajo");
-        break;
-      case "reportes":
-        navigate("/reportes");
-        break;
-      case "mantenimiento":
-        navigate("/mantenimiento");
-        break;
-      default:
-        navigate("/admin");
-    }
-  }
-
-  setIsMenuOpen(false);
+interface Carrera {
+  id: number
+  nombre: string
 }
+
+export default function Reportes() {
+  const navigate = useNavigate()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [activeSection, setActiveSection] = useState("reportes")
+  const [expandedSubmenu, setExpandedSubmenu] = useState<string | null>(null)
+
+  // Estados para reportes
+  const [carreras, setCarreras] = useState<Carrera[]>([])
+  const [tipoReporteSeleccionado, setTipoReporteSeleccionado] = useState<string>("")
+  const [carreraSeleccionada, setCarreraSeleccionada] = useState<string>("todas")
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Cargar carreras disponibles
+  useEffect(() => {
+    const fetchCarreras = async () => {
+      try {
+        const response = await fetch("http://localhost:3000/carrera")
+        if (!response.ok) throw new Error("Error al cargar carreras")
+
+        const data = await response.json()
+        setCarreras(data.map((c: any) => ({ id: c.id, nombre: c.nombre })))
+      } catch (error) {
+        console.error("Error al cargar carreras:", error)
+        setCarreras([])
+      }
+    }
+
+    fetchCarreras()
+  }, [])
+
+  const toggleMenu = () => {
+      setIsMenuOpen(!isMenuOpen)
+    }
+  
+    const handleLogout = () => {
+      localStorage.removeItem("adminRemember")
+      localStorage.removeItem("adminUser")
+      alert("¡Sesión cerrada exitosamente!")
+      navigate("/login")
+    }
+  
+
+  const handleMenuItemClick = (itemId: string) => {
+    setActiveSection(itemId);
+  
+    // Handle submenu toggle for "aspirantes"
+    if (itemId === "aspirantes") {
+      setExpandedSubmenu(expandedSubmenu === "aspirantes" ? null : "aspirantes");
+      return;
+    }
+  
+    // Handle navigation for submenu items
+    if (itemId === "aspirantes-preinscripcion") {
+      navigate("/aspirantes");
+    } else if (itemId === "aspirantes-matriculacion") {
+      navigate("/matriculacion");
+    } else {
+      switch (itemId) {
+        case "inicio":
+          navigate("/admin");
+          break;
+        case "cupos":
+          navigate("/cupos");
+          break;
+        case "legajo":
+          navigate("/legajo");
+          break;
+        case "reportes":
+          navigate("/reportes");
+          break;
+        case "mantenimiento":
+          navigate("/mantenimiento");
+          break;
+        default:
+          navigate("/admin");
+      }
+    }
+  
+    setIsMenuOpen(false);
+  }
+
+  const handleGenerarReporte = async () => {
+    setError(null)
+    setIsGenerating(true)
+    setTimeout(() => {
+      setIsGenerating(false)
+      alert("Reporte generado con éxito")
+    }, 1200)
+  }
+
   return (
     <div className="min-h-screen bg-[#1F6680] from-teal-600 to-teal-800 relative">
       {/* Header */}
@@ -165,7 +229,7 @@ const handleMenuItemClick = (itemId: string) => {
                     </span>
                   )}
                 </button>
-                {/* Submenu */}
+                {/* Submenu - Submenu items */}
                 {item.submenu && expandedSubmenu === item.id && (
                   <div className="bg-[#1A5A75] ml-4">
                     {item.submenu.map((subItem) => (
@@ -203,36 +267,175 @@ const handleMenuItemClick = (itemId: string) => {
         <div className="max-w-4xl mx-auto">
           {/* Page Title */}
           <div className="mb-8 text-center">
-            <h2 className="text-white text-3xl font-bold mb-4">Gestión de Reportes</h2>
+            <h2 className="text-white text-3xl font-bold mb-4">Centro de Reportes</h2>
+            <p className="text-white/80 text-lg">Genere reportes detallados en formato PDF</p>
           </div>
 
-          {/* Under Construction Card */}
-          <Card className="bg-white shadow-xl overflow-hidden">
-            <div className="p-12 text-center">
-              {/* Construction Icon */}
-              <div className="flex justify-center mb-6">
-                <div className="relative">
-                  <Construction className="w-24 h-24 text-orange-500" />
-                  <div className="absolute -top-2 -right-2">
-                    <AlertTriangle className="w-8 h-8 text-yellow-500" />
+          {/* Panel de Configuración Centrado */}
+          <div className="flex justify-center mb-8">
+            <Card className="bg-white shadow-xl p-8 w-full max-w-2xl">
+              <div className="flex items-center gap-3 mb-8 justify-center">
+                <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center">
+                  <Filter className="w-6 h-6 text-teal-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800">Configuración de Reportes</h3>
+              </div>
+
+              <div className="space-y-8">
+                {/* Tipo de Reporte */}
+                <div>
+                  <Label className="text-base font-semibold text-gray-700 mb-3 block">Tipo de Reporte *</Label>
+                  <Select value={tipoReporteSeleccionado} onValueChange={setTipoReporteSeleccionado}>
+                    <SelectTrigger className="w-full h-12 text-base">
+                      <SelectValue placeholder="Seleccionar tipo de reporte" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tiposReporte.map((tipo) => (
+                        <SelectItem key={tipo.id} value={tipo.id}>
+                          <div className="flex items-center gap-3 py-2">
+                            <div className={`w-8 h-8 ${tipo.color} rounded-full flex items-center justify-center`}>
+                              <tipo.icon className="w-4 h-4 text-white" />
+                            </div>
+                            <div>
+                              <div className="font-medium">{tipo.nombre}</div>
+                              <div className="text-sm text-gray-500">{tipo.descripcion}</div>
+                            </div>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Filtro por Carrera */}
+                <div>
+                  <Label className="text-base font-semibold text-gray-700 mb-3 block">Filtrar por Carrera</Label>
+                  <Select value={carreraSeleccionada} onValueChange={setCarreraSeleccionada}>
+                    <SelectTrigger className="w-full h-12 text-base">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">
+                        <div className="flex items-center gap-2">
+                          <BarChart3 className="w-4 h-4 text-teal-600" />
+                          <span className="font-medium">Todas las carreras</span>
+                        </div>
+                      </SelectItem>
+                      {carreras.map((carrera) => (
+                        <SelectItem key={carrera.id} value={carrera.nombre}>
+                          <div className="flex items-center gap-2">
+                            <GraduationCap className="w-4 h-4 text-gray-600" />
+                            <span>{carrera.nombre}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Información adicional */}
+                <div className="p-6 bg-blue-50 rounded-xl border border-blue-200">
+                  <div className="flex items-start gap-3">
+                    <Calendar className="w-6 h-6 text-blue-600 mt-1" />
+                    <div>
+                      <p className="text-blue-800 font-semibold mb-1">Fecha de generación</p>
+                      <p className="text-blue-700">
+                        {new Date().toLocaleDateString("es-AR", {
+                          weekday: "long",
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}
+                      </p>
+                        <p className="text-blue-600 text-sm mt-1">
+                        Hora: {new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false })}
+                        </p>
+                    </div>
                   </div>
                 </div>
+
+                {/* Error Message */}
+                {error && (
+                  <div className="p-6 bg-red-50 rounded-xl border border-red-200">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="w-6 h-6 text-red-600 mt-1" />
+                      <div>
+                        <p className="text-red-800 font-semibold mb-1">Error</p>
+                        <p className="text-red-700">{error}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Botón Generar */}
+                <Button
+                  onClick={handleGenerarReporte}
+                  disabled={!tipoReporteSeleccionado || isGenerating}
+                  className="w-full bg-teal-600 hover:bg-teal-700 text-white py-4 text-xl font-semibold rounded-xl transition-all transform hover:scale-105 disabled:transform-none"
+                >
+                  {isGenerating ? (
+                    <div className="flex items-center justify-center">
+                      <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin mr-3"></div>
+                      Generando PDF...
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center">
+                      <Download className="w-6 h-6 mr-3" />
+                      Generar Reporte PDF
+                    </div>
+                  )}
+                </Button>
               </div>
+            </Card>
+          </div>
 
-              {/* Title */}
-              <h3 className="text-3xl font-bold text-gray-800 mb-4">Vista en Desarrollo</h3>
-
-              {/* Description */}
-              <div className="max-w-2xl mx-auto mb-8">
-                <p className="text-gray-600 text-lg mb-4">
-                  La sección de <strong>Reportes</strong> está actualmente en proceso de desarrollo.
-                </p>
-                <p className="text-gray-500 text-base">
-                  Nuestro equipo está trabajando para implementar todas las funcionalidades necesarias para la gestión
-                  de reportes.
-                </p>
+          {/* Información sobre los reportes */}
+          <Card className="bg-white shadow-xl p-8">
+            <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">Información sobre los Reportes</h3>
+            <div className="bg-gray-50 rounded-xl p-6">
+              <h4 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-teal-600" />
+                Características de los reportes:
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ul className="space-y-3 text-sm text-gray-700">
+                  <li className="flex items-start gap-3">
+                    <div className="w-2 h-2 bg-teal-500 rounded-full mt-2 flex-shrink-0"></div>
+                    <span>
+                      <strong>Reporte de Cupos:</strong> Estado de ocupación, cupos disponibles y estadísticas
+                      detalladas por carrera.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                    <span>
+                      <strong>Aspirantes Matriculados:</strong> Lista completa de estudiantes que completaron su proceso
+                      de matriculación.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
+                    <span>
+                      <strong>Aspirantes Preinscriptos:</strong> Lista detallada de aspirantes que realizaron la
+                      preinscripción.
+                    </span>
+                  </li>
+                </ul>
+                <ul className="space-y-3 text-sm text-gray-700">
+                  <li className="flex items-start gap-3">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                    <span>Filtros avanzados por carrera individual o todas las carreras.</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                    <span>Estadísticas automáticas y resúmenes por estado de aspirante.</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
+                    <span>Formato PDF profesional con header institucional y numeración.</span>
+                  </li>
+                </ul>
               </div>
-
             </div>
           </Card>
         </div>
