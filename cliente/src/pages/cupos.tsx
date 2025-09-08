@@ -27,40 +27,6 @@ import { useNavigate } from "react-router-dom"
 import logo from "../assets/logo.png"
 import logo2 from "../assets/logo2.png"
 
-// Datos de ejemplo para cupos de carreras (simplificado)
-const cuposData = [
-  {
-    id: 1,
-    nombre: "DESARROLLO DE SOFTWARE",
-    cupoMaximo: 30,
-    cupoOcupado: 25,
-  },
-  {
-    id: 2,
-    nombre: "ADMINISTRACIÓN",
-    cupoMaximo: 25,
-    cupoOcupado: 18,
-  },
-  {
-    id: 3,
-    nombre: "ENFERMERÍA",
-    cupoMaximo: 20,
-    cupoOcupado: 20,
-  },
-  {
-    id: 4,
-    nombre: "CONTABILIDAD",
-    cupoMaximo: 15,
-    cupoOcupado: 8,
-  },
-  {
-    id: 5,
-    nombre: "TÉCNICO EN TURISMO",
-    cupoMaximo: 20,
-    cupoOcupado: 12,
-  },
-]
-
 type MenuItem = {
   icon: React.ElementType;
   label: string;
@@ -90,36 +56,33 @@ export default function Cupos() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [activeSection, setActiveSection] = useState("cupos")
   const [expandedSubmenu, setExpandedSubmenu] = useState<string | null>(null)
-  const [cupos, setCupos] = useState(cuposData)
+  const [cupos, setCupos] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const navigate = useNavigate()
 
-  // Cargar datos de cupos desde la API
+  // Cargar datos de cupos desde la API real
   useEffect(() => {
     const fetchCuposData = async () => {
       try {
         setIsLoading(true)
-
-        // Aquí conectarías con tu API de NestJS
-        const response = await fetch("/api/cupos")
-
-        if (!response.ok) {
-          throw new Error("Error al cargar los datos de cupos")
-        }
-
+        const response = await fetch("http://localhost:3000/carrera")
+        if (!response.ok) throw new Error("Error al cargar los datos de cupos")
         const data = await response.json()
-        setCupos(data)
-
-        console.log("Datos de cupos cargados:", data)
+        // Asegura que los campos sean números
+        setCupos(
+          data.map((c: any) => ({
+            ...c,
+            cupoMaximo: Number(c.cupo_maximo) || 0,
+            cupoOcupado: Number(c.cupo_ocupado) || 0,
+          }))
+        )
       } catch (error) {
         console.error("Error al cargar cupos:", error)
-        // Usar datos de ejemplo como fallback
-        setCupos(cuposData)
+        setCupos([])
       } finally {
         setIsLoading(false)
       }
     }
-
     fetchCuposData()
   }, [])
 
@@ -175,10 +138,10 @@ export default function Cupos() {
   }
 
   // Calcular estadísticas generales
-  const totalCupoMaximo = cupos.reduce((sum, carrera) => sum + carrera.cupoMaximo, 0)
-  const totalCupoOcupado = cupos.reduce((sum, carrera) => sum + carrera.cupoOcupado, 0)
+  const totalCupoMaximo = cupos.reduce((sum, carrera) => sum + (Number(carrera.cupoMaximo) || 0), 0)
+  const totalCupoOcupado = cupos.reduce((sum, carrera) => sum + (Number(carrera.cupoOcupado) || 0), 0)
   const totalDisponibles = totalCupoMaximo - totalCupoOcupado
-  const porcentajeOcupacion = (totalCupoOcupado / totalCupoMaximo) * 100
+  const porcentajeOcupacion = totalCupoMaximo > 0 ? (totalCupoOcupado / totalCupoMaximo) * 100 : 0
 
   const getStatusColor = (ocupado: number, maximo: number) => {
     const porcentaje = (ocupado / maximo) * 100
@@ -355,8 +318,8 @@ export default function Cupos() {
 
               <div className="space-y-6">
                 {cupos.map((carrera) => {
-                  const porcentajeCarrera = (carrera.cupoOcupado / carrera.cupoMaximo) * 100
-                  const cupoDisponible = carrera.cupoMaximo - carrera.cupoOcupado
+                  const porcentajeCarrera = carrera.cupoMaximo > 0 ? (carrera.cupoOcupado / carrera.cupoMaximo) * 100 : 0
+                  const cupoDisponible = (Number(carrera.cupoMaximo) || 0) - (Number(carrera.cupoOcupado) || 0)
 
                   return (
                     <div key={carrera.id} className="border border-gray-200 rounded-lg p-6">
