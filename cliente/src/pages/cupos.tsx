@@ -73,7 +73,7 @@ export default function Cupos() {
           data.map((c: any) => ({
             ...c,
             cupoMaximo: Number(c.cupo_maximo) || 0,
-            cupoOcupado: Number(c.cupo_ocupado) || 0,
+            cupoActual: Number(c.cupo_actual) || 0,
           }))
         )
       } catch (error) {
@@ -139,9 +139,9 @@ export default function Cupos() {
 
   // Calcular estadísticas generales
   const totalCupoMaximo = cupos.reduce((sum, carrera) => sum + (Number(carrera.cupoMaximo) || 0), 0)
-  const totalCupoOcupado = cupos.reduce((sum, carrera) => sum + (Number(carrera.cupoOcupado) || 0), 0)
-  const totalDisponibles = totalCupoMaximo - totalCupoOcupado
-  const porcentajeOcupacion = totalCupoMaximo > 0 ? (totalCupoOcupado / totalCupoMaximo) * 100 : 0
+  const totalCupoActual = cupos.reduce((sum, carrera) => sum + (Number(carrera.cupoActual) || 0), 0)
+  const totalOcupado = totalCupoMaximo - totalCupoActual
+  const porcentajeOcupacion = totalCupoMaximo > 0 ? (totalOcupado / totalCupoMaximo) * 100 : 0
 
   const getStatusColor = (ocupado: number, maximo: number) => {
     const porcentaje = (ocupado / maximo) * 100
@@ -277,7 +277,7 @@ export default function Cupos() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-600 text-sm font-medium">Cupos Ocupados</p>
-                  <p className="text-3xl font-bold text-orange-600">{totalCupoOcupado}</p>
+                  <p className="text-3xl font-bold text-orange-600">{totalOcupado}</p>
                 </div>
                 <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
                   <TrendingUp className="w-6 h-6 text-orange-600" />
@@ -289,7 +289,7 @@ export default function Cupos() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-600 text-sm font-medium">Cupos Disponibles</p>
-                  <p className="text-3xl font-bold text-green-600">{totalDisponibles}</p>
+                  <p className="text-3xl font-bold text-green-600">{totalCupoActual}</p>
                 </div>
                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                   <Users className="w-6 h-6 text-green-600" />
@@ -306,8 +306,8 @@ export default function Cupos() {
             </div>
             <Progress value={porcentajeOcupacion} className="h-4 mb-2" />
             <div className="flex justify-between text-sm text-gray-600">
-              <span>{totalCupoOcupado} ocupados</span>
-              <span>{totalDisponibles} disponibles</span>
+              <span>{totalOcupado} ocupados</span>
+              <span>{totalCupoActual} disponibles</span>
             </div>
           </Card>
 
@@ -318,8 +318,7 @@ export default function Cupos() {
 
               <div className="space-y-6">
                 {cupos.map((carrera) => {
-                  const porcentajeCarrera = carrera.cupoMaximo > 0 ? (carrera.cupoOcupado / carrera.cupoMaximo) * 100 : 0
-                  const cupoDisponible = (Number(carrera.cupoMaximo) || 0) - (Number(carrera.cupoOcupado) || 0)
+                  const porcentajeCarrera = carrera.cupoMaximo > 0 ? (carrera.cupoMaximo - carrera.cupoActual) / carrera.cupoMaximo * 100 : 0
 
                   return (
                     <div key={carrera.id} className="border border-gray-200 rounded-lg p-6">
@@ -328,7 +327,7 @@ export default function Cupos() {
                         <h4 className="text-lg font-bold text-gray-900">{carrera.nombre}</h4>
                         <div
                           className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                            carrera.cupoOcupado,
+                            carrera.cupoActual,
                             carrera.cupoMaximo,
                           )}`}
                         >
@@ -347,11 +346,11 @@ export default function Cupos() {
                           <p className="text-sm text-gray-600">Cupo Total</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-2xl font-bold text-orange-600">{carrera.cupoOcupado}</p>
+                          <p className="text-2xl font-bold text-orange-600">{carrera.cupoMaximo - carrera.cupo_actual}</p>
                           <p className="text-sm text-gray-600">Ocupados</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-2xl font-bold text-green-600">{cupoDisponible}</p>
+                          <p className="text-2xl font-bold text-green-600">{carrera.cupo_actual}</p>
                           <p className="text-sm text-gray-600">Disponibles</p>
                         </div>
                       </div>
@@ -387,7 +386,7 @@ export default function Cupos() {
                         <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
                           <AlertTriangle className="w-5 h-5 text-orange-600" />
                           <span className="text-orange-800 text-sm font-medium">
-                            Cupo casi completo - Quedan {cupoDisponible} lugares disponibles
+                            Cupo casi completo - Quedan {carrera.cupo_actual} lugares disponibles
                           </span>
                         </div>
                       )}

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Aspirante } from './aspirante.entity';
@@ -158,15 +158,22 @@ export class AspiranteService {
 
     // Se actualiza el estado en la tabla 'matricula' si ha cambiado y si existe una matrícula.
     if (
-      matricula &&
-      estado_matriculacion &&
-      estado_matriculacion !== estadoMatriculacionAnterior
-    ) {
-      await this.matriculaService.updateEstadoForAspirante(
-        id,
-        estado_matriculacion,
-      );
-    }
+  matricula &&
+  estado_matriculacion &&
+  estado_matriculacion !== estadoMatriculacionAnterior
+) {
+  const estadosPermitidos = ['pendiente', 'en espera', 'confirmado', 'rechazado'] as const;
+
+  if (!estadosPermitidos.includes(estado_matriculacion as any)) {
+    throw new BadRequestException('Estado de matrícula inválido');
+  }
+
+  await this.matriculaService.updateEstadoForAspirante(
+    id,
+    estado_matriculacion as 'pendiente' | 'en espera' | 'confirmado' | 'rechazado',
+  );
+}
+
 
     return saved;
   }

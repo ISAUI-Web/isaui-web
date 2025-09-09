@@ -37,41 +37,44 @@ export default function LoginDni() {
   }
 
   const handleDniSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  e.preventDefault()
 
-    if (dni.length < 7 || dni.length > 8) {
-      setError("El DNI debe tener entre 7 y 8 dígitos")
+  if (dni.length < 7 || dni.length > 8) {
+    setError("El DNI debe tener entre 7 y 8 dígitos")
+    return
+  }
+
+  setIsLoading(true)
+  setError("")
+
+  try {
+    const response = await fetch("http://localhost:3000/matricula/iniciar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dni }),
+    })
+
+    const data = await response.json()
+    console.log("Data recibida del API:", data);
+
+    if (!response.ok || !data.ok) {
+      setError(data.reason || "DNI no válido para matriculación")
       return
     }
 
-    setIsLoading(true)
-    setError("")
+    // ✅ Todo OK, redirigir
+    Navigate(`/formMatriculacion/${data.aspirante.id}`, {
+      state: { nombre: data.aspirante.nombre, apellido: data.aspirante.apellido }
+    })
 
-    try {
-      // 👉 Llamar a tu backend (ajustá la URL según tu setup: proxy, puerto, etc.)
-      const response = await fetch("http://localhost:3000/matricula/iniciar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dni }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok || !data.ok) {
-        throw new Error(data.reason || "DNI no válido para matriculación")
-      }
-
-      // ✅ Todo OK, redirigir pasando el DNI (o id del aspirante si preferís)
-      Navigate(`/formMatriculacion/${data.aspirante.id}`, {
-        state: { nombre: data.aspirante.nombre, apellido: data.aspirante.apellido }
-      })
-    } catch (error: any) {
-      console.error("Error al verificar DNI:", error)
-      setError(error.message || "DNI no válido")
-    } finally {
-      setIsLoading(false)
-    }
+  } catch (error: any) {
+    console.error("Error al verificar DNI:", error)
+    setError("Ocurrió un error al verificar el DNI")
+  } finally {
+    setIsLoading(false)
   }
+}
+
 
   const handleBack = () => {
     Navigate("/")
