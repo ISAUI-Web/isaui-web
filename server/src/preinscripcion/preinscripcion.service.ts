@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindManyOptions, Repository } from 'typeorm';
 import { Preinscripcion } from './preinscripcion.entity';
 import { CreatePreinscripcionDto } from './dto/create-preinscripcion.dto';
 import { Aspirante } from '../aspirante/aspirante.entity';
@@ -61,5 +61,11 @@ export class PreinscripcionService {
       preinscripcion.estado = estado;
       await this.preinscripcionRepository.save(preinscripcion);
     }
+  }
+
+  async find(
+    options: FindManyOptions<Preinscripcion>,
+  ): Promise<Preinscripcion[]> {
+    return this.preinscripcionRepository.find(options);
   }
 }

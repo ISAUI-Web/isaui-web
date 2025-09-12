@@ -1,7 +1,12 @@
-import { Injectable, NotFoundException, OnApplicationBootstrap } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  OnApplicationBootstrap,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Carrera } from './carrera.entity';
 import { Repository } from 'typeorm';
+import PDFDocument from 'pdfkit';
 
 @Injectable()
 export class CarreraService implements OnApplicationBootstrap {
@@ -61,10 +66,10 @@ export class CarreraService implements OnApplicationBootstrap {
   async findAll(): Promise<Carrera[]> {
     return this.carreraRepository.find();
   }
-  
+
   async findOne(id: number): Promise<Carrera | null> {
-  return this.carreraRepository.findOne({ where: { id } });
-}
+    return this.carreraRepository.findOne({ where: { id } });
+  }
 
   async create(data: Partial<Carrera>): Promise<Carrera> {
     // 🚫 Verificar duplicado
@@ -87,9 +92,13 @@ export class CarreraService implements OnApplicationBootstrap {
 
     // 🚫 Validar nombre duplicado
     if (data.nombre) {
-      const existente = await this.carreraRepository.findOne({ where: { nombre: data.nombre } });
+      const existente = await this.carreraRepository.findOne({
+        where: { nombre: data.nombre },
+      });
       if (existente && existente.id !== id) {
-        throw new Error(`Ya existe otra carrera con el nombre "${data.nombre}"`);
+        throw new Error(
+          `Ya existe otra carrera con el nombre "${data.nombre}"`,
+        );
       }
     }
 
@@ -102,5 +111,75 @@ export class CarreraService implements OnApplicationBootstrap {
     if (result.affected === 0) {
       throw new NotFoundException(`Carrera con ID ${id} no encontrada`);
     }
+  }
+
+  private async getCarrerasForReport(carreraId?: number): Promise<Carrera[]> {
+    if (carreraId) {
+      const carrera = await this.carreraRepository.findOneBy({ id: carreraId });
+      if (!carrera) {
+        throw new NotFoundException(
+          `Carrera con ID ${carreraId} no encontrada`,
+        );
+      }
+      return [carrera];
+    } else {
+      return this.carreraRepository.find();
+    }
+  }
+
+  async generateCuposPdf(carreraId?: number): Promise<Buffer> {
+    const carreras = await this.getCarrerasForReport(carreraId);
+
+    const pdfBuffer: Buffer = await new Promise((resolve) => {
+      const doc = new PDFDocument({
+        size: 'A4',
+        bufferPages: true,
+        margin: 50,
+      });
+
+      // Header
+      doc.fontSize(20).text('Reporte de Cupos', { align: 'center' });
+      doc.moveDown();
+
+      // Fecha y hora de generación
+      const now = new Date();
+      const fecha = now.toLocaleDateString('es-AR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+      const hora = now.toLocaleTimeString('es-AR', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      doc
+        .fontSize(10)
+        .text(`Generado el ${fecha} a las ${hora} hs.`, { align: 'right' });
+      doc.moveDown(2);
+
+      // Content
+      carreras.forEach((carrera) => {
+        const cuposOcupados = carrera.cupo_maximo - carrera.cupo_actual;
+
+        doc.fontSize(16).text(carrera.nombre, { underline: true });
+        doc.moveDown(0.5);
+
+        doc.fontSize(12).text(`Cupos Totales (Máximo): ${carrera.cupo_maximo}`);
+        doc.fontSize(12).text(`Cupos Disponibles: ${carrera.cupo_actual}`);
+        doc.fontSize(12).text(`Cupos Ocupados: ${cuposOcupados}`);
+        doc.moveDown(2);
+      });
+
+      doc.end();
+
+      const buffer = [];
+      doc.on('data', buffer.push.bind(buffer));
+      doc.on('end', () => {
+        const data = Buffer.concat(buffer);
+        resolve(data);
+      });
+    });
+
+    return pdfBuffer;
   }
 }

@@ -1,13 +1,45 @@
-import { Controller, Get, Patch, Post, Put, Delete, Param, Body, ParseIntPipe, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+  ParseIntPipe,
+  BadRequestException,
+  NotFoundException,
+  Res,
+  Query,
+} from '@nestjs/common';
 import { CarreraService } from './carrera.service';
 import { Carrera } from './carrera.entity';
 import { CreateCarreraDto } from './dto/create-carrera.dto';
 import { UpdateCarreraDto } from './dto/update-carrera.dto';
+import { Response } from 'express';
 
 @Controller('carrera')
 export class CarreraController {
   constructor(private readonly carreraService: CarreraService) {}
-  
+
+  @Get('reportes/cupos')
+  async generateCuposReport(
+    @Res() res: Response,
+    @Query('carreraId', new ParseIntPipe({ optional: true }))
+    carreraId?: number,
+  ) {
+    const pdfBuffer = await this.carreraService.generateCuposPdf(carreraId);
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'attachment; filename=reporte-cupos.pdf',
+      'Content-Length': pdfBuffer.length,
+    });
+
+    res.end(pdfBuffer);
+  }
+
   @Get()
   async findAll(): Promise<Carrera[]> {
     return this.carreraService.findAll();
@@ -16,9 +48,10 @@ export class CarreraController {
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number): Promise<Carrera> {
     const carrera = await this.carreraService.findOne(id);
-    if (!carrera) throw new NotFoundException(`Carrera con ID ${id} no encontrada`);
+    if (!carrera)
+      throw new NotFoundException(`Carrera con ID ${id} no encontrada`);
     return carrera;
-}
+  }
 
   @Post()
   async create(@Body() data: CreateCarreraDto): Promise<Carrera> {
@@ -45,5 +78,5 @@ export class CarreraController {
   ): Promise<Carrera> {
     // Llama al mismo update del servicio, que ya acepta campos parciales
     return this.carreraService.update(id, data);
-}
+  }
 }

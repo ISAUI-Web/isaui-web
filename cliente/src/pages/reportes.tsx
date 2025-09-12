@@ -75,6 +75,13 @@ const tiposReporte = [
   },
 ]
 
+const estadosTramite = [
+  { id: "pendiente", nombre: "Pendiente" },
+  { id: "en espera", nombre: "En Espera" },
+  { id: "confirmado", nombre: "Confirmado" },
+  { id: "rechazado", nombre: "Rechazado" },
+];
+
 interface Carrera {
   id: number
   nombre: string
@@ -90,6 +97,7 @@ export default function Reportes() {
   const [carreras, setCarreras] = useState<Carrera[]>([])
   const [tipoReporteSeleccionado, setTipoReporteSeleccionado] = useState<string>("")
   const [carreraSeleccionada, setCarreraSeleccionada] = useState<string>("todas")
+  const [estadoSeleccionado, setEstadoSeleccionado] = useState<string>("todos")
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -163,13 +171,76 @@ export default function Reportes() {
   }
 
   const handleGenerarReporte = async () => {
-    setError(null)
-    setIsGenerating(true)
-    setTimeout(() => {
-      setIsGenerating(false)
-      alert("Reporte generado con éxito")
-    }, 1200)
-  }
+    if (!tipoReporteSeleccionado) {
+      setError("Por favor, selecciona un tipo de reporte.");
+      return;
+    }
+
+    setError(null);
+    setIsGenerating(true);
+
+    try {
+      let url = "";
+      let filename = "reporte.pdf";
+      const params = new URLSearchParams();
+
+      if (carreraSeleccionada !== "todas") {
+        params.append('carreraId', carreraSeleccionada);
+      }
+
+      switch (tipoReporteSeleccionado) {
+        case "cupos":
+          url = "http://localhost:3000/carrera/reportes/cupos";
+          filename = "reporte-cupos.pdf";
+          break;
+        case "preinscriptos":
+          url = "http://localhost:3000/aspirante/reportes/preinscriptos"; // Endpoint a crear
+          filename = "reporte-preinscriptos.pdf";
+          if (estadoSeleccionado !== "todos") {
+            params.append('estado', estadoSeleccionado);
+          }
+          break;
+        case "matriculados":
+          url = "http://localhost:3000/aspirante/reportes/matriculados"; // Endpoint a crear
+          filename = "reporte-matriculados.pdf";
+          if (estadoSeleccionado !== "todos") {
+            params.append('estado', estadoSeleccionado);
+          }
+          break;
+        default:
+          // Este caso previene que se intente generar un reporte no implementado
+          throw new Error("Este tipo de reporte aún no está implementado.");
+      }
+
+      const queryString = params.toString();
+      if (queryString) {
+        url += `?${queryString}`;
+      }
+
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        let errorMessage = "Error al generar el reporte.";
+        try { const errorData = await response.json(); errorMessage = errorData.message || errorMessage; } catch (e) { /* no-op */ }
+        throw new Error(errorMessage);
+      }
+
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err: any) {
+      setError(err.message || "Ocurrió un error inesperado.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#1F6680] from-teal-600 to-teal-800 relative">
@@ -322,7 +393,7 @@ export default function Reportes() {
                         </div>
                       </SelectItem>
                       {carreras.map((carrera) => (
-                        <SelectItem key={carrera.id} value={carrera.nombre}>
+                        <SelectItem key={carrera.id} value={carrera.id.toString()}>
                           <div className="flex items-center gap-2">
                             <GraduationCap className="w-4 h-4 text-gray-600" />
                             <span>{carrera.nombre}</span>
@@ -333,6 +404,30 @@ export default function Reportes() {
                   </Select>
                 </div>
 
+                {/* Filtro por Estado (condicional) */}
+                {(tipoReporteSeleccionado === "preinscriptos" || tipoReporteSeleccionado === "matriculados") && (
+                  <div>
+                    <Label className="text-base font-semibold text-gray-700 mb-3 block">Filtrar por Estado del Trámite</Label>
+                    <Select value={estadoSeleccionado} onValueChange={setEstadoSeleccionado}>
+                      <SelectTrigger className="w-full h-12 text-base">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">
+                          <div className="flex items-center gap-2">
+                            <Filter className="w-4 h-4 text-gray-600" />
+                            <span className="font-medium">Todos los Estados</span>
+                          </div>
+                        </SelectItem>
+                        {estadosTramite.map((estado) => (
+                          <SelectItem key={estado.id} value={estado.id}>
+                            <span className="capitalize">{estado.nombre}</span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 {/* Información adicional */}
                 <div className="p-6 bg-blue-50 rounded-xl border border-blue-200">
                   <div className="flex items-start gap-3">
