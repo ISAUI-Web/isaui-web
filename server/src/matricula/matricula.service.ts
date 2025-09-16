@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindManyOptions, Repository } from 'typeorm';
 import { Aspirante } from '../aspirante/aspirante.entity';
 import { Preinscripcion } from '../preinscripcion/preinscripcion.entity';
 import { Matricula } from './matricula.entity';
@@ -117,6 +117,10 @@ export class MatriculaService {
     return this.matriculaRepository.find({
       relations: ['aspirante', 'carrera'],
     });
+  }
+  
+  async find(options: FindManyOptions<Matricula>): Promise<Matricula[]> {
+    return this.matriculaRepository.find(options);
   }
 
    async updateEstadoForAspirante(

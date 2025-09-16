@@ -1,6 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 import { Aspirante } from './aspirante.entity';
 import { CreateAspiranteDto } from './dto/create-aspirante.dto';
 import { UpdateAspiranteDto } from './dto/update-aspirante.dto';
@@ -8,6 +12,9 @@ import { DocumentoService } from '../documento/documento.service';
 import { PreinscripcionService } from '../preinscripcion/preinscripcion.service';
 import { ConstanciaService } from '../constancia/constancia.service';
 import { MatriculaService } from '../matricula/matricula.service';
+import PDFDocument from 'pdfkit';
+import { Preinscripcion } from '../preinscripcion/preinscripcion.entity';
+import { Matricula } from '../matricula/matricula.entity';
 
 @Injectable()
 export class AspiranteService {
@@ -176,5 +183,356 @@ export class AspiranteService {
 
 
     return saved;
+}
+
+    private async getPreinscripcionesForReport(
+    carreraId?: number,
+    estado?: string,
+  ): Promise<Preinscripcion[]> {
+    const where: FindOptionsWhere<Preinscripcion> = {};
+
+    if (carreraId) {
+      where.carrera = { id: carreraId };
+    }
+    if (estado && estado !== 'todos') {
+      where.estado = estado;
+    }
+
+    // Asumimos que preinscripcionService tiene un método find que acepta opciones de TypeORM.
+    return this.preinscripcionService.find({
+      where,
+      relations: ['aspirante', 'carrera'],
+    });
+  }
+
+  async generatePreinscriptosPdf(
+    carreraId?: number,
+    estado?: string,
+  ): Promise<Buffer> {
+    const preinscripciones = await this.getPreinscripcionesForReport(
+      carreraId,
+      estado,
+    );
+
+    const reportData = new Map<string, Preinscripcion[]>();
+
+    for (const pre of preinscripciones) {
+      if (pre.carrera && pre.aspirante) {
+        const carreraNombre = pre.carrera.nombre;
+        if (!reportData.has(carreraNombre)) {
+          reportData.set(carreraNombre, []);
+        }
+        reportData.get(carreraNombre)!.push(pre);
+      }
+    }
+
+    const pdfBuffer: Buffer = await new Promise((resolve) => {
+      const doc = new PDFDocument({
+        size: 'A4',
+        bufferPages: true,
+        margin: 50,
+      });
+
+      doc
+        .fontSize(20)
+        .text('Reporte de Aspirantes Preinscriptos', { align: 'center' });
+      doc.moveDown();
+
+      const now = new Date();
+      const fecha = now.toLocaleDateString('es-AR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+      const hora = now.toLocaleTimeString('es-AR', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      doc
+        .fontSize(10)
+        .text(`Generado el ${fecha} a las ${hora} hs.`, { align: 'right' });
+      doc.moveDown(2);
+
+      if (reportData.size === 0) {
+        doc
+          .fontSize(12)
+          .text(
+            'No se encontraron aspirantes que coincidan con los filtros seleccionados.',
+            { align: 'center' },
+          );
+      } else {
+        reportData.forEach((preinscripcionesDeCarrera, carreraNombre) => {
+          doc.x = 50;
+          doc
+            .fontSize(16)
+            .text(carreraNombre, { underline: true, align: 'left' });
+          doc.moveDown(0.5);
+
+          if (estado && estado !== 'todos') {
+            const total = preinscripcionesDeCarrera.length;
+            doc
+              .fontSize(12)
+              .text(
+                `Total de aspirantes en estado "${
+                  estado.charAt(0).toUpperCase() + estado.slice(1)
+                }": ${total}`,
+              );
+            doc.moveDown();
+          } else {
+            const stats = {
+              pendiente: 0,
+              confirmado: 0,
+              'en espera': 0,
+              rechazado: 0,
+            };
+            preinscripcionesDeCarrera.forEach((pre) => {
+              if (Object.prototype.hasOwnProperty.call(stats, pre.estado)) {
+                stats[pre.estado]++;
+              }
+            });
+            const totalGeneral = preinscripcionesDeCarrera.length;
+
+            doc
+              .fontSize(12)
+              .text(`Total general de aspirantes: ${totalGeneral}`);
+            doc.moveDown(2);
+            doc
+              .font('Helvetica-Bold')
+              .fontSize(10)
+              .text('Desglose por estado:');
+            doc
+              .font('Helvetica')
+              .fontSize(10)
+              .list(
+                [
+                  `Pendientes: ${stats.pendiente}`,
+                  `Confirmados: ${stats.confirmado}`,
+                  `En Espera: ${stats['en espera']}`,
+                  `Rechazados: ${stats.rechazado}`,
+                ],
+                { bulletRadius: 2, textIndent: 10, bulletIndent: 5 },
+              );
+            doc.moveDown(2);
+          }
+
+          const tableTop = doc.y;
+          const apellidoX = 50;
+          const nombreX = 180;
+          const dniX = 310;
+          const carreraColX = 400;
+
+          doc.font('Helvetica-Bold').fontSize(10);
+          doc.text('Apellido', apellidoX, tableTop);
+          doc.text('Nombre', nombreX, tableTop);
+          doc.text('DNI', dniX, tableTop);
+          doc.text('Carrera', carreraColX, tableTop);
+          doc.moveDown(0.5);
+          const lineY = doc.y;
+          doc
+            .moveTo(apellidoX, lineY)
+            .lineTo(doc.page.width - 50, lineY)
+            .stroke();
+          doc.moveDown(0.5);
+
+          doc.font('Helvetica').fontSize(10);
+
+          preinscripcionesDeCarrera.forEach((pre) => {
+            const aspirante = pre.aspirante;
+            const rowY = doc.y;
+            if (rowY > doc.page.height - 50) doc.addPage();
+            doc.text(aspirante.apellido, apellidoX, rowY, { width: 120 });
+            doc.text(aspirante.nombre, nombreX, rowY, { width: 120 });
+            doc.text(aspirante.dni, dniX, rowY, { width: 80 });
+            doc.text(pre.carrera.nombre, carreraColX, rowY, { width: 150 });
+            doc.moveDown(1.5);
+          });
+          doc.moveDown(2);
+        });
+      }
+
+      doc.end();
+      const buffer = [];
+      doc.on('data', buffer.push.bind(buffer));
+      doc.on('end', () => resolve(Buffer.concat(buffer)));
+    });
+
+    return pdfBuffer;
+  }
+
+  private async getMatriculacionesForReport(
+    carreraId?: number,
+    estado?: string,
+  ): Promise<Matricula[]> {
+    const where: FindOptionsWhere<Matricula> = {};
+
+    if (carreraId) {
+      where.carrera = { id: carreraId };
+    }
+    if (estado && estado !== 'todos') {
+      where.estado = estado;
+    }
+
+    // Asumimos que matriculaService tiene un método find que acepta opciones de TypeORM.
+    return this.matriculaService.find({
+      where,
+      relations: ['aspirante', 'carrera'],
+    });
+  }
+
+  async generateMatriculadosPdf(
+    carreraId?: number,
+    estado?: string,
+  ): Promise<Buffer> {
+    const matriculaciones = await this.getMatriculacionesForReport(
+      carreraId,
+      estado,
+    );
+
+    const reportData = new Map<string, Matricula[]>();
+
+    for (const mat of matriculaciones) {
+      if (mat.carrera && mat.aspirante) {
+        const carreraNombre = mat.carrera.nombre;
+        if (!reportData.has(carreraNombre)) {
+          reportData.set(carreraNombre, []);
+        }
+        reportData.get(carreraNombre)!.push(mat);
+      }
+    }
+
+    const pdfBuffer: Buffer = await new Promise((resolve) => {
+      const doc = new PDFDocument({
+        size: 'A4',
+        bufferPages: true,
+        margin: 50,
+      });
+
+      doc
+        .fontSize(20)
+        .text('Reporte de Aspirantes Matriculados', { align: 'center' });
+      doc.moveDown();
+
+      const now = new Date();
+      const fecha = now.toLocaleDateString('es-AR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+      const hora = now.toLocaleTimeString('es-AR', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      doc
+        .fontSize(10)
+        .text(`Generado el ${fecha} a las ${hora} hs.`, { align: 'right' });
+      doc.moveDown(2);
+
+      if (reportData.size === 0) {
+        doc
+          .fontSize(12)
+          .text(
+            'No se encontraron aspirantes matriculados que coincidan con los filtros seleccionados.',
+            { align: 'center' },
+          );
+      } else {
+        reportData.forEach((matriculacionesDeCarrera, carreraNombre) => {
+          doc.x = 50;
+          doc
+            .fontSize(16)
+            .text(carreraNombre, { underline: true, align: 'left' });
+          doc.moveDown(0.5);
+
+          if (estado && estado !== 'todos') {
+            const total = matriculacionesDeCarrera.length;
+            doc
+              .fontSize(12)
+              .text(
+                `Total de aspirantes matriculados en estado "${
+                  estado.charAt(0).toUpperCase() + estado.slice(1)
+                }": ${total}`,
+              );
+            doc.moveDown();
+          } else {
+            const stats = {
+              pendiente: 0,
+              confirmado: 0,
+              'en espera': 0,
+              rechazado: 0,
+            };
+            matriculacionesDeCarrera.forEach((mat) => {
+              if (Object.prototype.hasOwnProperty.call(stats, mat.estado)) {
+                stats[mat.estado]++;
+              }
+            });
+            const totalGeneral = matriculacionesDeCarrera.length;
+
+            doc
+              .fontSize(12)
+              .text(
+                `Total general de aspirantes matriculados: ${totalGeneral}`,
+              );
+            doc.moveDown(2);
+            doc
+              .font('Helvetica-Bold')
+              .fontSize(10)
+              .text('Desglose por estado:');
+            doc
+              .font('Helvetica')
+              .fontSize(10)
+              .list(
+                [
+                  `Pendientes: ${stats.pendiente}`,
+                  `Confirmados: ${stats.confirmado}`,
+                  `En Espera: ${stats['en espera']}`,
+                  `Rechazados: ${stats.rechazado}`,
+                ],
+                { bulletRadius: 2, textIndent: 10, bulletIndent: 5 },
+              );
+            doc.moveDown(2);
+          }
+
+          const tableTop = doc.y;
+          const apellidoX = 50,
+            nombreX = 180,
+            dniX = 310,
+            carreraColX = 400;
+
+          doc.font('Helvetica-Bold').fontSize(10);
+          doc
+            .text('Apellido', apellidoX, tableTop)
+            .text('Nombre', nombreX, tableTop)
+            .text('DNI', dniX, tableTop)
+            .text('Carrera', carreraColX, tableTop);
+          doc.moveDown(0.5);
+          const lineY = doc.y;
+          doc
+            .moveTo(apellidoX, lineY)
+            .lineTo(doc.page.width - 50, lineY)
+            .stroke();
+          doc.moveDown(0.5);
+
+          doc.font('Helvetica').fontSize(10);
+          matriculacionesDeCarrera.forEach((mat) => {
+            const aspirante = mat.aspirante;
+            const rowY = doc.y;
+            if (rowY > doc.page.height - 50) doc.addPage();
+            doc
+              .text(aspirante.apellido, apellidoX, rowY, { width: 120 })
+              .text(aspirante.nombre, nombreX, rowY, { width: 120 })
+              .text(aspirante.dni, dniX, rowY, { width: 80 })
+              .text(mat.carrera.nombre, carreraColX, rowY, { width: 150 });
+            doc.moveDown(1.5);
+          });
+          doc.moveDown(2);
+        });
+      }
+
+      doc.end();
+      const buffer = [];
+      doc.on('data', buffer.push.bind(buffer));
+      doc.on('end', () => resolve(Buffer.concat(buffer)));
+    });
+
+    return pdfBuffer;
   }
 }
