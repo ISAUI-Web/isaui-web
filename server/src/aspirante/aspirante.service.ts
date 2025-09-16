@@ -165,35 +165,27 @@ export class AspiranteService {
 
     // Se actualiza el estado en la tabla 'matricula' si ha cambiado y si existe una matrícula.
     if (
-      matricula &&
-      estado_matriculacion &&
-      estado_matriculacion !== estadoMatriculacionAnterior
-    ) {
-      const estadosPermitidos = [
-        'pendiente',
-        'en espera',
-        'confirmado',
-        'rechazado',
-      ] as const;
+  matricula &&
+  estado_matriculacion &&
+  estado_matriculacion !== estadoMatriculacionAnterior
+) {
+  const estadosPermitidos = ['pendiente', 'en espera', 'confirmado', 'rechazado'] as const;
 
-      if (!estadosPermitidos.includes(estado_matriculacion as any)) {
-        throw new BadRequestException('Estado de matrícula inválido');
-      }
-
-      await this.matriculaService.updateEstadoForAspirante(
-        id,
-        estado_matriculacion as
-          | 'pendiente'
-          | 'en espera'
-          | 'confirmado'
-          | 'rechazado',
-      );
-    }
-
-    return saved;
+  if (!estadosPermitidos.includes(estado_matriculacion as any)) {
+    throw new BadRequestException('Estado de matrícula inválido');
   }
 
-  private async getPreinscripcionesForReport(
+  await this.matriculaService.updateEstadoForAspirante(
+    id,
+    estado_matriculacion as 'pendiente' | 'en espera' | 'confirmado' | 'rechazado',
+  );
+}
+
+
+    return saved;
+}
+
+    private async getPreinscripcionesForReport(
     carreraId?: number,
     estado?: string,
   ): Promise<Preinscripcion[]> {

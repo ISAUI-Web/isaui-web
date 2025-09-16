@@ -69,7 +69,7 @@ export class AspiranteController {
 
     res.end(pdfBuffer);
   }
-
+  
   @Post()
   @UseInterceptors(
     FileFieldsInterceptor(
