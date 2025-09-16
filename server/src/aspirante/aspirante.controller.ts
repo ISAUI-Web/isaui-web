@@ -11,14 +11,11 @@ import {
   Body,
   BadRequestException,
   InternalServerErrorException,
-  Res,
-  Query,
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { AspiranteService } from './aspirante.service';
-import { Response } from 'express';
 import { CreateAspiranteDto } from './dto/create-aspirante.dto';
 import { UpdateAspiranteDto } from './dto/update-aspirante.dto';
 import { plainToInstance } from 'class-transformer';
@@ -27,48 +24,6 @@ import { DetalleAspiranteDto } from './dto/detalle-aspirante.dto';
 @Controller('aspirante')
 export class AspiranteController {
   constructor(private readonly aspiranteService: AspiranteService) {}
-
-  @Get('reportes/preinscriptos')
-  async generatePreinscriptosReport(
-    @Res() res: Response,
-    @Query('carreraId', new ParseIntPipe({ optional: true }))
-    carreraId?: number,
-    @Query('estado') estado?: string,
-  ) {
-    const pdfBuffer = await this.aspiranteService.generatePreinscriptosPdf(
-      carreraId,
-      estado,
-    );
-
-    res.set({
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': 'attachment; filename=reporte-preinscriptos.pdf',
-      'Content-Length': pdfBuffer.length,
-    });
-
-    res.end(pdfBuffer);
-  }
-
-  @Get('reportes/matriculados')
-  async generateMatriculadosReport(
-    @Res() res: Response,
-    @Query('carreraId', new ParseIntPipe({ optional: true }))
-    carreraId?: number,
-    @Query('estado') estado?: string,
-  ) {
-    const pdfBuffer = await this.aspiranteService.generateMatriculadosPdf(
-      carreraId,
-      estado,
-    );
-
-    res.set({
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': 'attachment; filename=reporte-matriculados.pdf',
-      'Content-Length': pdfBuffer.length,
-    });
-
-    res.end(pdfBuffer);
-  }
 
   @Post()
   @UseInterceptors(
