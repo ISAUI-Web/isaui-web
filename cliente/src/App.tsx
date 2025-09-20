@@ -13,6 +13,10 @@ import Reportes from './pages/reportes'
 import FormMatriculacion from './pages/formMatriculacion'
 import LoginDni from './pages/loginDNI'
 import DetalleLegajo from './pages/detalleLegajo'
+import DetalleLegajoProfesor from './pages/detalleLegajoProfesor'
+import CrearLegajoAlumno from './pages/crearAlumno'
+import CrearLegajoProfesor from './pages/crearProfesor'
+
 
 export default function App() {
   return (
@@ -31,6 +35,10 @@ export default function App() {
       <Route path="/formMatriculacion/:id" element={<FormMatriculacion />} />
       <Route path="/loginDNI" element={<LoginDni />} />
       <Route path="/detLegajo/:id" element={<DetalleLegajo />} />
+      <Route path="/detLegajoProfesor" element={<DetalleLegajoProfesor />} />
+      <Route path="/crearAlumno" element={<CrearLegajoAlumno />} />
+      <Route path="/crearProfesor" element={<CrearLegajoProfesor />} />
+
       {/* Podés agregar más rutas aquí */}
       {/* Podés agregar más rutas como <Route path="/" element={<Inicio />} /> */}
     </Routes>

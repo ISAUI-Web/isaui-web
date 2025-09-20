@@ -152,7 +152,7 @@ export default function AdminMatriculacion() {
     if (tipo === "alumno") {
       navigate(`/detLegajo/${id}`);
     } else {
-      navigate(`/legajo/profesor/${id}`);
+      navigate(`/detLegajoProfesor`);
     }
   };
   const [filterCarrera, setFilterCarrera] = useState("");
@@ -373,6 +373,13 @@ const handleMenuItemClick = (itemId: string) => {
   <div className="flex-1 flex justify-end">
     <Button
       className="bg-green-500 hover:bg-green-600 text-white flex items-center gap-2"
+      onClick={() => {
+        if (activeTab === "alumnos") {
+          navigate("/crearAlumno");
+        } else {
+          navigate("/crearProfesor");
+        }
+      }}
     >
       <Plus className="w-4 h-4" />
       Agregar Legajo
