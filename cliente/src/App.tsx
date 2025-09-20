@@ -12,6 +12,7 @@ import Legajo from './pages/legajo'
 import Reportes from './pages/reportes'
 import FormMatriculacion from './pages/formMatriculacion'
 import LoginDni from './pages/loginDNI'
+import DetalleLegajo from './pages/detalleLegajo'
 
 export default function App() {
   return (
@@ -29,6 +30,7 @@ export default function App() {
       <Route path="/reportes" element={<Reportes />} />
       <Route path="/formMatriculacion/:id" element={<FormMatriculacion />} />
       <Route path="/loginDNI" element={<LoginDni />} />
+      <Route path="/detLegajo/:id" element={<DetalleLegajo />} />
       {/* Podés agregar más rutas aquí */}
       {/* Podés agregar más rutas como <Route path="/" element={<Inicio />} /> */}
     </Routes>

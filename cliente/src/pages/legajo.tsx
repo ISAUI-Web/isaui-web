@@ -1,15 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "../components/ui/card"
+import { Input } from "../components/ui/input"
+import { Button } from "../components/ui/button"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select"
 import {
   Menu,
   X,
   Home,
   Users,
   BarChart3,
-  Clock,
-  ThumbsUp,
   FolderOpen,
   FileText,
   LogOut,
@@ -17,13 +18,34 @@ import {
   ChevronRight,
   ChevronDown,
   Settings,
-  Construction,
-  AlertTriangle,
-} from "lucide-react"
+  Check,
+  Eye,
+  Clock,
+  XIcon,
+  Search,
+  Filter,
+  Plus
+} from "lucide-react";
+import { useNavigate } from "react-router-dom" 
 import logo from "../assets/logo.png"
 import logo2 from "../assets/logo2.png"
-import { useNavigate } from "react-router-dom"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs"
+import { GraduationCap, BookOpen } from "lucide-react"
+import { Badge } from "../components/ui/badge"
 
+interface MatriculaItem {
+  id: number;
+  estado: string;
+  aspirante: {
+    id: number;
+    nombre: string;
+    apellido: string;
+    dni: string;
+  };
+  carrera: {
+    nombre: string;
+  };
+}
 
 type MenuItem = {
   icon: React.ElementType;
@@ -32,7 +54,7 @@ type MenuItem = {
   submenu?: { id: string; label: string }[];
 };
 
-const menuItems: MenuItem[] = [
+const menuItems = [
   { icon: Home, label: "INICIO", id: "inicio" },
   {
     icon: Users,
@@ -49,11 +71,122 @@ const menuItems: MenuItem[] = [
   { icon: Settings, label: "MANTENIMIENTO", id: "mantenimiento" },
 ]
 
-export default function Legajo() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [currentImageIndex, setCurrentImageIndex] = useState(0)
-  const [activeSection, setActiveSection] = useState("inicio")
-  const navigate = useNavigate()
+export default function AdminMatriculacion() {
+  const navigate = useNavigate();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState("aspirantes-matriculacion"); // para que el menú marque la sub-sección correcta
+  const [searchTerm, setSearchTerm] = useState("");
+  const [matriculas, setMatriculas] = useState<MatriculaItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // State for Tabs
+  const [activeTab, setActiveTab] = useState<"alumnos" | "profesores">("alumnos");
+
+  // Dummy data for demonstration, replace with real data fetching
+  interface Alumno {
+    id: number;
+    nombre: string;
+    apellido: string;
+    carrera: string;
+    dni: string;
+    legajoCompleto: boolean;
+    tipo: "alumno";
+  }
+
+  interface Profesor {
+    id: number;
+    nombre: string;
+    apellido: string;
+    especialidad: string;
+    dni: string;
+    legajoCompleto: boolean;
+    tipo: "profesor";
+  }
+
+  // Replace these arrays with real fetched data as needed
+  const filteredAlumnos: Alumno[] = [
+    {
+      id: 1,
+      nombre: "Juan",
+      apellido: "Pérez",
+      carrera: "Ingeniería",
+      dni: "12345678",
+      legajoCompleto: true,
+      tipo: "alumno"
+    },
+    {
+      id: 2,
+      nombre: "Ana",
+      apellido: "García",
+      carrera: "Medicina",
+      dni: "87654321",
+      legajoCompleto: false,
+      tipo: "alumno"
+    }
+  ];
+
+  const filteredProfesores: Profesor[] = [
+    {
+      id: 1,
+      nombre: "Carlos",
+      apellido: "López",
+      especialidad: "Matemáticas",
+      dni: "11223344",
+      legajoCompleto: true,
+      tipo: "profesor"
+    },
+    {
+      id: 2,
+      nombre: "María",
+      apellido: "Martínez",
+      especialidad: "Historia",
+      dni: "44332211",
+      legajoCompleto: false,
+      tipo: "profesor"
+    }
+  ];
+
+  // Handler for viewing legajo
+  const handleVerLegajo = (tipo: "alumno" | "profesor", id: number) => {
+    if (tipo === "alumno") {
+      navigate(`/detLegajo/${id}`);
+    } else {
+      navigate(`/legajo/profesor/${id}`);
+    }
+  };
+  const [filterCarrera, setFilterCarrera] = useState("");
+  const [filterEstado, setFilterEstado] = useState("");
+  const [tab, setTab] = useState<"alumnos" | "profesores">("alumnos")
+
+  useEffect(() => {
+    fetch("http://localhost:3000/matricula")
+        .then(res => {
+        if (!res.ok) throw new Error("Error al traer las matrículas");
+        return res.json();
+        })
+        .then(data => {
+        setMatriculas(data);
+        setLoading(false);
+        })
+        .catch(err => {
+        console.error(err);
+        setError("No se pudo cargar la lista de matrículas");
+        setLoading(false);
+        });
+    }, []);
+
+  const carrerasUnicas = Array.from(new Set(matriculas.map(m => m.carrera?.nombre)));
+  const estadosUnicos = Array.from(new Set(matriculas.map(m => m.estado)));
+
+  const filteredMatriculas = matriculas
+    .filter(m =>
+      `${m.aspirante.nombre} ${m.aspirante.apellido} ${m.aspirante.dni} ${m.carrera?.nombre}`
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
+    )
+    .filter(m => filterCarrera ? m.carrera?.nombre === filterCarrera : true)
+    .filter(m => filterEstado ? m.estado === filterEstado : true);
   
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
@@ -66,8 +199,7 @@ export default function Legajo() {
     navigate("/login")
   }
 
-
-const [expandedSubmenu, setExpandedSubmenu] = useState<string | null>(null);
+  const [expandedSubmenu, setExpandedSubmenu] = useState<string | null>(null);
 
 const handleMenuItemClick = (itemId: string) => {
   setActiveSection(itemId);
@@ -104,11 +236,17 @@ const handleMenuItemClick = (itemId: string) => {
         navigate("/admin");
     }
   }
+};
+  const handleVer = (id: number) => {
+    navigate(`/detAspirante/${id}`, { state: { from: "/matriculacion" } });
+  }
 
-  setIsMenuOpen(false);
-}
+
+  if (loading) return <p className="text-white">Cargando aspirantes...</p>
+  if (error) return <p className="text-red-400">{error}</p>
+
   return (
-    <div className="min-h-screen bg-[#1F6680] from-teal-600 to-teal-800 relative">
+   <div className="min-h-screen bg-[#1F6680] from-teal-600 to-teal-800 relative">
       {/* Header */}
       <header className="bg-slate-800 h-16 flex items-center px-4 relative z-50">
         <button onClick={toggleMenu} className="text-white hover:text-gray-300 transition-colors">
@@ -199,44 +337,152 @@ const handleMenuItemClick = (itemId: string) => {
       </div>
 
       {/* Main Content */}
-      <main className="p-8">
-        <div className="max-w-4xl mx-auto">
-          {/* Page Title */}
-          <div className="mb-8 text-center">
-            <h2 className="text-white text-3xl font-bold mb-4">Gestión de Legajos</h2>
-          </div>
-
-          {/* Under Construction Card */}
-          <Card className="bg-white shadow-xl overflow-hidden">
-            <div className="p-12 text-center">
-              {/* Construction Icon */}
-              <div className="flex justify-center mb-6">
-                <div className="relative">
-                  <Construction className="w-24 h-24 text-orange-500" />
-                  <div className="absolute -top-2 -right-2">
-                    <AlertTriangle className="w-8 h-8 text-yellow-500" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Title */}
-              <h3 className="text-3xl font-bold text-gray-800 mb-4">Vista en Desarrollo</h3>
-
-              {/* Description */}
-              <div className="max-w-2xl mx-auto mb-8">
-                <p className="text-gray-600 text-lg mb-4">
-                  La sección de <strong>Legajo</strong> está actualmente en proceso de desarrollo.
-                </p>
-                <p className="text-gray-500 text-base">
-                  Nuestro equipo está trabajando para implementar todas las funcionalidades necesarias para la gestión
-                  de legajos.
-                </p>
-              </div>
-
+<main className="p-8">
+  <Card className="bg-white shadow-xl overflow-hidden">
+    <Tabs
+    value={activeTab}
+    onValueChange={(val) => setActiveTab(val as "alumnos" | "profesores")}
+    className="w-full"
+  >
+    <div className="border-b border-gray-200 px-6 pt-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold text-gray-800">LEGAJO DIGITAL</h2>
+      </div>
+      {/* Search Bar */}
+          <div className="mb-6 flex items-center gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Input
+                type="text"
+                placeholder="¿A quien estás buscando?"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-4 pr-12 py-3 rounded-full bg-white border-2 focus:ring-2 focus:ring-blue-500 text-gray-600 text-xl font-sans"
+              />
             </div>
-          </Card>
-        </div>
-      </main>
+  {/* Filtro por Carrera */}
+  <select
+    value={filterCarrera}
+    onChange={(e) => setFilterCarrera(e.target.value)}
+    className="w-full h-9 max-w-xs pl-4 pr-12 rounded-full bg-white border-2 focus:ring-2 focus:ring-blue-500 text-gray-600 text-sm font-sans"
+  >
+    <option value="">Todas las carreras</option>
+    {carrerasUnicas.map((c) => (
+      <option key={c} value={c}>{c}</option>
+    ))}
+  </select>
+  <div className="flex-1 flex justify-end">
+    <Button
+      className="bg-green-500 hover:bg-green-600 text-white flex items-center gap-2"
+    >
+      <Plus className="w-4 h-4" />
+      Agregar Legajo
+    </Button>
+  </div>
+</div>
+      <TabsList className="grid w-full grid-cols-2 max-w-md">
+        <TabsTrigger value="alumnos" className="flex items-center gap-2">
+          <GraduationCap className="w-4 h-4" />
+          Alumnos ({filteredAlumnos.length})
+        </TabsTrigger>
+        <TabsTrigger value="profesores" className="flex items-center gap-2">
+          <BookOpen className="w-4 h-4" />
+          Profesores ({filteredProfesores.length})
+        </TabsTrigger>
+      </TabsList>
     </div>
+    <TabsContent value="alumnos" className="p-6">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-gray-200">
+              <th className="text-left py-2 px-3 font-semibold text-gray-700">
+                NOMBRE <span className="text-blue-500">↓</span>
+              </th>
+              <th className="text-left py-2 px-3 font-semibold text-gray-700">
+                APELLIDO <span className="text-blue-500">↓</span>
+              </th>
+              <th className="text-left py-2 px-3 font-semibold text-gray-700">
+                CARRERA <span className="text-blue-500">↓</span>
+              </th>
+              <th className="text-left py-2 px-3 font-semibold text-gray-700">
+                DNI <span className="text-blue-500">↓</span>
+              </th>
+
+              <th className="text-center py-2 px-3 font-semibold text-gray-700">ACCIONES</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredAlumnos.map((alumno, index) => (
+              <tr key={alumno.id} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                <td className="py-2 px-3 font-bold text-gray-900">{alumno.nombre}</td>
+                <td className="py-2 px-3 text-gray-600">{alumno.apellido}</td>
+                <td className="py-2 px-3 text-gray-600">{alumno.carrera}</td>
+                <td className="py-2 px-3 text-gray-600">{alumno.dni}</td>
+   
+                <td className="py-2 px-3">
+                  <div className="flex justify-center">
+                    <Button
+                      onClick={() => handleVerLegajo(alumno.tipo, alumno.id)}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                    >
+                      <Eye className="w-4 h-4" />
+                      Ver legajo
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </TabsContent>
+    <TabsContent value="profesores" className="p-6">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-gray-200">
+              <th className="text-left py-2 px-3 font-semibold text-gray-700">
+                NOMBRE <span className="text-blue-500">↓</span>
+              </th>
+              <th className="text-left py-2 px-3 font-semibold text-gray-700">
+                APELLIDO <span className="text-blue-500">↓</span>
+              </th>
+              <th className="text-left py-2 px-3 font-semibold text-gray-700">
+                ESPECIALIDAD <span className="text-blue-500">↓</span>
+              </th>
+              <th className="text-left py-2 px-3 font-semibold text-gray-700">
+                DNI <span className="text-blue-500">↓</span>
+              </th>
+              <th className="text-center py-2 px-3 font-semibold text-gray-700">ACCIONES</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredProfesores.map((profesor, index) => (
+              <tr key={profesor.id} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                <td className="py-2 px-3 font-bold text-gray-900">{profesor.nombre}</td>
+                <td className="py-2 px-3 text-gray-600">{profesor.apellido}</td>
+                <td className="py-2 px-3 text-gray-600">{profesor.especialidad}</td>
+                <td className="py-2 px-3 text-gray-600">{profesor.dni}</td>
+                <td className="py-2 px-3">
+                  <div className="flex justify-center">
+                    <Button
+                      onClick={() => handleVerLegajo(profesor.tipo, profesor.id)}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                    >
+                      <Eye className="w-4 h-4" />
+                      Ver legajo
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </TabsContent>
+  </Tabs>
+</Card>
+    </main>
+  </div>
   )
 }
