@@ -153,65 +153,71 @@ export default function DetalleLegajo() {
   }
 
   useEffect(() => {
-  const fetchAspirante = async () => {
+  const fetchLegajo = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/aspirante/${id}`)
-      if (!response.ok) throw new Error('Error al cargar el aspirante')
+      const response = await fetch(`http://localhost:3000/estudiante/by-aspirante/${id}`);
+      if (!response.ok) throw new Error('Error al cargar el legajo del estudiante');
 
-      const data = await response.json()
-      console.log("Aspirante cargado:", data)
+      const estudianteData = await response.json();
+      console.log("Legajo de Estudiante cargado:", estudianteData);
 
-      // La fecha viene del backend como un string ISO (ej: "1990-01-15T00:00:00.000Z").
-      // La formateamos para que el input la muestre correctamente.
-      const formattedDate = data.fecha_nacimiento ? data.fecha_nacimiento.split('T')[0] : "";
+      const aspiranteDetails = estudianteData.aspirante;
+      if (!aspiranteDetails) {
+        throw new Error('Los datos del aspirante no se encontraron en la respuesta del legajo.');
+      }
 
+      const formattedDate = aspiranteDetails.fecha_nacimiento ? aspiranteDetails.fecha_nacimiento.split('T')[0] : "";
+
+      // Se combinan los datos del estudiante y del aspirante en el estado del formulario.
       setFormData({
-        id: data.id,
-        nombre: data.nombre || "",
-        apellido: data.apellido || "",
-        sexo: data.sexo || "",
-        dni: data.dni || "",
+        ...estudianteData,
+        ...aspiranteDetails,
+        id: aspiranteDetails.id,
         fecha_nacimiento: formattedDate,
-        provincia_nacimiento: data.provincia_nacimiento || "",
-        ciudad_nacimiento: data.ciudad_nacimiento || "",
-        cuil: data.cuil || "",
-        domicilio: data.domicilio || "",
-        localidad: data.localidad || "",
-        barrio: data.barrio || "",
-        codigo_postal: data.codigo_postal || "",
-        telefono: data.telefono || "",
-        email: data.email || "",
-        carrera: data.carrera || "", 
-        estado_preinscripcion: data.estado_preinscripcion || "pendiente",
-        estado_matriculacion: data.estado_matriculacion || "no matriculado",
-        completo_nivel_medio: data.completo_nivel_medio || "No",
-        anio_ingreso_medio: data.anio_ingreso_medio || "",
-        anio_egreso_medio: data.anio_egreso_medio || "",
-        provincia_medio: data.provincia_medio || "",
-        titulo_medio: data.titulo_medio || "",
-        completo_nivel_superior: data.completo_nivel_superior || "No",
-        carrera_superior: data.carrera_superior || "",
-        institucion_superior: data.institucion_superior || "",
-        provincia_superior: data.provincia_superior || "",
-        anio_ingreso_superior: data.anio_ingreso_superior || "",
-        anio_egreso_superior: data.anio_egreso_superior || "",
-        trabajo: data.trabajo === true || data.trabajo === 'Sí' ? 'Sí' : 'No',
-        horas_diarias: data.horas_diarias || "",
-        descripcion_trabajo: data.descripcion_trabajo || "",
-        personas_cargo: data.personas_cargo === true || data.personas_cargo === 'Sí' ? 'Sí' : 'No',
+        nombre: aspiranteDetails.nombre || "",
+        apellido: aspiranteDetails.apellido || "",
+        sexo: aspiranteDetails.sexo || "",
+        dni: aspiranteDetails.dni || "",
+        provincia_nacimiento: aspiranteDetails.provincia_nacimiento || "",
+        ciudad_nacimiento: aspiranteDetails.ciudad_nacimiento || "",
+        cuil: aspiranteDetails.cuil || "",
+        domicilio: aspiranteDetails.domicilio || "",
+        localidad: aspiranteDetails.localidad || "",
+        barrio: aspiranteDetails.barrio || "",
+        codigo_postal: aspiranteDetails.codigo_postal || "",
+        telefono: aspiranteDetails.telefono || "",
+        email: aspiranteDetails.email || "",
+        carrera: aspiranteDetails.carrera || "",
+        estado_preinscripcion: aspiranteDetails.estado_preinscripcion || "pendiente",
+        estado_matriculacion: aspiranteDetails.estado_matriculacion || "no matriculado",
+        completo_nivel_medio: aspiranteDetails.completo_nivel_medio || "No",
+        anio_ingreso_medio: aspiranteDetails.anio_ingreso_medio || "",
+        anio_egreso_medio: aspiranteDetails.anio_egreso_medio || "",
+        provincia_medio: aspiranteDetails.provincia_medio || "",
+        titulo_medio: aspiranteDetails.titulo_medio || "",
+        completo_nivel_superior: aspiranteDetails.completo_nivel_superior || "No",
+        carrera_superior: aspiranteDetails.carrera_superior || "",
+        institucion_superior: aspiranteDetails.institucion_superior || "",
+        provincia_superior: aspiranteDetails.provincia_superior || "",
+        anio_ingreso_superior: aspiranteDetails.anio_ingreso_superior || "",
+        anio_egreso_superior: aspiranteDetails.anio_egreso_superior || "",
+        trabajo: aspiranteDetails.trabajo === true || aspiranteDetails.trabajo === 'Sí' ? 'Sí' : 'No',
+        horas_diarias: aspiranteDetails.horas_diarias || "",
+        descripcion_trabajo: aspiranteDetails.descripcion_trabajo || "",
+        personas_cargo: aspiranteDetails.personas_cargo === true || aspiranteDetails.personas_cargo === 'Sí' ? 'Sí' : 'No',
         documentos: {
-          dniFrenteUrl: data.dniFrenteUrl || null,
-          dniDorsoUrl: data.dniDorsoUrl || null,
-          dniFrenteNombre: data.dniFrenteNombre || "",
-          dniDorsoNombre: data.dniDorsoNombre || "",
-          cusUrl: data.cusUrl || null,
-          isaUrl: data.isaUrl || null,
-          partida_nacimientoUrl: data.partida_nacimientoUrl || null,
-          analiticoUrl: data.analiticoUrl || null,
-          grupo_sanguineoUrl: data.grupo_sanguineoUrl || null,
-          cudUrl: data.cudUrl || null,
-          emmacUrl: data.emmacUrl || null,
-          foto_carnetUrl: data.foto_carnetUrl || null,
+          dniFrenteUrl: aspiranteDetails.dniFrenteUrl || null,
+          dniDorsoUrl: aspiranteDetails.dniDorsoUrl || null,
+          dniFrenteNombre: aspiranteDetails.dniFrenteNombre || "",
+          dniDorsoNombre: aspiranteDetails.dniDorsoNombre || "",
+          cusUrl: aspiranteDetails.cusUrl || null,
+          isaUrl: aspiranteDetails.isaUrl || null,
+          partida_nacimientoUrl: aspiranteDetails.partida_nacimientoUrl || null,
+          analiticoUrl: aspiranteDetails.analiticoUrl || null,
+          grupo_sanguineoUrl: aspiranteDetails.grupo_sanguineoUrl || null,
+          cudUrl: aspiranteDetails.cudUrl || null,
+          emmacUrl: aspiranteDetails.emmacUrl || null,
+          foto_carnetUrl: aspiranteDetails.foto_carnetUrl || null,
         }
       })
     } catch (error) {
@@ -219,7 +225,7 @@ export default function DetalleLegajo() {
     }
   }
 
-  if (id) fetchAspirante()
+  if (id) fetchLegajo()
 }, [id])
 
   if (!formData) {
