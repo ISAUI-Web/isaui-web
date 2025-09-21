@@ -74,7 +74,7 @@ const menuItems = [
 export default function AdminMatriculacion() {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState("aspirantes-matriculacion"); // para que el menú marque la sub-sección correcta
+  const [activeSection, setActiveSection] = useState("legajo"); // para que el menú marque la sub-sección correcta
   const [searchTerm, setSearchTerm] = useState("");
   const [matriculas, setMatriculas] = useState<MatriculaItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,17 +82,6 @@ export default function AdminMatriculacion() {
 
   // State for Tabs
   const [activeTab, setActiveTab] = useState<"alumnos" | "profesores">("alumnos");
-
-  // Dummy data for demonstration, replace with real data fetching
-  interface Alumno {
-    id: number;
-    nombre: string;
-    apellido: string;
-    carrera: string;
-    dni: string;
-    legajoCompleto: boolean;
-    tipo: "alumno";
-  }
 
   interface Profesor {
     id: number;
@@ -103,28 +92,6 @@ export default function AdminMatriculacion() {
     legajoCompleto: boolean;
     tipo: "profesor";
   }
-
-  // Replace these arrays with real fetched data as needed
-  const filteredAlumnos: Alumno[] = [
-    {
-      id: 1,
-      nombre: "Juan",
-      apellido: "Pérez",
-      carrera: "Ingeniería",
-      dni: "12345678",
-      legajoCompleto: true,
-      tipo: "alumno"
-    },
-    {
-      id: 2,
-      nombre: "Ana",
-      apellido: "García",
-      carrera: "Medicina",
-      dni: "87654321",
-      legajoCompleto: false,
-      tipo: "alumno"
-    }
-  ];
 
   const filteredProfesores: Profesor[] = [
     {
@@ -156,8 +123,6 @@ export default function AdminMatriculacion() {
     }
   };
   const [filterCarrera, setFilterCarrera] = useState("");
-  const [filterEstado, setFilterEstado] = useState("");
-  const [tab, setTab] = useState<"alumnos" | "profesores">("alumnos")
 
   useEffect(() => {
     fetch("http://localhost:3000/matricula")
@@ -177,16 +142,15 @@ export default function AdminMatriculacion() {
     }, []);
 
   const carrerasUnicas = Array.from(new Set(matriculas.map(m => m.carrera?.nombre)));
-  const estadosUnicos = Array.from(new Set(matriculas.map(m => m.estado)));
 
-  const filteredMatriculas = matriculas
-    .filter(m =>
+  const alumnosConfirmados = matriculas
+    .filter(m => m.estado === 'confirmado')
+    .filter(m => 
       `${m.aspirante.nombre} ${m.aspirante.apellido} ${m.aspirante.dni} ${m.carrera?.nombre}`
         .toLowerCase()
         .includes(searchTerm.toLowerCase())
     )
-    .filter(m => filterCarrera ? m.carrera?.nombre === filterCarrera : true)
-    .filter(m => filterEstado ? m.estado === filterEstado : true);
+    .filter(m => filterCarrera ? m.carrera?.nombre === filterCarrera : true);
   
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
@@ -389,7 +353,7 @@ const handleMenuItemClick = (itemId: string) => {
       <TabsList className="grid w-full grid-cols-2 max-w-md">
         <TabsTrigger value="alumnos" className="flex items-center gap-2">
           <GraduationCap className="w-4 h-4" />
-          Alumnos ({filteredAlumnos.length})
+          Alumnos ({alumnosConfirmados.length})
         </TabsTrigger>
         <TabsTrigger value="profesores" className="flex items-center gap-2">
           <BookOpen className="w-4 h-4" />
@@ -419,17 +383,17 @@ const handleMenuItemClick = (itemId: string) => {
             </tr>
           </thead>
           <tbody>
-            {filteredAlumnos.map((alumno, index) => (
-              <tr key={alumno.id} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
-                <td className="py-2 px-3 font-bold text-gray-900">{alumno.nombre}</td>
-                <td className="py-2 px-3 text-gray-600">{alumno.apellido}</td>
-                <td className="py-2 px-3 text-gray-600">{alumno.carrera}</td>
-                <td className="py-2 px-3 text-gray-600">{alumno.dni}</td>
+            {alumnosConfirmados.map((matricula, index) => (
+              <tr key={matricula.id} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                <td className="py-2 px-3 font-bold text-gray-900">{matricula.aspirante.nombre}</td>
+                <td className="py-2 px-3 text-gray-600">{matricula.aspirante.apellido}</td>
+                <td className="py-2 px-3 text-gray-600">{matricula.carrera.nombre}</td>
+                <td className="py-2 px-3 text-gray-600">{matricula.aspirante.dni}</td>
    
                 <td className="py-2 px-3">
                   <div className="flex justify-center">
                     <Button
-                      onClick={() => handleVerLegajo(alumno.tipo, alumno.id)}
+                      onClick={() => handleVerLegajo("alumno", matricula.aspirante.id)}
                       className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
                     >
                       <Eye className="w-4 h-4" />
