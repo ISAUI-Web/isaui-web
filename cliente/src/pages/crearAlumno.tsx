@@ -10,6 +10,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom'
 
 const API_BASE = 'http://localhost:3000';
 const abs = (u?: string | null) => (u ? (u.startsWith('http') ? u : `${API_BASE}${u}`) : '');
+const API_URL = 'http://localhost:3000';
 
 // Datos de ejemplo del aspirante
 
@@ -102,6 +103,29 @@ export default function CrearLegajoAlumno() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [dniFrenteFile, setDniFrenteFile] = useState<File | null>(null);
   const [dniDorsoFile, setDniDorsoFile] = useState<File | null>(null);
+  const [cusFile, setCusFile] = useState<File | null>(null);
+  const [fotoCarnetFile, setFotoCarnetFile] = useState<File | null>(null);
+  const [isaFile, setIsaFile] = useState<File | null>(null);
+  const [partidaNacimientoFile, setPartidaNacimientoFile] = useState<File | null>(null);
+  const [analiticoFile, setAnaliticoFile] = useState<File | null>(null);
+  const [grupoSanguineoFile, setGrupoSanguineoFile] = useState<File | null>(null);
+  const [cudFile, setCudFile] = useState<File | null>(null);
+  const [emmacFile, setEmmacFile] = useState<File | null>(null);
+
+  // Mapeo para manejar el estado de los archivos de forma genérica
+  const fileStates: Record<string, React.Dispatch<React.SetStateAction<File | null>>> = {
+    dniFrente: setDniFrenteFile,
+    dniDorso: setDniDorsoFile,
+    cus: setCusFile,
+    foto_carnet: setFotoCarnetFile,
+    isa: setIsaFile,
+    partida_nacimiento: setPartidaNacimientoFile,
+    analitico: setAnaliticoFile,
+    grupo_sanguineo: setGrupoSanguineoFile,
+    cud: setCudFile,
+    emmac: setEmmacFile,
+  };
+
 
   //  VALIDACIÓN UNIFICADA
   // Esta función centraliza toda la lógica de validación, eliminando la duplicación
@@ -225,19 +249,74 @@ export default function CrearLegajoAlumno() {
   }
   
   const handleCreate = async () => {
-    const step =
-      activeTab === "datos" ? 1 :
-      activeTab === "estudios" ? 2 :
-      activeTab === "laboral" ? 3 :
-      activeTab === "documentacion" ? 4 : 1;
-    if (!validate(formData, step)) {
-      alert("Por favor, corrige los errores antes de crear.");
+    // Validar todas las pestañas antes de enviar
+    const isStep1Valid = validate(formData, 1);
+    const isStep2Valid = validate(formData, 2);
+    const isStep3Valid = validate(formData, 3);
+
+    if (!isStep1Valid || !isStep2Valid || !isStep3Valid) {
+      alert("Por favor, completa todos los campos obligatorios en todas las pestañas antes de crear el legajo.");
       return;
     }
-    // Aquí iría la lógica para crear el alumno (POST al backend)
-    alert('Alumno creado (simulado, sin conexión a backend)');
-    navigate('/legajo');
-  }
+
+    const payload = new FormData();
+
+    // Mapear y agregar datos del formulario
+    const carreraSeleccionada = carreras.find(c => c.nombre === formData.carrera);
+    if (carreraSeleccionada) {
+      payload.append('carrera_id', carreraSeleccionada.id.toString());
+    }
+
+    Object.keys(formData).forEach(key => {
+      if (key !== 'documentos' && key !== 'carrera' && formData[key] !== null && formData[key] !== '') {
+        let value = formData[key];
+        if (typeof value === 'boolean') {
+          value = value.toString();
+        }
+        // Mapeo de valores de selects a lo que espera el backend si es necesario
+        if (key === 'completo_nivel_medio' || key === 'completo_nivel_superior' || key === 'trabajo' || key === 'personas_cargo') {
+            value = value === 'Sí' ? 'true' : (value === 'No' ? 'false' : value);
+        }
+        payload.append(key, value);
+      }
+    });
+
+    // Añadir estados por defecto para el flujo de creación integral
+    payload.append('estado_preinscripcion', 'confirmado');
+    payload.append('estado_matriculacion', 'confirmado');
+
+    // Adjuntar todos los archivos
+    if (dniFrenteFile) payload.append('dniFrente', dniFrenteFile);
+    if (dniDorsoFile) payload.append('dniDorso', dniDorsoFile);
+    if (cusFile) payload.append('cus', cusFile);
+    if (fotoCarnetFile) payload.append('foto_carnet', fotoCarnetFile);
+    if (isaFile) payload.append('isa', isaFile);
+    if (partidaNacimientoFile) payload.append('partida_nacimiento', partidaNacimientoFile);
+    if (analiticoFile) payload.append('analitico', analiticoFile);
+    if (grupoSanguineoFile) payload.append('grupo_sanguineo', grupoSanguineoFile);
+    if (cudFile) payload.append('cud', cudFile);
+    if (emmacFile) payload.append('emmac', emmacFile);
+
+    try {
+      const response = await fetch(`${API_URL}/legajo-estudiante/crear-alumno-completo`, {
+        method: 'POST',
+        body: payload,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        const errorMessage = Array.isArray(errorData.message) ? errorData.message.join(', ') : errorData.message;
+        throw new Error(errorMessage || 'Error al crear el legajo del alumno.');
+      }
+
+      const result = await response.json();
+      alert(`Legajo del alumno ${result.estudiante.nombre} ${result.estudiante.apellido} creado con éxito.`);
+      navigate('/legajo');
+    } catch (error: any) {
+      console.error('Error en la creación del legajo:', error);
+      alert(`Hubo un problema al crear el legajo: ${error.message}`);
+    }
+  };
 
 
 
@@ -251,26 +330,38 @@ export default function CrearLegajoAlumno() {
   const fileInputRefs = {
     dniFrente: dniFrenteInputRef,
     dniDorso: dniDorsoInputRef,
-    cusUrl: useRef<HTMLInputElement>(null),
-    foto_carnetUrl: useRef<HTMLInputElement>(null),
-    isaUrl: useRef<HTMLInputElement>(null),
-    partida_nacimientoUrl: useRef<HTMLInputElement>(null),
-    analiticoUrl: useRef<HTMLInputElement>(null),
-    grupo_sanguineoUrl: useRef<HTMLInputElement>(null),
-    cudUrl: useRef<HTMLInputElement>(null),
-    emmacUrl: useRef<HTMLInputElement>(null),
+    cus: useRef<HTMLInputElement>(null),
+    foto_carnet: useRef<HTMLInputElement>(null),
+    isa: useRef<HTMLInputElement>(null),
+    partida_nacimiento: useRef<HTMLInputElement>(null),
+    analitico: useRef<HTMLInputElement>(null),
+    grupo_sanguineo: useRef<HTMLInputElement>(null),
+    cud: useRef<HTMLInputElement>(null),
+    emmac: useRef<HTMLInputElement>(null),
   };
 
-  const handleFileInputChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-    documentType: keyof typeof fileInputRefs,
-  ) => {
-    const file = event.target.files?.[0];
+const handleFileInputChange = (
+  event: React.ChangeEvent<HTMLInputElement>,
+  documentType: string, // Usamos string para que coincida con las keys de fileInputRefs y fileStates
+) => {
+  const file = event.target.files ? event.target.files[0] : null;
     if (file) {
+    // Usar el mapeo para actualizar el estado del archivo correcto
+    const fileSetter = fileStates[documentType];
+    if (fileSetter) {
+      fileSetter(file);
+    }
+
       const previewUrl = URL.createObjectURL(file);
+    const urlKey = `${documentType}Url`;
+
       setFormData((prev: any) => ({
         ...prev,
-        documentos: { ...prev.documentos, [documentType]: previewUrl },
+      documentos: {
+        ...prev.documentos,
+        [urlKey]: previewUrl,
+        [`${documentType}Nombre`]: file.name,
+      },
       }));
     }
   };
@@ -671,59 +762,59 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
               className="hidden"
             />
             <input
-              ref={fileInputRefs.cusUrl}
+              ref={fileInputRefs.cus}
               type="file"
               accept="image/*"
-              onChange={(e) => handleFileInputChange(e, "cusUrl")}
+              onChange={(e) => handleFileInputChange(e, "cus")}
               className="hidden"
             />
             <input
-              ref={fileInputRefs.foto_carnetUrl}
+              ref={fileInputRefs.foto_carnet}
               type="file"
               accept="image/*"
-              onChange={(e) => handleFileInputChange(e, "foto_carnetUrl")}
+              onChange={(e) => handleFileInputChange(e, "foto_carnet")}
               className="hidden"
             />
             <input
-              ref={fileInputRefs.isaUrl}
+              ref={fileInputRefs.isa}
               type="file"
               accept="image/*"
-              onChange={(e) => handleFileInputChange(e, "isaUrl")}
+              onChange={(e) => handleFileInputChange(e, "isa")}
               className="hidden"
             />
             <input
-              ref={fileInputRefs.partida_nacimientoUrl}
+              ref={fileInputRefs.partida_nacimiento}
               type="file"
               accept="image/*"
-              onChange={(e) => handleFileInputChange(e, "partida_nacimientoUrl")}
+              onChange={(e) => handleFileInputChange(e, "partida_nacimiento")}
               className="hidden"
             />
             <input
-              ref={fileInputRefs.analiticoUrl}
+              ref={fileInputRefs.analitico}
               type="file"
               accept="image/*"
-              onChange={(e) => handleFileInputChange(e, "analiticoUrl")}
+              onChange={(e) => handleFileInputChange(e, "analitico")}
               className="hidden"
             />
             <input
-              ref={fileInputRefs.grupo_sanguineoUrl}
+              ref={fileInputRefs.grupo_sanguineo}
               type="file"
               accept="image/*"
-              onChange={(e) => handleFileInputChange(e, "grupo_sanguineoUrl")}
+              onChange={(e) => handleFileInputChange(e, "grupo_sanguineo")}
               className="hidden"
             />
             <input
-              ref={fileInputRefs.cudUrl}
+              ref={fileInputRefs.cud}
               type="file"
               accept="image/*"
-              onChange={(e) => handleFileInputChange(e, "cudUrl")}
+              onChange={(e) => handleFileInputChange(e, "cud")}
               className="hidden"
             />
             <input
-              ref={fileInputRefs.emmacUrl}
+              ref={fileInputRefs.emmac}
               type="file"
               accept="image/*"
-              onChange={(e) => handleFileInputChange(e, "emmacUrl")}
+              onChange={(e) => handleFileInputChange(e, "emmac")}
               className="hidden"
             />
             <div className={`grid grid-cols-1 md:grid-cols-2 gap-6`}>
@@ -736,7 +827,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       src={abs(formData.documentos.dniFrenteUrl) || '/placeholder.svg'}
                       alt="DNI Frente"
                       className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                      onClick={() => formData.documentos?.dniFrenteUrl && handleViewImage(abs(formData.documentos.dniFrenteUrl))}
+                      onClick={() => formData.documentos?.dniFrenteUrl && handleViewImage(abs(formData.documentos.dniFrenteUrl))} // Corregido
                     />
                   ) : (
                     <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
@@ -848,7 +939,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                   )}
                   <div className="flex gap-2">
                     <Button
-                      onClick={() => triggerFileInput("cusUrl")}
+                      onClick={() => triggerFileInput("cus")}
                       className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
                     >
                       <Camera className="w-4 h-4 mr-2" />
@@ -883,7 +974,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                   )}
                   <div className="flex gap-2">
                     <Button
-                      onClick={() => triggerFileInput("foto_carnetUrl")}
+                      onClick={() => triggerFileInput("foto_carnet")}
                       className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
                     >
                       <Camera className="w-4 h-4 mr-2" />
@@ -918,7 +1009,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                   )}
                   <div className="flex gap-2">
                     <Button
-                      onClick={() => triggerFileInput("isaUrl")}
+                      onClick={() => triggerFileInput("isa")}
                       className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
                     >
                       <Camera className="w-4 h-4 mr-2" />
@@ -953,7 +1044,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                   )}
                   <div className="flex gap-2">
                     <Button
-                      onClick={() => triggerFileInput("partida_nacimientoUrl")}
+                      onClick={() => triggerFileInput("partida_nacimiento")}
                       className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
                     >
                       <Camera className="w-4 h-4 mr-2" />
@@ -988,7 +1079,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                   )}
                   <div className="flex gap-2">
                     <Button
-                      onClick={() => triggerFileInput("analiticoUrl")}
+                      onClick={() => triggerFileInput("analitico")}
                       className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
                     >
                       <Camera className="w-4 h-4 mr-2" />
@@ -1023,7 +1114,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                   )}
                   <div className="flex gap-2">
                     <Button
-                      onClick={() => triggerFileInput("grupo_sanguineoUrl")}
+                      onClick={() => triggerFileInput("grupo_sanguineo")}
                       className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
                     >
                       <Camera className="w-4 h-4 mr-2" />
@@ -1058,7 +1149,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                   )}
                   <div className="flex gap-2">
                     <Button
-                      onClick={() => triggerFileInput("cudUrl")}
+                      onClick={() => triggerFileInput("cud")}
                       className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
                     >
                       <Camera className="w-4 h-4 mr-2" />
@@ -1093,7 +1184,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                   )}
                   <div className="flex gap-2">
                     <Button
-                      onClick={() => triggerFileInput("emmacUrl")}
+                      onClick={() => triggerFileInput("emmac")}
                       className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
                     >
                       <Camera className="w-4 h-4 mr-2" />

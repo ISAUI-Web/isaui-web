@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Matricula } from './matricula.entity';
 import { MatriculaService } from './matricula.service';
@@ -13,7 +13,7 @@ import { EstudianteModule } from '../estudiante/estudiante.module';
   imports: [
     TypeOrmModule.forFeature([Aspirante, Preinscripcion, Matricula, Carrera]), // 👈 IMPORTANTE
     ConstanciaModule,
-    EstudianteModule,
+    forwardRef(() => EstudianteModule),
   ],
   controllers: [MatriculaController],
   providers: [MatriculaService],

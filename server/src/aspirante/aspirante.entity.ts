@@ -96,6 +96,13 @@ export class Aspirante {
   @Column()
   personas_cargo: boolean;
 
+  @Column({
+    type: 'varchar',
+    length: 50,
+    default: 'PREINSCRIPCION_WEB', // Valor por defecto para los nuevos aspirantes
+  })
+  origen: string;
+
   @OneToMany(() => Preinscripcion, (preinscripcion) => preinscripcion.aspirante)
   preinscripciones: Preinscripcion[];
 

@@ -33,18 +33,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs"
 import { GraduationCap, BookOpen } from "lucide-react"
 import { Badge } from "../components/ui/badge"
 
-interface MatriculaItem {
-  id: number;
-  estado: string;
-  aspirante: {
-    id: number;
-    nombre: string;
-    apellido: string;
-    dni: string;
-  };
-  carrera: {
-    nombre: string;
-  };
+interface EstudianteItem {
+  id: number; // ID del Estudiante
+  aspirante_id: number; // ID del Aspirante
+  nombre: string;
+  apellido: string;
+  dni: string;
+  carrera: string;
 }
 
 type MenuItem = {
@@ -76,7 +71,7 @@ export default function AdminMatriculacion() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("legajo"); // para que el menú marque la sub-sección correcta
   const [searchTerm, setSearchTerm] = useState("");
-  const [matriculas, setMatriculas] = useState<MatriculaItem[]>([]);
+  const [estudiantes, setEstudiantes] = useState<EstudianteItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -117,7 +112,8 @@ export default function AdminMatriculacion() {
   // Handler for viewing legajo
   const handleVerLegajo = (tipo: "alumno" | "profesor", id: number) => {
     if (tipo === "alumno") {
-      navigate(`/detLegajo/${id}`);
+      // Navegamos usando el ID del aspirante para que la página de detalle funcione
+      navigate(`/detLegajo/${id}`); 
     } else {
       navigate(`/detLegajoProfesor`);
     }
@@ -125,28 +121,27 @@ export default function AdminMatriculacion() {
   const [filterCarrera, setFilterCarrera] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:3000/matricula")
+    fetch("http://localhost:3000/estudiante") // <--- CAMBIO: Usamos el nuevo endpoint
         .then(res => {
-        if (!res.ok) throw new Error("Error al traer las matrículas");
+        if (!res.ok) throw new Error("Error al traer los legajos de estudiantes");
         return res.json();
         })
         .then(data => {
-        setMatriculas(data);
+        setEstudiantes(data);
         setLoading(false);
         })
         .catch(err => {
         console.error(err);
-        setError("No se pudo cargar la lista de matrículas");
+        setError("No se pudo cargar la lista de legajos");
         setLoading(false);
         });
     }, []);
 
-  const carrerasUnicas = Array.from(new Set(matriculas.map(m => m.carrera?.nombre)));
+  const carrerasUnicas = Array.from(new Set(estudiantes.map(e => e.carrera)));
 
-  const alumnosConfirmados = matriculas
-    .filter(m => m.estado === 'confirmado')
+  const alumnosFiltrados = estudiantes
     .filter(m => 
-      `${m.aspirante.nombre} ${m.aspirante.apellido} ${m.aspirante.dni} ${m.carrera?.nombre}`
+      `${m.nombre} ${m.apellido} ${m.dni} ${m.carrera}`
         .toLowerCase()
         .includes(searchTerm.toLowerCase())
     )
@@ -353,11 +348,11 @@ const handleMenuItemClick = (itemId: string) => {
       <TabsList className="grid w-full grid-cols-2 max-w-md">
         <TabsTrigger value="alumnos" className="flex items-center gap-2">
           <GraduationCap className="w-4 h-4" />
-          Alumnos ({alumnosConfirmados.length})
+          Alumnos ({alumnosFiltrados.length})
         </TabsTrigger>
         <TabsTrigger value="profesores" className="flex items-center gap-2">
           <BookOpen className="w-4 h-4" />
-          Profesores ({filteredProfesores.length})
+          Profesores ({filteredProfesores.length}) 
         </TabsTrigger>
       </TabsList>
     </div>
@@ -383,17 +378,17 @@ const handleMenuItemClick = (itemId: string) => {
             </tr>
           </thead>
           <tbody>
-            {alumnosConfirmados.map((matricula, index) => (
-              <tr key={matricula.id} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
-                <td className="py-2 px-3 font-bold text-gray-900">{matricula.aspirante.nombre}</td>
-                <td className="py-2 px-3 text-gray-600">{matricula.aspirante.apellido}</td>
-                <td className="py-2 px-3 text-gray-600">{matricula.carrera.nombre}</td>
-                <td className="py-2 px-3 text-gray-600">{matricula.aspirante.dni}</td>
+            {alumnosFiltrados.map((estudiante, index) => (
+              <tr key={estudiante.id} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                <td className="py-2 px-3 font-bold text-gray-900">{estudiante.nombre}</td>
+                <td className="py-2 px-3 text-gray-600">{estudiante.apellido}</td>
+                <td className="py-2 px-3 text-gray-600">{estudiante.carrera}</td>
+                <td className="py-2 px-3 text-gray-600">{estudiante.dni}</td>
    
                 <td className="py-2 px-3">
                   <div className="flex justify-center">
                     <Button
-                      onClick={() => handleVerLegajo("alumno", matricula.aspirante.id)}
+                      onClick={() => handleVerLegajo("alumno", estudiante.aspirante_id)}
                       className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
                     >
                       <Eye className="w-4 h-4" />

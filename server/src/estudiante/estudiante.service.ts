@@ -1,6 +1,13 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryRunner, Repository } from 'typeorm';
+import { DocumentoService } from '../documento/documento.service';
 import { Estudiante } from './estudiante.entity';
 import { Aspirante } from '../aspirante/aspirante.entity';
 import { Matricula } from '../matricula/matricula.entity';
@@ -15,9 +22,33 @@ export class EstudianteService {
     private readonly estudianteRepository: Repository<Estudiante>,
     @InjectRepository(Matricula)
     private readonly matriculaRepository: Repository<Matricula>,
-    @InjectRepository(Documento)
-    private readonly documentoRepository: Repository<Documento>,
+    // Inyectamos el servicio de documentos en lugar del repositorio
+    @Inject(forwardRef(() => DocumentoService))
+    private readonly documentoService: DocumentoService,
   ) {}
+
+  async findAll(): Promise<any[]> {
+    const estudiantes = await this.estudianteRepository.find({
+      relations: {
+        aspirante: {
+          preinscripciones: {
+            carrera: true,
+          },
+        },
+      },
+    });
+
+    return estudiantes.map((estudiante) => {
+      return {
+        id: estudiante.id, // ID del estudiante para la URL
+        aspirante_id: estudiante.aspirante.id, // ID del aspirante para la URL
+        nombre: estudiante.aspirante.nombre,
+        apellido: estudiante.aspirante.apellido,
+        dni: estudiante.aspirante.dni,
+        carrera: estudiante.aspirante.preinscripciones?.[0]?.carrera?.nombre || 'N/A',
+      };
+    });
+  }
 
   async findByAspiranteId(aspiranteId: number): Promise<any> {
     const estudiante = await this.estudianteRepository.findOne({
@@ -45,35 +76,17 @@ export class EstudianteService {
     const preinscripcion = aspirante.preinscripciones?.[0];
     const carreraNombre = preinscripcion?.carrera?.nombre || 'N/A';
 
-    const documentos = await this.documentoRepository.find({
-      where: { aspirante: { id: aspiranteId } },
-    });
-
-    const documentosMapeados: { [key: string]: string } = {};
-    const tipoToKeyMap: { [key: string]: string } = {
-      'DNI Frente': 'dniFrenteUrl',
-      'DNI Dorso': 'dniDorsoUrl',
-      CUS: 'cusUrl',
-      ISA: 'isaUrl',
-      'Partida de Nacimiento': 'partida_nacimientoUrl',
-      'Analítico Nivel Secundario': 'analiticoUrl',
-      'Certificado de Grupo Sanguíneo': 'grupo_sanguineoUrl',
-      CUD: 'cudUrl',
-      EMMAC: 'emmacUrl',
-      'Foto Carnet 4x4': 'foto_carnetUrl',
-    };
-
-    documentos.forEach((doc) => {
-      const key = tipoToKeyMap[doc.tipo];
-      if (key) {
-        documentosMapeados[key] = `/uploads/documentos/${doc.archivo_pdf}`;
-      }
-    });
+    // Usamos el servicio centralizado para obtener las URLs de los documentos
+    const documentosMapeados =
+      await this.documentoService.getDocumentosByAspiranteId(aspiranteId);
 
     // Componemos un objeto aspirante que coincide con lo que el frontend espera
     const aspiranteData = {
       ...aspirante,
       carrera: carreraNombre,
+      // Transformamos el booleano a un string que el frontend espera
+      trabajo: aspirante.trabajo ? 'Sí' : 'No',
+      personas_cargo: aspirante.personas_cargo ? 'Sí' : 'No',
       estado_preinscripcion: preinscripcion?.estado || 'N/A',
       estado_matriculacion: matricula?.estado || 'no matriculado',
       ...documentosMapeados,
@@ -90,8 +103,11 @@ export class EstudianteService {
 
   async crearEstudianteDesdeAspirante(
     aspirante: Aspirante,
+    queryRunner?: QueryRunner,
   ): Promise<Estudiante> {
-    const estudianteExistente = await this.estudianteRepository.findOne({
+    const manager = queryRunner ? queryRunner.manager : this.estudianteRepository.manager;
+
+    const estudianteExistente = await manager.findOne(Estudiante, {
       where: { aspirante: { id: aspirante.id } },
     });
 
@@ -109,6 +125,21 @@ export class EstudianteService {
       activo: true,
     });
 
-    return this.estudianteRepository.save(nuevoEstudiante);
+    const estudianteGuardado = await manager.save(nuevoEstudiante);
+
+    // --- INICIO DE LA SOLUCIÓN ---
+    // Ahora, buscamos todos los documentos asociados al aspirante
+    // y los vinculamos con el nuevo estudiante que acabamos de crear.
+    const documentosDelAspirante = await manager.find(Documento, {
+      where: { aspirante: { id: aspirante.id } },
+    });
+
+    for (const doc of documentosDelAspirante) {
+      doc.estudiante = estudianteGuardado; // Asignamos la referencia al estudiante
+      await manager.save(doc);
+    }
+    // --- FIN DE LA SOLUCIÓN ---
+
+    return estudianteGuardado;
   }
 }

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Documento } from './documento.entity';
 import { DocumentoService } from './documento.service';
@@ -16,7 +16,7 @@ import { MatriculaModule } from '../matricula/matricula.module';
       LegajoDocente,
       Aspirante,
     ]),
-    MatriculaModule,
+    forwardRef(() => MatriculaModule),
   ],
   controllers: [DocumentoController],
   providers: [DocumentoService],

@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, Repository } from 'typeorm';
+import { FindOptionsWhere, QueryRunner, Repository } from 'typeorm';
 import { Aspirante } from './aspirante.entity';
 import { CreateAspiranteDto } from './dto/create-aspirante.dto';
 import { UpdateAspiranteDto } from './dto/update-aspirante.dto';
@@ -15,6 +15,7 @@ import { MatriculaService } from '../matricula/matricula.service';
 import PDFDocument from 'pdfkit';
 import { Preinscripcion } from '../preinscripcion/preinscripcion.entity';
 import { Matricula } from '../matricula/matricula.entity';
+import { Carrera } from '../carrera/carrera.entity';
 
 @Injectable()
 export class AspiranteService {
@@ -25,38 +26,59 @@ export class AspiranteService {
     private readonly preinscripcionService: PreinscripcionService,
     private readonly constanciaService: ConstanciaService,
     private readonly matriculaService: MatriculaService,
+    @InjectRepository(Preinscripcion)
+    private readonly preinscripcionRepository: Repository<Preinscripcion>,
+    @InjectRepository(Carrera)
+    private readonly carreraRepository: Repository<Carrera>,
   ) {}
 
   async create(
-    dto: CreateAspiranteDto,
-    archivos?: {
-      dniFrente?: Express.Multer.File[];
-      dniDorso?: Express.Multer.File[];
-    },
+    createAspiranteDto: CreateAspiranteDto,
+    files: { [fieldname: string]: Express.Multer.File[] } = {},
+    queryRunner?: QueryRunner,
   ): Promise<Aspirante> {
-    // Crear y guardar el aspirante
-    const aspirante = this.aspiranteRepository.create(dto);
-    const savedAspirante = await this.aspiranteRepository.save(aspirante);
+    const manager = queryRunner
+      ? queryRunner.manager
+      : this.aspiranteRepository.manager;
 
-    // Si hay archivos, guardar documentos asociados
-    if (archivos) {
-      await this.documentoService.guardarDocumentosAspirante(
-        savedAspirante,
-        archivos,
-      );
-    }
+    const carrera = await manager.findOneBy(Carrera, {
+      id: createAspiranteDto.carrera_id,
+    });
+    if (!carrera) throw new NotFoundException('Carrera no encontrada');
 
-    await this.preinscripcionService.create({
-      aspirante_id: savedAspirante.id,
-      carrera_id: dto.carrera_id,
+    const nuevoAspirante = manager.create(Aspirante, {
+      ...createAspiranteDto,
+      carrera: carrera,
     });
 
-    return savedAspirante;
+    const aspiranteGuardado = await manager.save(nuevoAspirante);
+
+    const preinscripcion = manager.create(Preinscripcion, {
+      aspirante: aspiranteGuardado,
+      carrera: carrera,
+      fecha_preinscripcion: new Date(),
+      estado: 'pendiente',
+    });
+
+    await manager.save(preinscripcion);
+
+    // El método de documentos también debe aceptar el queryRunner
+    // Corregimos el nombre del método y pasamos el objeto aspirante completo
+    await this.documentoService.guardarDocumentosAspirante(
+      aspiranteGuardado,
+      files,
+      queryRunner,
+    );
+
+    return aspiranteGuardado;
   }
 
   async findAll() {
     const aspirantes = await this.aspiranteRepository.find({
       select: ['id', 'nombre', 'apellido', 'dni'],
+      where: {
+        origen: 'PREINSCRIPCION_WEB',
+      },
       relations: ['preinscripciones', 'preinscripciones.carrera'],
     });
 
@@ -80,22 +102,13 @@ export class AspiranteService {
 
     if (!aspirante) throw new NotFoundException('Aspirante no encontrado');
 
-    // Traer todos los documentos
+    // Traer todos los documentos usando el servicio centralizado
     const documentos =
       await this.documentoService.getDocumentosByAspiranteId(id);
 
-    // Crear un objeto plano con las URLs y nombres de los documentos
-    const documentosData: { [key: string]: string | null } = {};
-    for (const key in documentos) {
-      const doc = documentos[key];
-      documentosData[`${key}Url`] = doc?.url || null;
-      documentosData[`${key}Nombre`] =
-        doc?.url?.split('/').pop() || 'No hay imagen disponible';
-    }
-
     const aspiranteConDocumentos = {
       ...aspirante,
-      ...documentosData,
+      ...documentos,
     };
 
     return aspiranteConDocumentos;
@@ -165,27 +178,35 @@ export class AspiranteService {
 
     // Se actualiza el estado en la tabla 'matricula' si ha cambiado y si existe una matrícula.
     if (
-  matricula &&
-  estado_matriculacion &&
-  estado_matriculacion !== estadoMatriculacionAnterior
-) {
-  const estadosPermitidos = ['pendiente', 'en espera', 'confirmado', 'rechazado'] as const;
+      matricula &&
+      estado_matriculacion &&
+      estado_matriculacion !== estadoMatriculacionAnterior
+    ) {
+      const estadosPermitidos = [
+        'pendiente',
+        'en espera',
+        'confirmado',
+        'rechazado',
+      ] as const;
 
-  if (!estadosPermitidos.includes(estado_matriculacion as any)) {
-    throw new BadRequestException('Estado de matrícula inválido');
-  }
+      if (!estadosPermitidos.includes(estado_matriculacion as any)) {
+        throw new BadRequestException('Estado de matrícula inválido');
+      }
 
-  await this.matriculaService.updateEstadoForAspirante(
-    id,
-    estado_matriculacion as 'pendiente' | 'en espera' | 'confirmado' | 'rechazado',
-  );
-}
-
+      await this.matriculaService.updateEstadoForAspirante(
+        id,
+        estado_matriculacion as
+          | 'pendiente'
+          | 'en espera'
+          | 'confirmado'
+          | 'rechazado',
+      );
+    }
 
     return saved;
-}
+  }
 
-    private async getPreinscripcionesForReport(
+  private async getPreinscripcionesForReport(
     carreraId?: number,
     estado?: string,
   ): Promise<Preinscripcion[]> {
