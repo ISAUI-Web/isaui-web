@@ -8,5 +8,6 @@ import { CarreraController } from './carrera.controller';
   imports: [TypeOrmModule.forFeature([Carrera])],
   controllers: [CarreraController],
   providers: [CarreraService],
+  exports: [CarreraService],
 })
 export class CarreraModule {}

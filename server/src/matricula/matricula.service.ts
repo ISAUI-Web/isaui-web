@@ -1,6 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindManyOptions, Repository } from 'typeorm';
+import {
+  QueryRunner,
+  FindManyOptions,
+  Repository,
+  EntityManager,
+} from 'typeorm';
 import { Aspirante } from '../aspirante/aspirante.entity';
 import { Preinscripcion } from '../preinscripcion/preinscripcion.entity';
 import { Matricula } from './matricula.entity';
@@ -17,7 +27,8 @@ export class MatriculaService {
     @InjectRepository(Matricula)
     private matriculaRepository: Repository<Matricula>,
     private readonly constanciaService: ConstanciaService,
-    private readonly estudianteService: EstudianteService,
+    @Inject(forwardRef(() => EstudianteService))
+    private estudianteService: EstudianteService,
   ) {}
 
   async validarAccesoMatricula(dni: string) {
@@ -56,15 +67,22 @@ export class MatriculaService {
     };
   }
 
-  async formalizarMatricula(aspiranteId: number): Promise<Matricula> {
+  async formalizarMatricula(
+    aspiranteId: number,
+    queryRunner?: QueryRunner,
+  ): Promise<Matricula> {
+    const manager = queryRunner
+      ? queryRunner.manager
+      : this.matriculaRepository.manager;
+
     // Verificar si ya existe una matrícula
-    const matriculaExistente = await this.matriculaRepository.findOne({
+    const matriculaExistente = await manager.findOne(Matricula, {
       where: { aspirante: { id: aspiranteId } },
     });
     if (matriculaExistente) return matriculaExistente;
 
     // Buscar aspirante y preinscripción
-    const aspirante = await this.aspiranteRepository.findOne({
+    const aspirante = await manager.findOne(Aspirante, {
       where: { id: aspiranteId },
       relations: ['preinscripciones', 'preinscripciones.carrera'],
     });
@@ -76,7 +94,7 @@ export class MatriculaService {
     }
 
     // Crear nueva matrícula
-    const nuevaMatricula = this.matriculaRepository.create({
+    const nuevaMatricula = manager.create(Matricula, {
       aspirante,
       carrera: preinscripcion.carrera,
       fecha_matricula: new Date(),
@@ -84,7 +102,7 @@ export class MatriculaService {
       constancia_pdf: '', // puedes guardar el nombre si querés
     });
 
-    const savedMatricula = await this.matriculaRepository.save(nuevaMatricula);
+    const savedMatricula = await manager.save(nuevaMatricula);
     console.log('Matricula creada', nuevaMatricula);
     // --- GENERAR Y ENVIAR PDF ---
     try {
@@ -118,6 +136,11 @@ export class MatriculaService {
   async findAll(): Promise<Matricula[]> {
     return this.matriculaRepository.find({
       relations: ['aspirante', 'carrera'],
+      where: {
+        aspirante: {
+          origen: 'PREINSCRIPCION_WEB',
+        },
+      },
     });
   }
 
@@ -128,75 +151,83 @@ export class MatriculaService {
   async updateEstadoForAspirante(
     aspiranteId: number,
     nuevoEstado: 'pendiente' | 'en espera' | 'confirmado' | 'rechazado',
+    queryRunner?: QueryRunner,
   ) {
-    return await this.matriculaRepository.manager.transaction(
-      async (transactionalEntityManager) => {
-        const matricula = await transactionalEntityManager.findOne(Matricula, {
-          where: { aspirante: { id: aspiranteId } },
-          relations: ['aspirante', 'carrera'],
-        });
+    const performUpdate = async (manager: EntityManager) => {
+      const matricula = await manager.findOne(Matricula, {
+        where: { aspirante: { id: aspiranteId } },
+        relations: ['aspirante', 'carrera'],
+      });
 
-        if (!matricula) {
-          throw new NotFoundException(
-            `No se encontró matrícula para el aspirante con ID ${aspiranteId}`,
+      if (!matricula) {
+        throw new NotFoundException(
+          `No se encontró matrícula para el aspirante con ID ${aspiranteId}`,
+        );
+      }
+
+      const estadoAnterior = matricula.estado;
+      const carrera = matricula.carrera;
+
+      // Ajustar cupo si cambia el estado
+      if (estadoAnterior !== nuevoEstado) {
+        // Confirmar matrícula → ocupar un cupo
+        if (nuevoEstado === 'confirmado' && estadoAnterior !== 'confirmado') {
+          if (carrera.cupo_actual <= 0) {
+            throw new Error(
+              `No hay más cupos disponibles para ${carrera.nombre}`,
+            );
+          }
+          carrera.cupo_actual -= 1;
+          await manager.save(carrera);
+
+          // Crear el registro de estudiante
+          await this.estudianteService.crearEstudianteDesdeAspirante(
+            matricula.aspirante,
+            queryRunner, // Propagar el queryRunner
           );
         }
 
-        const estadoAnterior = matricula.estado;
-        const carrera = matricula.carrera;
+        // Rechazar matrícula previamente confirmada → liberar un cupo
+        if (estadoAnterior === 'confirmado' && nuevoEstado !== 'confirmado') {
+          carrera.cupo_actual += 1; // SUMAR al liberar
+          if (carrera.cupo_actual > carrera.cupo_maximo) {
+            carrera.cupo_actual = carrera.cupo_maximo;
+          }
+          await manager.save(carrera);
+        }
 
-        // Ajustar cupo si cambia el estado
-        if (estadoAnterior !== nuevoEstado) {
-          // Confirmar matrícula → ocupar un cupo
-          if (nuevoEstado === 'confirmado' && estadoAnterior !== 'confirmado') {
-            if (carrera.cupo_actual <= 0) {
-              throw new Error(
-                `No hay más cupos disponibles para ${carrera.nombre}`,
-              );
-            }
-            carrera.cupo_actual -= 1; // RESTAR al confirmar
-            await transactionalEntityManager.save(carrera);
+        // Actualizar estado de la matrícula
+        matricula.estado = nuevoEstado;
+        await manager.save(matricula);
 
-            // Crear el registro de estudiante
-            await this.estudianteService.crearEstudianteDesdeAspirante(
-              matricula.aspirante,
+        // Notificación por email
+        const aspirante = matricula.aspirante;
+        if (aspirante && aspirante.email) {
+          try {
+            await this.constanciaService.enviarNotificacionEstado(
+              aspirante.email,
+              `${aspirante.nombre} ${aspirante.apellido}`,
+              nuevoEstado,
+              'matriculación',
             );
-          }
-
-          // Rechazar matrícula previamente confirmada → liberar un cupo
-          if (estadoAnterior === 'confirmado' && nuevoEstado !== 'confirmado') {
-            carrera.cupo_actual += 1; // SUMAR al liberar
-            if (carrera.cupo_actual > carrera.cupo_maximo) {
-              carrera.cupo_actual = carrera.cupo_maximo;
-            }
-            await transactionalEntityManager.save(carrera);
-          }
-
-          // Actualizar estado de la matrícula
-          matricula.estado = nuevoEstado;
-          await transactionalEntityManager.save(matricula);
-
-          // Notificación por email
-          const aspirante = matricula.aspirante;
-          if (aspirante && aspirante.email) {
-            try {
-              await this.constanciaService.enviarNotificacionEstado(
-                aspirante.email,
-                `${aspirante.nombre} ${aspirante.apellido}`,
-                nuevoEstado,
-                'matriculación',
-              );
-            } catch (error) {
-              console.error(
-                'Error al enviar email de cambio de estado de matriculación:',
-                error,
-              );
-            }
+          } catch (error) {
+            console.error(
+              'Error al enviar email de cambio de estado de matriculación:',
+              error,
+            );
           }
         }
 
         return matricula;
-      },
-    );
+      }
+    };
+
+    if (queryRunner) {
+      // Si estamos en una transacción, usamos su manager
+      return performUpdate(queryRunner.manager);
+    } else {
+      // Si no, creamos una transacción nueva como antes
+      return this.matriculaRepository.manager.transaction(performUpdate);
+    }
   }
 }

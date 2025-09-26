@@ -28,7 +28,39 @@ export default function DetalleLegajo() {
 
   const [activeTab, setActiveTab] = useState("datos")
   const [isEditing, setIsEditing] = useState(false)
-  const [formData, setFormData] = useState<any | null>(null)
+  const [formData, setFormData] = useState<any>({
+    nombre: '',
+    apellido: '',
+    sexo: '',
+    dni: '',
+    cuil: '',
+    domicilio: '',
+    localidad: '',
+    barrio: '',
+    codigo_postal: '',
+    telefono: '',
+    email: '',
+    fecha_nacimiento: '',
+    ciudad_nacimiento: '',
+    provincia_nacimiento: '',
+    carrera: '',
+    estado_preinscripcion: '',
+    estado_matriculacion: '',
+    // ... y así con todos los demás campos para evitar que sean `undefined`
+    documentos: {
+      dniFrenteUrl: null,
+      dniDorsoUrl: null,
+      cusUrl: null,
+      foto_carnetUrl: null,
+      isaUrl: null,
+      partida_nacimientoUrl: null,
+      analiticoUrl: null,
+      grupo_sanguineoUrl: null,
+      cudUrl: null,
+      emmacUrl: null,
+    },
+  });
+  const [isLoading, setIsLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(1)
   const totalSteps = 3
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -154,6 +186,7 @@ export default function DetalleLegajo() {
 
   useEffect(() => {
   const fetchLegajo = async () => {
+    setIsLoading(true);
     try {
       const response = await fetch(`http://localhost:3000/estudiante/by-aspirante/${id}`);
       if (!response.ok) throw new Error('Error al cargar el legajo del estudiante');
@@ -161,75 +194,47 @@ export default function DetalleLegajo() {
       const estudianteData = await response.json();
       console.log("Legajo de Estudiante cargado:", estudianteData);
 
-      const aspiranteDetails = estudianteData.aspirante;
-      if (!aspiranteDetails) {
+      if (!estudianteData.aspirante) {
         throw new Error('Los datos del aspirante no se encontraron en la respuesta del legajo.');
       }
 
-      const formattedDate = aspiranteDetails.fecha_nacimiento ? aspiranteDetails.fecha_nacimiento.split('T')[0] : "";
+      const formattedDate = estudianteData.aspirante.fecha_nacimiento 
+        ? estudianteData.aspirante.fecha_nacimiento.split('T')[0] 
+        : "";
 
-      // Se combinan los datos del estudiante y del aspirante en el estado del formulario.
+      // El problema es que la respuesta del backend es anidada: { ..., aspirante: { ... } }
+      // El estado del frontend espera una estructura plana.
+      // La solución es combinar los datos del estudiante y los datos del aspirante anidado.
+      // Y lo más importante, construir el objeto `documentos` a partir del objeto `aspirante` anidado.
       setFormData({
-        ...estudianteData,
-        ...aspiranteDetails,
-        id: aspiranteDetails.id,
+        ...estudianteData, // Copia los datos del estudiante (id, año_actual, etc.)
+        ...estudianteData.aspirante, // Copia los datos del aspirante (nombre, dni, etc.)
         fecha_nacimiento: formattedDate,
-        nombre: aspiranteDetails.nombre || "",
-        apellido: aspiranteDetails.apellido || "",
-        sexo: aspiranteDetails.sexo || "",
-        dni: aspiranteDetails.dni || "",
-        provincia_nacimiento: aspiranteDetails.provincia_nacimiento || "",
-        ciudad_nacimiento: aspiranteDetails.ciudad_nacimiento || "",
-        cuil: aspiranteDetails.cuil || "",
-        domicilio: aspiranteDetails.domicilio || "",
-        localidad: aspiranteDetails.localidad || "",
-        barrio: aspiranteDetails.barrio || "",
-        codigo_postal: aspiranteDetails.codigo_postal || "",
-        telefono: aspiranteDetails.telefono || "",
-        email: aspiranteDetails.email || "",
-        carrera: aspiranteDetails.carrera || "",
-        estado_preinscripcion: aspiranteDetails.estado_preinscripcion || "pendiente",
-        estado_matriculacion: aspiranteDetails.estado_matriculacion || "no matriculado",
-        completo_nivel_medio: aspiranteDetails.completo_nivel_medio || "No",
-        anio_ingreso_medio: aspiranteDetails.anio_ingreso_medio || "",
-        anio_egreso_medio: aspiranteDetails.anio_egreso_medio || "",
-        provincia_medio: aspiranteDetails.provincia_medio || "",
-        titulo_medio: aspiranteDetails.titulo_medio || "",
-        completo_nivel_superior: aspiranteDetails.completo_nivel_superior || "No",
-        carrera_superior: aspiranteDetails.carrera_superior || "",
-        institucion_superior: aspiranteDetails.institucion_superior || "",
-        provincia_superior: aspiranteDetails.provincia_superior || "",
-        anio_ingreso_superior: aspiranteDetails.anio_ingreso_superior || "",
-        anio_egreso_superior: aspiranteDetails.anio_egreso_superior || "",
-        trabajo: aspiranteDetails.trabajo === true || aspiranteDetails.trabajo === 'Sí' ? 'Sí' : 'No',
-        horas_diarias: aspiranteDetails.horas_diarias || "",
-        descripcion_trabajo: aspiranteDetails.descripcion_trabajo || "",
-        personas_cargo: aspiranteDetails.personas_cargo === true || aspiranteDetails.personas_cargo === 'Sí' ? 'Sí' : 'No',
         documentos: {
-          dniFrenteUrl: aspiranteDetails.dniFrenteUrl || null,
-          dniDorsoUrl: aspiranteDetails.dniDorsoUrl || null,
-          dniFrenteNombre: aspiranteDetails.dniFrenteNombre || "",
-          dniDorsoNombre: aspiranteDetails.dniDorsoNombre || "",
-          cusUrl: aspiranteDetails.cusUrl || null,
-          isaUrl: aspiranteDetails.isaUrl || null,
-          partida_nacimientoUrl: aspiranteDetails.partida_nacimientoUrl || null,
-          analiticoUrl: aspiranteDetails.analiticoUrl || null,
-          grupo_sanguineoUrl: aspiranteDetails.grupo_sanguineoUrl || null,
-          cudUrl: aspiranteDetails.cudUrl || null,
-          emmacUrl: aspiranteDetails.emmacUrl || null,
-          foto_carnetUrl: aspiranteDetails.foto_carnetUrl || null,
-        }
-      })
+          // El error estaba aquí. No se estaba leyendo del objeto anidado.
+          // Ahora, tomamos todas las URLs del objeto `aspirante` y las ponemos en `documentos`.
+          ...estudianteData.aspirante,
+        },
+      });
     } catch (error) {
       console.error("❌ Error:", error)
+    } finally {
+      setIsLoading(false);
     }
   }
 
   if (id) fetchLegajo()
 }, [id])
 
-  if (!formData) {
-  return <div className="text-white text-center mt-10">Cargando datos del aspirante...</div>
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#1F6680] flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-xl">Cargando datos del legajo...</p>
+        </div>
+      </div>
+    );
   }
 
 

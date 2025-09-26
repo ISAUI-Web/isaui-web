@@ -1,9 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryRunner, Repository } from 'typeorm';
 import { Documento } from './documento.entity';
 import { Aspirante } from '../aspirante/aspirante.entity';
 import { MatriculaService } from '../matricula/matricula.service';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 type ArchivosMatriculacion = {
   // Corresponden a los 'field' del frontend
@@ -25,85 +27,120 @@ export class DocumentoService {
     private readonly documentoRepository: Repository<Documento>,
     @InjectRepository(Aspirante)
     private readonly aspiranteRepository: Repository<Aspirante>,
-    private readonly matriculaService: MatriculaService,
+    @Inject(forwardRef(() => MatriculaService))
+    private matriculaService: MatriculaService,
   ) {}
+
+  private readonly uploadPath = path.join(
+    __dirname,
+    '..',
+    '..',
+    'public',
+    'uploads',
+    'documentos',
+  );
+
+  private tipoDocumentoMap: { [key: string]: string } = {
+    dniFrente: 'DNI Frente',
+    dniDorso: 'DNI Dorso',
+    cus: 'CUS',
+    foto_carnet: 'Foto Carnet 4x4',
+    isa: 'ISA',
+    partida_nacimiento: 'Partida de Nacimiento',
+    analitico: 'Analítico Nivel Secundario',
+    grupo_sanguineo: 'Certificado de Grupo Sanguíneo',
+    cud: 'CUD',
+    emmac: 'EMMAC',
+  };
 
   async guardarDocumentosAspirante(
     aspirante: Aspirante,
-    archivos: {
-      dniFrente?: Express.Multer.File[];
-      dniDorso?: Express.Multer.File[];
-    },
+    archivos: { [fieldname: string]: Express.Multer.File[] },
+    queryRunner?: QueryRunner,
   ): Promise<void> {
-    const processDocument = async (
-      tipo: 'DNI Frente' | 'DNI Dorso',
-      file?: Express.Multer.File,
-    ) => {
-      if (!file) return;
+    const manager = queryRunner
+      ? queryRunner.manager
+      : this.documentoRepository.manager;
 
-      // Buscamos si ya existe un documento de este tipo para el aspirante
-      let documento = await this.documentoRepository.findOne({
-        where: { tipo, aspirante: { id: aspirante.id } },
-      });
+    for (const fieldName in archivos) {
+      const fileArray = archivos[fieldName];
+      if (fileArray && fileArray.length > 0) {
+        const file = fileArray[0];
+        const tipoDocumento = this.tipoDocumentoMap[fieldName] || fieldName;
 
-      if (documento) {
-        // Si existe, actualizamos el nombre del archivo
-        // Opcional: aquí podrías agregar lógica para borrar el archivo antiguo del disco
-        documento.archivo_pdf = file.filename;
-      } else {
-        // Si no existe, creamos una nueva instancia
-        documento = this.documentoRepository.create({
-          tipo,
-          descripcion: `Imagen del ${tipo.toLowerCase()}`,
-          archivo_pdf: file.filename,
-          aspirante: aspirante,
+        // El archivo ya fue guardado en disco por Multer con el nombre correcto.
+        // Solo necesitamos el nombre del archivo para guardarlo en la BD.
+        const filename = file.filename;
+
+        // Crear o actualizar el registro del documento en la BD
+        let documento = await manager.findOne(Documento, {
+          where: { aspirante: { id: aspirante.id }, tipo: tipoDocumento },
         });
+
+        if (documento) {
+          // Opcional: borrar el archivo antiguo si se está reemplazando
+          documento.archivo_pdf = filename; // Actualiza con el nuevo nombre de archivo
+        } else {
+          documento = manager.create(Documento, {
+            aspirante: aspirante,
+            tipo: tipoDocumento,
+            descripcion: `Documento de ${tipoDocumento}`,
+            archivo_pdf: filename,
+            fecha_subida: new Date(),
+            validado: false,
+          });
+        }
+        await manager.save(documento);
       }
-
-      await this.documentoRepository.save(documento);
-    };
-
-    // Procesamos ambos tipos de documentos en paralelo
-    await Promise.all([
-      processDocument('DNI Frente', archivos.dniFrente?.[0]),
-      processDocument('DNI Dorso', archivos.dniDorso?.[0]),
-    ]);
+    }
   }
 
   async getDocumentosByAspiranteId(
     aspiranteId: number,
-  ): Promise<{ [key: string]: { url: string } | null }> {
+  ): Promise<{ [key: string]: string | null }> {
     // Buscar todos los documentos asociados al aspirante
     const documentos = await this.documentoRepository.find({
       where: { aspirante: { id: aspiranteId } },
     });
 
-    const documentosMapeados: { [key: string]: { url: string } | null } = {};
+    const documentosMapeados: { [key: string]: string | null } = {};
 
     // Mapeo de 'tipo' en BD a 'key' en el frontend
     const tipoToKeyMap: { [key: string]: string } = {
-      'DNI Frente': 'dniFrente',
-      'DNI Dorso': 'dniDorso',
-      CUS: 'cus',
-      ISA: 'isa',
-      'Partida de Nacimiento': 'partida_nacimiento',
-      'Analítico Nivel Secundario': 'analitico',
-      'Certificado de Grupo Sanguíneo': 'grupo_sanguineo',
-      CUD: 'cud',
-      EMMAC: 'emmac',
-      'Foto Carnet 4x4': 'foto_carnet',
+      'DNI Frente': 'dniFrenteUrl',
+      'DNI Dorso': 'dniDorsoUrl',
+      CUS: 'cusUrl',
+      ISA: 'isaUrl',
+      'Partida de Nacimiento': 'partida_nacimientoUrl',
+      'Analítico Nivel Secundario': 'analiticoUrl',
+      'Certificado de Grupo Sanguíneo': 'grupo_sanguineoUrl',
+      CUD: 'cudUrl',
+      EMMAC: 'emmacUrl',
+      'Foto Carnet 4x4': 'foto_carnetUrl',
     };
 
     documentos.forEach((doc) => {
       const key = tipoToKeyMap[doc.tipo];
       if (key) {
-        documentosMapeados[key] = {
-          url: `/uploads/documentos/${doc.archivo_pdf}`,
-        };
+        documentosMapeados[key] = `/uploads/documentos/${doc.archivo_pdf}`;
       }
     });
 
     return documentosMapeados;
+  }
+
+  async uploadDocumentos(
+    aspiranteId: number,
+    files: { [fieldname: string]: Express.Multer.File[] },
+    queryRunner?: QueryRunner,
+  ) {
+    const aspirante = await this.aspiranteRepository.findOneBy({
+      id: aspiranteId,
+    });
+    if (!aspirante) {
+      throw new NotFoundException('Aspirante no encontrado');
+    }
+    return this.guardarDocumentosAspirante(aspirante, files, queryRunner);
   }
 
   async guardarDocumentosMatriculacion(
