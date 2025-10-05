@@ -209,6 +209,14 @@ export class AspiranteController {
       [
         { name: 'dniFrente', maxCount: 1 },
         { name: 'dniDorso', maxCount: 1 },
+        { name: 'cus', maxCount: 1 },
+        { name: 'foto_carnet', maxCount: 1 },
+        { name: 'isa', maxCount: 1 },
+        { name: 'partida_nacimiento', maxCount: 1 },
+        { name: 'analitico', maxCount: 1 },
+        { name: 'grupo_sanguineo', maxCount: 1 },
+        { name: 'cud', maxCount: 1 },
+        { name: 'emmac', maxCount: 1 },
       ],
       {
         storage: diskStorage({
@@ -250,10 +258,7 @@ export class AspiranteController {
     @Param('id', ParseIntPipe) id: number,
     @Body() updateAspiranteDto: UpdateAspiranteDto,
     @UploadedFiles()
-    files?: {
-      dniFrente?: Express.Multer.File[];
-      dniDorso?: Express.Multer.File[];
-    },
+    files?: { [fieldname: string]: Express.Multer.File[] },
   ) {
     const updated = await this.aspiranteService.update(
       id,

@@ -117,10 +117,7 @@ export class AspiranteService {
   async update(
     id: number,
     updateAspiranteDto: UpdateAspiranteDto,
-    archivos?: {
-      dniFrente?: Express.Multer.File[];
-      dniDorso?: Express.Multer.File[];
-    },
+    archivos?: { [fieldname: string]: Express.Multer.File[] },
   ): Promise<Aspirante> {
     // Se carga la relación con preinscripciones para asegurar que leemos el estado correcto.
     const aspirante = await this.aspiranteRepository.findOne({
@@ -145,7 +142,7 @@ export class AspiranteService {
     const saved = await this.aspiranteRepository.save(updated);
 
     // Si se subieron nuevos archivos, los guardamos.
-    if (archivos && (archivos.dniFrente?.length || archivos.dniDorso?.length)) {
+    if (archivos && Object.keys(archivos).length > 0) {
       await this.documentoService.guardarDocumentosAspirante(saved, archivos);
     }
 
