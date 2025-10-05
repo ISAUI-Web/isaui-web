@@ -9,7 +9,10 @@ import { ArrowLeft, User, Save, Edit, Eye, X, Camera, Upload } from "lucide-reac
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 
 const API_BASE = 'http://localhost:3000';
-const abs = (u?: string | null) => (u ? (u.startsWith('http') ? u : `${API_BASE}${u}`) : '');
+const abs = (u?: string | null) => {
+  if (!u) return '';
+  return u.startsWith('http') || u.startsWith('blob:') ? u : `${API_BASE}${u}`;
+};
 
 // Datos de ejemplo del aspirante
 
@@ -64,14 +67,34 @@ export default function DetalleLegajo() {
   const [currentStep, setCurrentStep] = useState(1)
   const totalSteps = 3
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const dniFrenteInputRef = useRef<HTMLInputElement>(null)
-  const dniDorsoInputRef = useRef<HTMLInputElement>(null)
-  const [isUploadingImage, setIsUploadingImage] = useState<"dniFrente" | "dniDorso" | null>(null)
+  const [isUploadingImage, setIsUploadingImage] = useState<string | null>(null)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   
   // Estado para manejar los archivos seleccionados para subir
   const [dniFrenteFile, setDniFrenteFile] = useState<File | null>(null);
   const [dniDorsoFile, setDniDorsoFile] = useState<File | null>(null);
+  const [cusFile, setCusFile] = useState<File | null>(null);
+  const [fotoCarnetFile, setFotoCarnetFile] = useState<File | null>(null);
+  const [isaFile, setIsaFile] = useState<File | null>(null);
+  const [partidaNacimientoFile, setPartidaNacimientoFile] = useState<File | null>(null);
+  const [analiticoFile, setAnaliticoFile] = useState<File | null>(null);
+  const [grupoSanguineoFile, setGrupoSanguineoFile] = useState<File | null>(null);
+  const [cudFile, setCudFile] = useState<File | null>(null);
+  const [emmacFile, setEmmacFile] = useState<File | null>(null);
+
+  // Mapeo para manejar el estado de los archivos de forma genérica
+  const fileStates: Record<string, React.Dispatch<React.SetStateAction<File | null>>> = {
+    dniFrente: setDniFrenteFile,
+    dniDorso: setDniDorsoFile,
+    cus: setCusFile,
+    foto_carnet: setFotoCarnetFile,
+    isa: setIsaFile,
+    partida_nacimiento: setPartidaNacimientoFile,
+    analitico: setAnaliticoFile,
+    grupo_sanguineo: setGrupoSanguineoFile,
+    cud: setCudFile,
+    emmac: setEmmacFile,
+  };
 
   //  VALIDACIÓN UNIFICADA
   // Esta función centraliza toda la lógica de validación, eliminando la duplicación
@@ -226,19 +249,6 @@ export default function DetalleLegajo() {
   if (id) fetchLegajo()
 }, [id])
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#1F6680] flex items-center justify-center">
-        <div className="text-white text-center">
-          <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-xl">Cargando datos del legajo...</p>
-        </div>
-      </div>
-    );
-  }
-
-
-
   const handleBack = () => {
       // Si existe un "from", vuelve ahí. Si no, vuelve a aspirantes por defecto
       navigate("/legajo");
@@ -258,21 +268,44 @@ export default function DetalleLegajo() {
 
   const data = new FormData();
 
-  // Agregamos todos los campos del formulario al FormData
-  // Omitimos 'documentos' y 'carrera' que no se envían en el body
-  Object.keys(formData).forEach(key => {
-    // Lista de claves a excluir del envío.
-    // 'id', 'carrera' no son editables.
-    // 'documentos' es un objeto contenedor en el frontend.
-    // Las claves de URL/nombre de documentos son enviadas por el backend para visualización,
-    // pero no deben ser reenviadas en el body del PUT, ya que el DTO del backend no las espera.
-    const excludedKeys = ['id', 'documentos', 'carrera', 'dniFrenteUrl', 'dniDorsoUrl', 'dniFrenteNombre', 'dniDorsoNombre'];
+  // Lista de campos que SÍ se deben enviar al backend (coinciden con UpdateAspiranteDto)
+  const allowedKeys = [
+    'nombre', 'apellido', 'sexo', 'dni', 'cuil', 'domicilio', 'localidad',
+    'barrio', 'codigo_postal', 'telefono', 'email', 'fecha_nacimiento',
+    'ciudad_nacimiento', 'provincia_nacimiento', 'estado_preinscripcion',
+    'estado_matriculacion', 'completo_nivel_medio', 'anio_ingreso_medio',
+    'anio_egreso_medio', 'provincia_medio', 'titulo_medio',
+    'completo_nivel_superior', 'carrera_superior', 'institucion_superior',
+    'provincia_superior', 'anio_ingreso_superior', 'anio_egreso_superior',
+    'trabajo', 'horas_diarias', 'descripcion_trabajo', 'personas_cargo'
+  ];
 
-    if (!excludedKeys.includes(key) && formData[key] !== null) {
-      // Aseguramos que los valores booleanos se envíen como strings 'true' o 'false',
-      // que es como el backend los espera (gracias a los transformadores del DTO).
-      const value = typeof formData[key] === 'boolean' ? String(formData[key]) : formData[key];
-      data.append(key, value);
+  // Iteramos sobre las claves permitidas y las agregamos al FormData si existen en el estado
+  allowedKeys.forEach(key => {
+    if (formData[key] !== null && formData[key] !== undefined) {
+      let value = formData[key];
+
+      // Convertir booleanos a string 'true'/'false'
+      if (typeof value === 'boolean') {
+        value = String(value);
+      }
+
+      // Mapeo de valores de selects a lo que espera el backend si es necesario
+      // (ej: 'Sí' -> 'true', 'No' -> 'false')
+      if (['completo_nivel_medio', 'completo_nivel_superior', 'trabajo', 'personas_cargo'].includes(key)) {
+        if (value === 'Sí') {
+          value = 'true';
+        } else if (value === 'No') {
+          value = 'false';
+        }
+        // Si es 'En curso', se mantiene como está
+      }
+
+      // Si el valor es una cadena vacía, no lo enviamos para que el backend
+      // no intente validar un campo opcional vacío.
+      if (value !== '') {
+        data.append(key, value);
+      }
     }
   });
 
@@ -283,6 +316,14 @@ export default function DetalleLegajo() {
   if (dniDorsoFile) {
     data.append('dniDorso', dniDorsoFile);
   }
+  if (cusFile) data.append('cus', cusFile);
+  if (fotoCarnetFile) data.append('foto_carnet', fotoCarnetFile);
+  if (isaFile) data.append('isa', isaFile);
+  if (partidaNacimientoFile) data.append('partida_nacimiento', partidaNacimientoFile);
+  if (analiticoFile) data.append('analitico', analiticoFile);
+  if (grupoSanguineoFile) data.append('grupo_sanguineo', grupoSanguineoFile);
+  if (cudFile) data.append('cud', cudFile);
+  if (emmacFile) data.append('emmac', emmacFile);
 
   try {
     const res = await fetch(`http://localhost:3000/aspirante/${id}`, {
@@ -307,7 +348,15 @@ export default function DetalleLegajo() {
         dniFrenteUrl: updatedAspirante.dniFrenteUrl || null,
         dniDorsoUrl: updatedAspirante.dniDorsoUrl || null,
         dniFrenteNombre: updatedAspirante.dniFrenteUrl?.split('/').pop() || "",
-        dniDorsoNombre: updatedAspirante.dniDorsoUrl?.split('/').pop() || ""
+        dniDorsoNombre: updatedAspirante.dniDorsoUrl?.split('/').pop() || "",
+        cusUrl: updatedAspirante.cusUrl || null,
+        isaUrl: updatedAspirante.isaUrl || null,
+        partida_nacimientoUrl: updatedAspirante.partida_nacimientoUrl || null,
+        analiticoUrl: updatedAspirante.analiticoUrl || null,
+        grupo_sanguineoUrl: updatedAspirante.grupo_sanguineoUrl || null,
+        cudUrl: updatedAspirante.cudUrl || null,
+        emmacUrl: updatedAspirante.emmacUrl || null,
+        foto_carnetUrl: updatedAspirante.foto_carnetUrl || null,
       }
     });
     setIsEditing(false);
@@ -330,20 +379,19 @@ export default function DetalleLegajo() {
 
   const handleFileInputChange = (
     event: React.ChangeEvent<HTMLInputElement>,
-    documentType: "dniFrente" | "dniDorso",
+    documentType: string,
   ) => {
     const file = event.target.files?.[0]
     if (file) {
       // Guardamos el archivo en el estado correspondiente
-      if (documentType === 'dniFrente') {
-        setDniFrenteFile(file);
-      } else {
-        setDniDorsoFile(file);
+      const fileSetter = fileStates[documentType];
+      if (fileSetter) {
+        fileSetter(file);
       }
       // Mostramos una vista previa local de la imagen seleccionada
       const previewUrl = URL.createObjectURL(file);
-      const urlKey = documentType === 'dniFrente' ? 'dniFrenteUrl' : 'dniDorsoUrl';
-      const nameKey = documentType === 'dniFrente' ? 'dniFrenteNombre' : 'dniDorsoNombre';
+      const urlKey = `${documentType}Url`;
+      const nameKey = `${documentType}Nombre`;
 
       setFormData((prev: any) => ({
         ...prev,
@@ -352,13 +400,15 @@ export default function DetalleLegajo() {
     }
   }
 
-  const triggerFileInput = (documentType: "dniFrente" | "dniDorso") => {
-    if (documentType === "dniFrente") {
-      dniFrenteInputRef.current?.click()
-    } else {
-      dniDorsoInputRef.current?.click()
+  const triggerFileInput = (documentType: string) => {
+    fileInputRefs.current[documentType]?.click();
+  };
+
+  const setInputRef = (documentType: string) => (el: HTMLInputElement | null) => {
+    if (el) {
+      fileInputRefs.current[documentType] = el;
     }
-  }
+  };
 
   const handleInputChange = (field: string, value: string) => {
     // Calcula el nuevo estado antes de setearlo
@@ -406,6 +456,20 @@ export default function DetalleLegajo() {
 
   const fromAspirantes = location.state?.from === "/aspirantes";
 const fromMatriculacion = location.state?.from === "/matriculacion";
+
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#1F6680] flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-xl">Cargando datos del legajo...</p>
+        </div>
+      </div>
+    );
+  }
+
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -878,20 +942,12 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
           <div className="text-gray-500 text-center py-8 col-span-2">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Documentos del Aspirante</h3>
             {/* Inputs ocultos para subir archivos */}
-            <input
-              ref={dniFrenteInputRef}
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleFileInputChange(e, "dniFrente")}
-              className="hidden"
-            />
-            <input
-              ref={dniDorsoInputRef}
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleFileInputChange(e, "dniDorso")}
-              className="hidden"
-            />
+            {Object.keys(fileStates).map(docType => (
+              <input key={docType} ref={setInputRef(docType)} type="file" accept="image/*"
+                onChange={(e) => handleFileInputChange(e, docType)}
+                className="hidden"
+              />
+            ))}
             <div className={`grid grid-cols-1 md:grid-cols-2 gap-6`}>
               {/* DNI Frente */}
               <div className="space-y-3">
@@ -1109,6 +1165,15 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       <Eye className="w-4 h-4 mr-2" />
                       Ver
                     </Button>
+                    {isEditing && (
+                      <Button
+                        onClick={() => triggerFileInput("cus")}
+                        className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
+                      >
+                        <Camera className="w-4 h-4 mr-2" />
+                        {formData.documentos?.cusUrl ? "Cambiar" : "Subir"}
+                      </Button>
+                    )}
                   </div>
             </div>
                 {/* FOTO CARNET */}
@@ -1146,6 +1211,15 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       <Eye className="w-4 h-4 mr-2" />
                       Ver
                     </Button>
+                    {isEditing && (
+                      <Button
+                        onClick={() => triggerFileInput("foto_carnet")}
+                        className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
+                      >
+                        <Camera className="w-4 h-4 mr-2" />
+                        {formData.documentos?.foto_carnetUrl ? "Cambiar" : "Subir"}
+                      </Button>
+                    )}
                   </div>
             </div>
                 {/* ISA */}
@@ -1183,6 +1257,15 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       <Eye className="w-4 h-4 mr-2" />
                       Ver
                     </Button>
+                    {isEditing && (
+                      <Button
+                        onClick={() => triggerFileInput("isa")}
+                        className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
+                      >
+                        <Camera className="w-4 h-4 mr-2" />
+                        {formData.documentos?.isaUrl ? "Cambiar" : "Subir"}
+                      </Button>
+                    )}
                   </div>
             </div>
                 {/* PARTIDA DE NACIMIENTO */}
@@ -1220,6 +1303,15 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       <Eye className="w-4 h-4 mr-2" />
                       Ver
                     </Button>
+                    {isEditing && (
+                      <Button
+                        onClick={() => triggerFileInput("partida_nacimiento")}
+                        className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
+                      >
+                        <Camera className="w-4 h-4 mr-2" />
+                        {formData.documentos?.partida_nacimientoUrl ? "Cambiar" : "Subir"}
+                      </Button>
+                    )}
                   </div>
             </div>
                 {/* ANALÍTICO SECUNDARIO */}
@@ -1257,6 +1349,15 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       <Eye className="w-4 h-4 mr-2" />
                       Ver
                     </Button>
+                    {isEditing && (
+                      <Button
+                        onClick={() => triggerFileInput("analitico")}
+                        className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
+                      >
+                        <Camera className="w-4 h-4 mr-2" />
+                        {formData.documentos?.analiticoUrl ? "Cambiar" : "Subir"}
+                      </Button>
+                    )}
                   </div>
             </div>
                 {/* CERTIFICADO DE GRUPO SANGUÍNEO */}
@@ -1294,6 +1395,15 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       <Eye className="w-4 h-4 mr-2" />
                       Ver
                     </Button>
+                    {isEditing && (
+                      <Button
+                        onClick={() => triggerFileInput("grupo_sanguineo")}
+                        className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
+                      >
+                        <Camera className="w-4 h-4 mr-2" />
+                        {formData.documentos?.grupo_sanguineoUrl ? "Cambiar" : "Subir"}
+                      </Button>
+                    )}
                   </div>
             </div>
                 {/* CUD */}
@@ -1331,6 +1441,15 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       <Eye className="w-4 h-4 mr-2" />
                       Ver
                     </Button>
+                    {isEditing && (
+                      <Button
+                        onClick={() => triggerFileInput("cud")}
+                        className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
+                      >
+                        <Camera className="w-4 h-4 mr-2" />
+                        {formData.documentos?.cudUrl ? "Cambiar" : "Subir"}
+                      </Button>
+                    )}
                   </div>
             </div>
                 {/* EMMAC */}

@@ -9,7 +9,10 @@ import { ArrowLeft, User, Save, Edit, Eye, X, Camera, Upload } from "lucide-reac
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 
 const API_BASE = 'http://localhost:3000';
-const abs = (u?: string | null) => (u ? (u.startsWith('http') ? u : `${API_BASE}${u}`) : '');
+const abs = (u?: string | null) => {
+  if (!u) return '';
+  return u.startsWith('http') || u.startsWith('blob:') ? u : `${API_BASE}${u}`;
+};
 const API_URL = 'http://localhost:3000';
 
 // Datos de ejemplo del aspirante
