@@ -1,4 +1,9 @@
-import { Inject, Injectable, NotFoundException, forwardRef } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { QueryRunner, Repository } from 'typeorm';
 import { Documento } from './documento.entity';
@@ -6,6 +11,7 @@ import { Aspirante } from '../aspirante/aspirante.entity';
 import { MatriculaService } from '../matricula/matricula.service';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { Docente } from '../docente/docente.entity';
 
 type ArchivosMatriculacion = {
   // Corresponden a los 'field' del frontend
@@ -51,6 +57,11 @@ export class DocumentoService {
     grupo_sanguineo: 'Certificado de Grupo Sanguíneo',
     cud: 'CUD',
     emmac: 'EMMAC',
+
+    // Tipos de documentos para Docentes
+    titulo_secundario: 'Título Nivel Secundario',
+    titulo_terciario: 'Título Nivel Terciario/Superior',
+    examen_psicofisico: 'Examen Psicofísico',
   };
 
   async guardarDocumentosAspirante(
@@ -83,6 +94,47 @@ export class DocumentoService {
         } else {
           documento = manager.create(Documento, {
             aspirante: aspirante,
+            tipo: tipoDocumento,
+            descripcion: `Documento de ${tipoDocumento}`,
+            archivo_pdf: filename,
+            fecha_subida: new Date(),
+            validado: false,
+          });
+        }
+        await manager.save(documento);
+      }
+    }
+  }
+
+  async guardarDocumentosDocente(
+    docente: Docente,
+    archivos: { [fieldname: string]: Express.Multer.File[] },
+    queryRunner?: QueryRunner,
+  ): Promise<void> {
+    const manager = queryRunner
+      ? queryRunner.manager
+      : this.documentoRepository.manager;
+
+    for (const fieldName in archivos) {
+      const fileArray = archivos[fieldName];
+      if (fileArray && fileArray.length > 0) {
+        const file = fileArray[0];
+        // El archivo ya fue guardado en disco por Multer con el nombre correcto.
+        const filename = file.filename;
+        const tipoDocumento = this.tipoDocumentoMap[fieldName] || fieldName;
+
+        // Crear o actualizar el registro del documento en la BD
+        let documento = await manager.findOne(Documento, {
+          where: { docente: { id: docente.id }, tipo: tipoDocumento },
+        });
+
+        if (documento) {
+          // Opcional: borrar el archivo antiguo si se está reemplazando
+          documento.archivo_pdf = filename; // Actualiza con el nuevo nombre de archivo
+          documento.fecha_subida = new Date();
+        } else {
+          documento = manager.create(Documento, {
+            docente: docente,
             tipo: tipoDocumento,
             descripcion: `Documento de ${tipoDocumento}`,
             archivo_pdf: filename,

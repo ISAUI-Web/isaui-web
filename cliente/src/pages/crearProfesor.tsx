@@ -1,15 +1,18 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Card } from "../components/ui/card"
-import { Button } from "../components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
+import { Button, buttonVariants } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
-import { ArrowLeft, User, Save, Camera } from "lucide-react"
+import { ArrowLeft, User, Save, Camera, Upload } from "lucide-react"
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 
 const API_BASE = 'http://localhost:3000';
-const abs = (u?: string | null) => (u ? (u.startsWith('http') ? u : `${API_BASE}${u}`) : '');
+const abs = (u?: string | null) => {
+  if (!u) return '';
+  return u.startsWith('http') || u.startsWith('blob:') ? u : `${API_BASE}${u}`;
+};
 
 const tabs = [
   { id: "datos", label: "Datos personales" },
@@ -22,27 +25,6 @@ export default function CrearLegajoProfesor() {
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
-
-  // Estado y carga de carreras desde backend
-  const [carreras, setCarreras] = useState<Array<{ id: number, nombre: string }>>([]);
-  const [loadingCarreras, setLoadingCarreras] = useState(false);
-  const [errorCarreras, setErrorCarreras] = useState<string | null>(null);
-  useEffect(() => {
-    setLoadingCarreras(true);
-    fetch(`${API_BASE}/carrera`)
-      .then(res => {
-        if (!res.ok) throw new Error('Error al obtener carreras');
-        return res.json();
-      })
-      .then(data => {
-        setCarreras(data);
-        setLoadingCarreras(false);
-      })
-      .catch(err => {
-        setErrorCarreras('Error al cargar carreras');
-        setLoadingCarreras(false);
-      });
-  }, []);
 
   const [activeTab, setActiveTab] = useState("datos")
   const [formData, setFormData] = useState<any>({
@@ -60,7 +42,6 @@ export default function CrearLegajoProfesor() {
     fecha_nacimiento: '',
     ciudad_nacimiento: '',
     provincia_nacimiento: '',
-    carrera: '',
     completo_nivel_medio: '',
     anio_ingreso_medio: '',
     anio_egreso_medio: '',
@@ -84,36 +65,57 @@ export default function CrearLegajoProfesor() {
       examen_psicofisicoUrl: '',
     },
   });
+  // Estados para almacenar los archivos (File objects)
+  const [dniFrenteFile, setDniFrenteFile] = useState<File | null>(null);
+  const [dniDorsoFile, setDniDorsoFile] = useState<File | null>(null);
+  const [tituloSecundarioFile, setTituloSecundarioFile] = useState<File | null>(null);
+  const [tituloTerciarioFile, setTituloTerciarioFile] = useState<File | null>(null);
+  const [examenPsicofisicoFile, setExamenPsicofisicoFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const dniFrenteInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
   const dniDorsoInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
   const tituloSecundarioInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
   const tituloTerciarioInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
   const examenPsicofisicoInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  // Mapeo de setters para los archivos
+  const fileSetters: Record<string, React.Dispatch<React.SetStateAction<File | null>>> = {
+    dniFrente: setDniFrenteFile,
+    dniDorso: setDniDorsoFile,
+    titulo_secundario: setTituloSecundarioFile,
+    titulo_terciario: setTituloTerciarioFile,
+    examen_psicofisico: setExamenPsicofisicoFile,
+  };
 
   // Generalizado para todos los tipos de documentos
   const fileInputRefs: Record<string, React.RefObject<HTMLInputElement>> = {
     dniFrente: dniFrenteInputRef,
     dniDorso: dniDorsoInputRef,
-    titulo_secundarioUrl: tituloSecundarioInputRef,
-    titulo_terciarioUrl: tituloTerciarioInputRef,
-    examen_psicofisicoUrl: examenPsicofisicoInputRef,
+    titulo_secundario: tituloSecundarioInputRef,
+    titulo_terciario: tituloTerciarioInputRef,
+    examen_psicofisico: examenPsicofisicoInputRef,
   };
 
   const handleFileInputChange = (
     event: React.ChangeEvent<HTMLInputElement>,
     documentType: string,
   ) => {
-    const file = event.target.files?.[0];
+    const file = event.target.files?.[0] || null;
     if (file) {
+      // Guardar el objeto File en su estado
+      const setter = fileSetters[documentType];
+      if (setter) setter(file);
+
+      // Generar y guardar la URL de previsualización
       const previewUrl = URL.createObjectURL(file);
+      const urlKey = `${documentType}Url`;
       setFormData((prev: any) => ({
         ...prev,
-        documentos: { ...prev.documentos, [documentType]: previewUrl },
+        documentos: { ...prev.documentos, [urlKey]: previewUrl },
       }));
     }
   };
+
 
   const triggerFileInput = (documentType: string) => {
     fileInputRefs[documentType]?.current?.click();
@@ -231,6 +233,9 @@ export default function CrearLegajoProfesor() {
       }
     }
     if (step === 3) {
+      if (!data.trabajo) newErrors.trabajo = "Debe indicar si trabaja actualmente";
+      if (!data.personas_cargo) newErrors.personas_cargo = "Debe indicar si tiene personas a cargo";
+
       if (data.trabajo === "Sí" || data.trabajo === true) {
         if (!data.horas_diarias) {
           newErrors.horas_diarias = "Las horas diarias son requeridas";
@@ -248,12 +253,6 @@ export default function CrearLegajoProfesor() {
 
   const handleBack = () => {
     navigate("/legajo");
-  };
-
-  const handleViewImage = (imageUrl: string | null) => {
-    if (imageUrl) {
-      setSelectedImage(imageUrl)
-    }
   };
 
   const fromAspirantes = location.state?.from === "/aspirantes";
@@ -393,22 +392,6 @@ export default function CrearLegajoProfesor() {
               />
               {errors.provincia_nacimiento && <div className="text-red-500 text-xs mt-1">{errors.provincia_nacimiento}</div>}
             </div>
-            <div>
-              <Label className="text-sm font-medium text-gray-700 mb-1 block">CARRERA</Label>
-              <select
-                value={formData.carrera}
-                onChange={e => setFormData({ ...formData, carrera: e.target.value })}
-                className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
-                disabled={loadingCarreras}
-              >
-                <option value="">{loadingCarreras ? 'Cargando carreras...' : 'Seleccionar carrera'}</option>
-                {carreras.map((c) => (
-                  <option key={c.id} value={c.nombre}>{c.nombre}</option>
-                ))}
-              </select>
-              {errorCarreras && <div className="text-red-500 text-xs mt-1">{errorCarreras}</div>}
-              {errors.carrera && <div className="text-red-500 text-xs mt-1">{errors.carrera}</div>}
-            </div>
 
           </div>
         );
@@ -422,6 +405,7 @@ export default function CrearLegajoProfesor() {
                 onChange={(e) => handleInputChange('completo_nivel_medio', e.target.value)}
                 className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
               >
+                <option value="">Seleccionar...</option>
                 <option value="Sí">Sí</option>
                 <option value="No">No</option>
               </select>
@@ -474,6 +458,7 @@ export default function CrearLegajoProfesor() {
                 onChange={(e) => handleInputChange('completo_nivel_superior', e.target.value)}
                 className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
               >
+                <option value="">Seleccionar...</option>
                 <option value="Sí">Sí</option>
                 <option value="No">No</option>
                 <option value="En curso">En curso</option>
@@ -542,6 +527,7 @@ export default function CrearLegajoProfesor() {
                 onChange={(e) => handleInputChange('trabajo', e.target.value)}
                 className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
               >
+                <option value="">Seleccionar...</option>
                 <option value="Sí">Sí</option>
                 <option value="No">No</option>
               </select>
@@ -574,6 +560,7 @@ export default function CrearLegajoProfesor() {
                 onChange={(e) => handleInputChange('personas_cargo', e.target.value)}
                 className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
               >
+                <option value="">Seleccionar...</option>
                 <option value="Sí">Sí</option>
                 <option value="No">No</option>
               </select>
@@ -585,234 +572,128 @@ export default function CrearLegajoProfesor() {
         return (
           <div className="text-gray-500 text-center py-8 col-span-2">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Documentos del Profesor</h3>
-            {/* Inputs ocultos para subir archivos (generalizado) */}
-            <input ref={dniFrenteInputRef} type="file" accept="image/*" onChange={e => handleFileInputChange(e, "dniFrente") } className="hidden" />
-            <input ref={dniDorsoInputRef} type="file" accept="image/*" onChange={e => handleFileInputChange(e, "dniDorso") } className="hidden" />
-            <input ref={tituloSecundarioInputRef} type="file" accept="image/*" onChange={e => handleFileInputChange(e, "titulo_secundarioUrl") } className="hidden" />
-            <input ref={tituloTerciarioInputRef} type="file" accept="image/*" onChange={e => handleFileInputChange(e, "titulo_terciarioUrl") } className="hidden" />
-            <input ref={examenPsicofisicoInputRef} type="file" accept="image/*" onChange={e => handleFileInputChange(e, "examen_psicofisicoUrl") } className="hidden" />
-            <div className={`grid grid-cols-1 md:grid-cols-2 gap-6`}>
-              {/* DNI Frente */}
-              <div className="space-y-3">
-                <h4 className="text-md font-medium text-gray-700">DNI - Frente</h4>
-                <div className="relative group">
-                  {formData.documentos?.dniFrenteUrl ? (
-                    <img
-                      src={abs(formData.documentos.dniFrenteUrl) || '/placeholder.svg'}
-                      alt="DNI Frente"
-                      className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                    />
-                  ) : (
-                    <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
-                      <div className="text-center text-gray-500">
-                        <Camera className="w-8 h-8 mx-auto mb-2" />
-                        <p className="text-sm">No hay imagen disponible</p>
-                      </div>
+            {/* Inputs ocultos para subir archivos */}
+            <input ref={dniFrenteInputRef} type="file" accept="image/*" onChange={e => handleFileInputChange(e, "dniFrente")} className="hidden" />
+            <input ref={dniDorsoInputRef} type="file" accept="image/*" onChange={e => handleFileInputChange(e, "dniDorso")} className="hidden" />
+            <input ref={tituloSecundarioInputRef} type="file" accept="image/*,application/pdf" onChange={e => handleFileInputChange(e, "titulo_secundario")} className="hidden" />
+            <input ref={tituloTerciarioInputRef} type="file" accept="image/*,application/pdf" onChange={e => handleFileInputChange(e, "titulo_terciario")} className="hidden" />
+            <input ref={examenPsicofisicoInputRef} type="file" accept="image/*,application/pdf" onChange={e => handleFileInputChange(e, "examen_psicofisico")} className="hidden" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {Object.keys(fileInputRefs).map((docType) => {
+                const docUrl = formData.documentos[`${docType}Url`];
+                const docFile = 
+                  docType === 'dniFrente' ? dniFrenteFile :
+                  docType === 'dniDorso' ? dniDorsoFile :
+                  docType === 'titulo_secundario' ? tituloSecundarioFile :
+                  docType === 'titulo_terciario' ? tituloTerciarioFile :
+                  examenPsicofisicoFile;
+
+                const docTitle = 
+                  docType === 'dniFrente' ? 'DNI - Frente' :
+                  docType === 'dniDorso' ? 'DNI - Dorso' :
+                  docType === 'titulo_secundario' ? 'Título Nivel Secundario' :
+                  docType === 'titulo_terciario' ? 'Título Nivel Terciario/Superior' :
+                  'Examen Psicofísico';
+
+                return (
+                  <div key={docType} className="space-y-3">
+                    <h4 className="text-md font-medium text-gray-700">{docTitle}</h4>
+                    <div className="relative group">
+                      {docUrl ? (
+                        <img
+                          src={abs(docUrl)}
+                          alt={docTitle}
+                          className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                        />
+                      ) : (
+                        <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                          <div className="text-center text-gray-500">
+                            <Camera className="w-8 h-8 mx-auto mb-2" />
+                            <p className="text-sm">No hay imagen disponible</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
 
-                  {/* Mostrar nombre del archivo si existe */}
-                  {formData.documentos?.dniFrenteUrl && (
-                    <p className="text-sm text-gray-700 truncate mt-1">
-                      {formData.documentos.dniFrenteUrl.split('/').pop()}
-                    </p>
-                  )}
+                    {docFile && (
+                      <div className="text-sm text-gray-600 truncate mt-1" title={docFile.name}>
+                        {docFile.name}
+                      </div>
+                    )}
 
-                  {/* Overlay para modo vista */}
-                  {!formData.documentos?.dniFrenteUrl && (
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+                    <div className="flex gap-2">
                       <Button
-                        onClick={() => triggerFileInput("dniFrente")}
-                        className="bg-white/90 hover:bg-white text-gray-800 p-2 rounded-full"
+                        onClick={() => triggerFileInput(docType)}
+                        className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
                       >
-                        <Camera className="w-4 h-4" />
+                        <Upload className="w-4 h-4 mr-2" />
+                        {docUrl ? "Cambiar" : "Subir"}
                       </Button>
                     </div>
-                  )}
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => triggerFileInput("dniFrente")}
-                    className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
-                  >
-                    <Camera className="w-4 h-4 mr-2" />
-                    {formData.documentos?.dniFrenteUrl ? "Cambiar" : "Subir"}
-                  </Button>
-                </div>
-              </div>
-
-              {/* DNI Dorso */}
-              <div className="space-y-3">
-                <h4 className="text-md font-medium text-gray-700">DNI - Dorso</h4>
-                <div className="relative group">
-                  {formData.documentos?.dniDorsoUrl ? (
-                    <img
-                      src={abs(formData.documentos.dniDorsoUrl) || '/placeholder.svg'}
-                      alt="DNI Dorso"
-                      className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                    />
-                  ) : (
-                    <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
-                      <div className="text-center text-gray-500">
-                        <Camera className="w-8 h-8 mx-auto mb-2" />
-                        <p className="text-sm">No hay imagen disponible</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {formData.documentos?.dniDorsoUrl && (
-                    <p className="text-sm text-gray-700 truncate">
-                      {formData.documentos.dniDorsoUrl.split('/').pop()}
-                    </p>
-                  )}
-
-                  {/* Overlay para modo vista */}
-                  {!formData.documentos?.dniDorsoUrl && (
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
-                      <Button
-                        onClick={() => triggerFileInput("dniDorso")}
-                        className="bg-white/90 hover:bg-white text-gray-800 p-2 rounded-full"
-                      >
-                        <Camera className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => triggerFileInput("dniDorso")}
-                    className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
-                  >
-                    <Camera className="w-4 h-4 mr-2" />
-                    {formData.documentos?.dniDorsoUrl ? "Cambiar" : "Subir"}
-                  </Button>
-                </div>
-              </div>
-                {/* Título nivel secundario */}
-            <div className="space-y-3">
-              <h4 className="text-md font-medium text-gray-700">Título nivel secundario</h4>
-                  <div className="relative group">
-                    {formData.documentos?.titulo_secundarioUrl ? (
-                      <img
-                        src={abs(formData.documentos.titulo_secundarioUrl)}
-                        alt="Título nivel secundario"
-                        className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                      />
-                    ) : (
-                      <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
-                        <div className="text-center text-gray-500">
-                          <Camera className="w-8 h-8 mx-auto mb-2" />
-                          <p className="text-sm">No hay imagen disponible</p>
-                        </div>
-                      </div>
-                    )}
                   </div>
-                  {formData.documentos?.titulo_secundarioUrl && (
-                    <p className="text-sm text-gray-700 truncate mt-1">
-                      {formData.documentos.titulo_secundarioUrl.split('/').pop()}
-                    </p>
-                  )}
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => triggerFileInput("titulo_secundarioUrl")}
-                      className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
-                    >
-                      <Camera className="w-4 h-4 mr-2" />
-                      {formData.documentos?.titulo_secundarioUrl ? "Cambiar" : "Subir"}
-                    </Button>
-                  </div>
+                );
+              })}
             </div>
-                {/* titulo nivel terciario */}
-                <div className="space-y-3">
-              <h4 className="text-md font-medium text-gray-700">Título nivel terciario</h4>
-                  <div className="relative group">
-                    {formData.documentos?.titulo_terciarioUrl ? (
-                      <img
-                        src={abs(formData.documentos.titulo_terciarioUrl)}
-                        alt="Título nivel terciario"
-                        className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                      />
-                    ) : (
-                      <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
-                        <div className="text-center text-gray-500">
-                          <Camera className="w-8 h-8 mx-auto mb-2" />
-                          <p className="text-sm">No hay imagen disponible</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  {formData.documentos?.titulo_terciarioUrl && (
-                    <p className="text-sm text-gray-700 truncate mt-1">
-                      {formData.documentos.titulo_terciarioUrl.split('/').pop()}
-                    </p>
-                  )}
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => triggerFileInput("titulo_terciarioUrl")}
-                      className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
-                    >
-                      <Camera className="w-4 h-4 mr-2" />
-                      {formData.documentos?.titulo_terciarioUrl ? "Cambiar" : "Subir"}
-                    </Button>
-                  </div>
-            </div>
-                {/* examen psicofisico */}
-                <div className="space-y-3">
-              <h4 className="text-md font-medium text-gray-700">Examen psicofísico</h4>
-                  <div className="relative group">
-                    {formData.documentos?.examen_psicofisicoUrl ? (
-                      <img
-                        src={abs(formData.documentos.examen_psicofisicoUrl)}
-                        alt="Examen psicofísico"
-                        className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                      />
-                    ) : (
-                      <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
-                        <div className="text-center text-gray-500">
-                          <Camera className="w-8 h-8 mx-auto mb-2" />
-                          <p className="text-sm">No hay imagen disponible</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  {formData.documentos?.examen_psicofisicoUrl && (
-                    <p className="text-sm text-gray-700 truncate mt-1">
-                      {formData.documentos.examen_psicofisicoUrl.split('/').pop()}
-                    </p>
-                  )}
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => triggerFileInput("examen_psicofisicoUrl")}
-                      className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
-                    >
-                      <Camera className="w-4 h-4 mr-2" />
-                      {formData.documentos?.examen_psicofisicoUrl ? "Cambiar" : "Subir"}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
+          </div>
+        );
       default:
         return null;
     }
   }
 
   // Botón CREAR
-  const handleCreate = () => {
-    const step =
-      activeTab === "datos" ? 1 :
-      activeTab === "estudios" ? 2 :
-      activeTab === "laboral" ? 3 :
-      activeTab === "documentacion" ? 4 : 1;
-    if (!validate(formData, step)) {
-      alert("Por favor, corrige los errores antes de crear.");
+  const handleCreate = async () => {
+    // Validar todas las pestañas antes de enviar
+    const isStep1Valid = validate(formData, 1);
+    const isStep2Valid = validate(formData, 2);
+    const isStep3Valid = validate(formData, 3);
+
+    if (!isStep1Valid || !isStep2Valid || !isStep3Valid) {
+      alert("Por favor, completa todos los campos obligatorios en todas las pestañas antes de crear el legajo.");
       return;
     }
-    alert('Profesor creado (simulado, sin conexión a backend)');
-    navigate('/legajo');
+
+    const payload = new FormData();
+
+    // Agregar datos del formulario al payload
+    Object.keys(formData).forEach(key => {
+      if (key !== 'documentos' && key !== 'carrera' && formData[key] !== null && formData[key] !== '') {
+        let value = formData[key];
+        if (typeof value === 'boolean') {
+          value = value.toString();
+        }
+        if (['completo_nivel_medio', 'completo_nivel_superior', 'trabajo', 'personas_cargo'].includes(key)) {
+            value = value === 'Sí' ? 'true' : (value === 'No' ? 'false' : value);
+        }
+        payload.append(key, value);
+      }
+    });
+
+    // Adjuntar archivos
+    if (dniFrenteFile) payload.append('dniFrente', dniFrenteFile);
+    if (dniDorsoFile) payload.append('dniDorso', dniDorsoFile);
+    if (tituloSecundarioFile) payload.append('titulo_secundario', tituloSecundarioFile);
+    if (tituloTerciarioFile) payload.append('titulo_terciario', tituloTerciarioFile);
+    if (examenPsicofisicoFile) payload.append('examen_psicofisico', examenPsicofisicoFile);
+
+    try {
+      const response = await fetch(`${API_BASE}/docente`, {
+        method: 'POST',
+        body: payload,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        const errorMessage = Array.isArray(errorData.message) ? errorData.message.join(', ') : errorData.message;
+        throw new Error(errorMessage || 'Error al crear el legajo del profesor.');
+      }
+
+      alert('Legajo del profesor creado con éxito.');
+      navigate('/legajo'); // O a la lista de profesores
+    } catch (error: any) {
+      console.error('Error en la creación del legajo:', error);
+      alert(`Hubo un problema al crear el legajo: ${error.message}`);
+    }
   };
 
   return (

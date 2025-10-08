@@ -45,7 +45,8 @@ export class EstudianteService {
         nombre: estudiante.aspirante.nombre,
         apellido: estudiante.aspirante.apellido,
         dni: estudiante.aspirante.dni,
-        carrera: estudiante.aspirante.preinscripciones?.[0]?.carrera?.nombre || 'N/A',
+        carrera:
+          estudiante.aspirante.preinscripciones?.[0]?.carrera?.nombre || 'N/A',
       };
     });
   }
@@ -105,7 +106,9 @@ export class EstudianteService {
     aspirante: Aspirante,
     queryRunner?: QueryRunner,
   ): Promise<Estudiante> {
-    const manager = queryRunner ? queryRunner.manager : this.estudianteRepository.manager;
+    const manager = queryRunner
+      ? queryRunner.manager
+      : this.estudianteRepository.manager;
 
     const estudianteExistente = await manager.findOne(Estudiante, {
       where: { aspirante: { id: aspirante.id } },

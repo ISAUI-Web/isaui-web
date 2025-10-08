@@ -7,7 +7,6 @@ import {
   OneToMany,
 } from 'typeorm';
 import { Docente } from '../docente/docente.entity';
-import { Documento } from '../documento/documento.entity';
 
 @Entity()
 export class LegajoDocente {
@@ -20,7 +19,4 @@ export class LegajoDocente {
   @OneToOne(() => Docente, { onDelete: 'CASCADE' })
   @JoinColumn()
   docente: Docente;
-
-  @OneToMany(() => Documento, (documento) => documento.legajoDocente)
-  documentos: Documento[];
 }
