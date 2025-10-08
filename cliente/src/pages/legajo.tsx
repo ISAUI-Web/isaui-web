@@ -145,7 +145,7 @@ export default function AdminMatriculacion() {
         .toLowerCase()
         .includes(searchTerm.toLowerCase())
     )
-    .filter(m => filterCarrera ? m.carrera?.nombre === filterCarrera : true);
+    .filter(m => filterCarrera ? m.carrera === filterCarrera : true);
   
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)

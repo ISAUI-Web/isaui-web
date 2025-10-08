@@ -10,7 +10,6 @@ import { Estudiante } from '../estudiante/estudiante.entity';
 import { Usuario } from '../usuario/usuario.entity';
 import { Docente } from '../docente/docente.entity';
 import { LegajoEstudiante } from '../legajo-estudiante/legajo-estudiante.entity';
-import { LegajoDocente } from '../legajo-docente/legajo-docente.entity';
 
 @Entity()
 export class Documento {
@@ -59,10 +58,4 @@ export class Documento {
     onDelete: 'SET NULL',
   })
   legajoEstudiante: LegajoEstudiante;
-
-  @ManyToOne(() => LegajoDocente, (legajo) => legajo.documentos, {
-    nullable: true,
-    onDelete: 'SET NULL',
-  })
-  legajoDocente: LegajoDocente;
 }
