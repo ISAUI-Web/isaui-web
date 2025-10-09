@@ -24,7 +24,8 @@ import {
   XIcon,
   Search,
   Filter,
-  Plus
+  Plus,
+  Trash2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom" 
 import logo from "../assets/logo.png"
@@ -198,6 +199,27 @@ const handleMenuItemClick = (itemId: string) => {
 };
   const handleVer = (id: number) => {
     navigate(`/detAspirante/${id}`, { state: { from: "/matriculacion" } });
+  }
+
+  const handleDeleteEstudiante = async (id: number, nombre: string, apellido: string) => {
+     if (!confirm(`¿Está seguro de que desea desactivar el legajo de ${nombre} ${apellido}?`)) return;
+
+  try {
+    const response = await fetch(`http://localhost:3000/estudiante/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ activo: false }), 
+    });
+
+    if (!response.ok) throw new Error("Error al desactivar el legajo");
+
+     setEstudiantes(prev => prev.filter(e => e.id !== id));
+
+    alert("Legajo desactivado correctamente");
+  } catch (error) {
+    console.error("Error:", error);
+    alert("Error al desactivar el legajo del estudiante");
+  }
   }
 
 
@@ -386,7 +408,7 @@ const handleMenuItemClick = (itemId: string) => {
                 <td className="py-2 px-3 text-gray-600">{estudiante.dni}</td>
    
                 <td className="py-2 px-3">
-                  <div className="flex justify-center">
+                  <div className="flex justify-center gap-2">
                     <Button
                       onClick={() => handleVerLegajo("alumno", estudiante.aspirante_id)}
                       className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
@@ -394,6 +416,15 @@ const handleMenuItemClick = (itemId: string) => {
                       <Eye className="w-4 h-4" />
                       Ver legajo
                     </Button>
+                    <Button
+                      onClick={() =>
+                       handleDeleteEstudiante(estudiante.id, estudiante.nombre, estudiante.apellido)
+                      }
+                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                      >
+                      <Trash2 className="w-4 h-4" />
+                      Eliminar
+                      </Button>
                   </div>
                 </td>
               </tr>
