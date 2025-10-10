@@ -1,4 +1,4 @@
-import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Patch, Body } from '@nestjs/common';
 import { EstudianteService } from './estudiante.service';
 
 @Controller('estudiante')
@@ -16,5 +16,13 @@ export class EstudianteController {
   ) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return this.estudianteService.findByAspiranteId(aspiranteId);
+  }
+  
+     @Patch(':id')
+  async updateActivo(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { activo: boolean },
+  ) {
+    return this.estudianteService.updateActivo(id, body.activo);
   }
 }

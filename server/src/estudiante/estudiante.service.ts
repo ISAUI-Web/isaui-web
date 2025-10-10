@@ -28,15 +28,16 @@ export class EstudianteService {
   ) {}
 
   async findAll(): Promise<any[]> {
-    const estudiantes = await this.estudianteRepository.find({
-      relations: {
-        aspirante: {
-          preinscripciones: {
-            carrera: true,
-          },
+  const estudiantes = await this.estudianteRepository.find({
+    where: { activo: true }, // 👈 filtra solo los activos
+    relations: {
+      aspirante: {
+        preinscripciones: {
+          carrera: true,
         },
       },
-    });
+    },
+  });
 
     return estudiantes.map((estudiante) => {
       return {
@@ -145,4 +146,7 @@ export class EstudianteService {
 
     return estudianteGuardado;
   }
+  async updateActivo(id: number, activo: boolean) {
+  return this.estudianteRepository.update(id, { activo });
+}
 }

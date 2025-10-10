@@ -99,4 +99,7 @@ export class Docente {
 
   @OneToMany(() => Documento, (documento) => documento.docente)
   documentos: Documento[];
+
+  @Column({ default: true })
+  activo: boolean;
 }
