@@ -4,6 +4,9 @@ import {
   Body,
   UseInterceptors,
   UploadedFiles,
+  Get,
+  Patch,
+  Param,
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -14,6 +17,16 @@ import { CreateDocenteDto } from './dto/create-docente.dto';
 @Controller('docente')
 export class DocenteController {
   constructor(private readonly docenteService: DocenteService) {}
+
+    @Get()
+  async findAll() {
+    return await this.docenteService.findAll();
+  }
+
+   @Patch(':id')
+  async updateActivo(@Param('id') id: number, @Body() body: { activo: boolean }) {
+    return await this.docenteService.updateActivo(id, body.activo);
+  }
 
   @Post()
   @UseInterceptors(

@@ -43,6 +43,15 @@ interface EstudianteItem {
   carrera: string;
 }
 
+ interface Profesor {
+    id: number;
+    nombre: string;
+    apellido: string;
+    dni: string;
+    legajoCompleto: boolean;
+    tipo: "profesor";
+  }
+
 type MenuItem = {
   icon: React.ElementType;
   label: string;
@@ -75,40 +84,14 @@ export default function AdminMatriculacion() {
   const [estudiantes, setEstudiantes] = useState<EstudianteItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const [profesores, setProfesores] = useState<Profesor[]>([]);
+  const [loadingProfesores, setLoadingProfesores] = useState(true);
+  const [errorProfesores, setErrorProfesores] = useState<string | null>(null);
 
   // State for Tabs
   const [activeTab, setActiveTab] = useState<"alumnos" | "profesores">("alumnos");
 
-  interface Profesor {
-    id: number;
-    nombre: string;
-    apellido: string;
-    especialidad: string;
-    dni: string;
-    legajoCompleto: boolean;
-    tipo: "profesor";
-  }
-
-  const filteredProfesores: Profesor[] = [
-    {
-      id: 1,
-      nombre: "Carlos",
-      apellido: "López",
-      especialidad: "Matemáticas",
-      dni: "11223344",
-      legajoCompleto: true,
-      tipo: "profesor"
-    },
-    {
-      id: 2,
-      nombre: "María",
-      apellido: "Martínez",
-      especialidad: "Historia",
-      dni: "44332211",
-      legajoCompleto: false,
-      tipo: "profesor"
-    }
-  ];
 
   // Handler for viewing legajo
   const handleVerLegajo = (tipo: "alumno" | "profesor", id: number) => {
@@ -138,6 +121,23 @@ export default function AdminMatriculacion() {
         });
     }, []);
 
+    useEffect(() => {
+  fetch("http://localhost:3000/docente")
+    .then(res => {
+      if (!res.ok) throw new Error("Error al traer los profesores");
+      return res.json();
+    })
+    .then(data => {
+      setProfesores(data);
+      setLoadingProfesores(false);
+    })
+    .catch(err => {
+      console.error(err);
+      setErrorProfesores("No se pudo cargar la lista de profesores");
+      setLoadingProfesores(false);
+    });
+}, []);
+
   const carrerasUnicas = Array.from(new Set(estudiantes.map(e => e.carrera)));
 
   const alumnosFiltrados = estudiantes
@@ -147,6 +147,12 @@ export default function AdminMatriculacion() {
         .includes(searchTerm.toLowerCase())
     )
     .filter(m => filterCarrera ? m.carrera === filterCarrera : true);
+
+    const profesoresFiltrados = profesores.filter(p =>
+  `${p.nombre} ${p.apellido} ${p.dni}`
+    .toLowerCase()
+    .includes(searchTerm.toLowerCase())
+);
   
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
@@ -221,6 +227,28 @@ const handleMenuItemClick = (itemId: string) => {
     alert("Error al desactivar el legajo del estudiante");
   }
   }
+  
+  const handleDeleteDocente = async (id: number, nombre: string, apellido: string) => {
+  if (!confirm(`¿Está seguro de que desea desactivar el legajo de ${nombre} ${apellido}?`)) return;
+
+  try {
+    const response = await fetch(`http://localhost:3000/docente/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ activo: false }),
+    });
+
+    if (!response.ok) throw new Error("Error al desactivar el legajo");
+
+    // Actualizamos el estado para removerlo del listado en el frontend
+    setProfesores(prev => prev.filter(d => d.id !== id));
+
+    alert("Legajo desactivado correctamente");
+  } catch (error) {
+    console.error("Error:", error);
+    alert("Error al desactivar el legajo del docente");
+  }
+};
 
 
   if (loading) return <p className="text-white">Cargando aspirantes...</p>
@@ -374,7 +402,7 @@ const handleMenuItemClick = (itemId: string) => {
         </TabsTrigger>
         <TabsTrigger value="profesores" className="flex items-center gap-2">
           <BookOpen className="w-4 h-4" />
-          Profesores ({filteredProfesores.length}) 
+          Profesores ({profesoresFiltrados.length}) 
         </TabsTrigger>
       </TabsList>
     </div>
@@ -434,49 +462,56 @@ const handleMenuItemClick = (itemId: string) => {
       </div>
     </TabsContent>
     <TabsContent value="profesores" className="p-6">
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-200">
-              <th className="text-left py-2 px-3 font-semibold text-gray-700">
-                NOMBRE <span className="text-blue-500">↓</span>
-              </th>
-              <th className="text-left py-2 px-3 font-semibold text-gray-700">
-                APELLIDO <span className="text-blue-500">↓</span>
-              </th>
-              <th className="text-left py-2 px-3 font-semibold text-gray-700">
-                ESPECIALIDAD <span className="text-blue-500">↓</span>
-              </th>
-              <th className="text-left py-2 px-3 font-semibold text-gray-700">
-                DNI <span className="text-blue-500">↓</span>
-              </th>
-              <th className="text-center py-2 px-3 font-semibold text-gray-700">ACCIONES</th>
+  {loadingProfesores ? (
+    <p className="text-gray-700">Cargando profesores...</p>
+  ) : errorProfesores ? (
+    <p className="text-red-500">{errorProfesores}</p>
+  ) : (
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead>
+          <tr className="border-b border-gray-200">
+            <th className="text-left py-2 px-3 font-semibold text-gray-700">NOMBRE</th>
+            <th className="text-left py-2 px-3 font-semibold text-gray-700">APELLIDO</th>
+            {/* <th className="text-left py-2 px-3 font-semibold text-gray-700">ESPECIALIDAD</th> */}
+            <th className="text-left py-2 px-3 font-semibold text-gray-700">DNI</th>
+            <th className="text-center py-2 px-3 font-semibold text-gray-700">ACCIONES</th>
+          </tr>
+        </thead>
+        <tbody>
+          {profesoresFiltrados.map((profesor, index) => (
+            <tr key={profesor.id} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+              <td className="py-2 px-3 font-bold text-gray-900">{profesor.nombre}</td>
+              <td className="py-2 px-3 text-gray-600">{profesor.apellido}</td>
+              {/* <td className="py-2 px-3 text-gray-600">{profesor.especialidad}</td> */}
+              <td className="py-2 px-3 text-gray-600">{profesor.dni}</td>
+              <td className="py-2 px-3">
+                <div className="flex justify-center gap-2">
+                  <Button
+                    onClick={() => handleVerLegajo("profesor", profesor.id)}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                  >
+                    <Eye className="w-4 h-4" />
+                    Ver legajo
+                  </Button>
+                  <Button
+                    onClick={() =>
+                       handleDeleteDocente(profesor.id, profesor.nombre, profesor.apellido)
+                      }
+                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Eliminar
+                  </Button>
+                </div>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {filteredProfesores.map((profesor, index) => (
-              <tr key={profesor.id} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
-                <td className="py-2 px-3 font-bold text-gray-900">{profesor.nombre}</td>
-                <td className="py-2 px-3 text-gray-600">{profesor.apellido}</td>
-                <td className="py-2 px-3 text-gray-600">{profesor.especialidad}</td>
-                <td className="py-2 px-3 text-gray-600">{profesor.dni}</td>
-                <td className="py-2 px-3">
-                  <div className="flex justify-center">
-                    <Button
-                      onClick={() => handleVerLegajo(profesor.tipo, profesor.id)}
-                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-                    >
-                      <Eye className="w-4 h-4" />
-                      Ver legajo
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </TabsContent>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+</TabsContent>
   </Tabs>
 </Card>
     </main>
