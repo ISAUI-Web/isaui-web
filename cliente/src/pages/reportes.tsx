@@ -44,8 +44,6 @@ const menuItems = [
     ],
   },
   { icon: BarChart3, label: "CUPOS", id: "cupos" },
-  { icon: Clock, label: "EN ESPERA", id: "espera" },
-  { icon: ThumbsUp, label: "CONFIRMADOS", id: "confirmados" },
   { icon: FolderOpen, label: "LEGAJO DIGITAL", id: "legajo" },
   { icon: FileText, label: "REPORTES", id: "reportes" },
   { icon: Settings, label: "MANTENIMIENTO", id: "mantenimiento" },

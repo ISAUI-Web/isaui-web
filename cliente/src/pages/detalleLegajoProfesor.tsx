@@ -5,7 +5,7 @@ import { Card } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
-import { ArrowLeft, User, Save, Edit, Eye, X, Camera, Upload } from "lucide-react"
+import { ArrowLeft, User, Save, Edit, Eye, X, Camera, Upload, BookOpen, Trash2 } from "lucide-react"
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 
 const API_BASE = 'http://localhost:3000';
@@ -19,6 +19,7 @@ const tabs = [
   { id: "estudios", label: "Estudios" },
   { id: "laboral", label: "Situación laboral y responsabilidades" },
   { id: "documentacion", label: "Documentación" },
+  { id: "cursos", label: "Cursos" },
 ]
 
 export default function DetalleLegajoProfesor() {
@@ -80,6 +81,33 @@ export default function DetalleLegajoProfesor() {
   // Estado para manejar los archivos seleccionados para subir
   const [dniFrenteFile, setDniFrenteFile] = useState<File | null>(null);
   const [dniDorsoFile, setDniDorsoFile] = useState<File | null>(null);
+
+  // Estado para cursos - datos de ejemplo hardcodeados para que tus compañeros los conecten al backend
+  const [cursos, setCursos] = useState<Array<{
+    id: string;
+    nombre: string;
+    certificadoUrl: string;
+    certificadoFile: File | null;
+  }>>([
+    {
+      id: '1',
+      nombre: 'Matemáticas Avanzadas',
+      certificadoUrl: '',
+      certificadoFile: null,
+    },
+    {
+      id: '2',
+      nombre: 'Física Cuántica',
+      certificadoUrl: '',
+      certificadoFile: null,
+    },
+    {
+      id: '3',
+      nombre: 'Programación en Python',
+      certificadoUrl: '',
+      certificadoFile: null,
+    }
+  ]);
 
   //  VALIDACIÓN UNIFICADA
   // Esta función centraliza toda la lógica de validación, eliminando la duplicación
@@ -1082,6 +1110,186 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
               </div>
             </div>
           );
+      case "cursos":
+        return (
+          <div className="text-gray-500 text-center py-8 col-span-2">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Cursos del Profesor</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Cursos existentes con formato igual a documentación */}
+              {cursos.map((curso) => (
+                <div key={curso.id} className="space-y-3">
+                  {/* Input editable para el nombre del curso en modo edición, texto en modo vista */}
+                  {isEditing ? (
+                    <Input
+                      value={curso.nombre}
+                      onChange={(e) => {
+                        const newCursos = [...cursos];
+                        const cursoIndex = newCursos.findIndex(c => c.id === curso.id);
+                        if (cursoIndex !== -1) {
+                          newCursos[cursoIndex].nombre = e.target.value;
+                          setCursos(newCursos);
+                        }
+                      }}
+                      className="text-md font-medium text-gray-700"
+                      placeholder="Nombre del curso"
+                    />
+                  ) : (
+                    <h4 className="text-md font-medium text-gray-700">{curso.nombre}</h4>
+                  )}
+                  
+                  {/* Imagen/placeholder - igual que documentación */}
+                  <div className="relative group">
+                    {curso.certificadoUrl ? (
+                      <img
+                        src={curso.certificadoUrl}
+                        alt={curso.nombre}
+                        className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                        onClick={() => !isEditing && handleViewImage(curso.certificadoUrl)}
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                        <div className="text-center text-gray-500">
+                          <Camera className="w-8 h-8 mx-auto mb-2" />
+                          <p className="text-sm">No hay imagen disponible</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Overlay para modo edición */}
+                    {isEditing && (
+                      <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center">
+                        <Button
+                          onClick={() => {
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.accept = 'image/*,application/pdf';
+                            input.onchange = (e: any) => {
+                              const file = e.target.files?.[0] || null;
+                              if (file) {
+                                const newCursos = [...cursos];
+                                const cursoIndex = newCursos.findIndex(c => c.id === curso.id);
+                                if (cursoIndex !== -1) {
+                                  newCursos[cursoIndex].certificadoFile = file;
+                                  newCursos[cursoIndex].certificadoUrl = URL.createObjectURL(file);
+                                  setCursos(newCursos);
+                                }
+                              }
+                            };
+                            input.click();
+                          }}
+                          className="bg-white/90 hover:bg-white text-gray-800 px-4 py-2 rounded-lg flex items-center gap-2"
+                        >
+                          <Upload className="w-4 h-4" />
+                          {curso.certificadoUrl ? "Cambiar imagen" : "Subir imagen"}
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Overlay para modo vista */}
+                    {!isEditing && curso.certificadoUrl && (
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <Button
+                          onClick={() => handleViewImage(curso.certificadoUrl)}
+                          className="bg-white/90 hover:bg-white text-gray-800 p-2 rounded-full"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Nombre del archivo si existe */}
+                  {curso.certificadoFile && (
+                    <div className="text-sm text-gray-600 truncate mt-1" title={curso.certificadoFile.name}>
+                      {curso.certificadoFile.name}
+                    </div>
+                  )}
+
+                  {/* Botones según el modo */}
+                  <div className="flex gap-2">
+                    {isEditing ? (
+                      <>
+                        <Button
+                          onClick={() => {
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.accept = 'image/*,application/pdf';
+                            input.onchange = (e: any) => {
+                              const file = e.target.files?.[0] || null;
+                              if (file) {
+                                const newCursos = [...cursos];
+                                const cursoIndex = newCursos.findIndex(c => c.id === curso.id);
+                                if (cursoIndex !== -1) {
+                                  newCursos[cursoIndex].certificadoFile = file;
+                                  newCursos[cursoIndex].certificadoUrl = URL.createObjectURL(file);
+                                  setCursos(newCursos);
+                                }
+                              }
+                            };
+                            input.click();
+                          }}
+                          className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
+                        >
+                          <Upload className="w-4 h-4 mr-2" />
+                          {curso.certificadoUrl ? "Cambiar" : "Subir"}
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            const newCursos = cursos.filter(c => c.id !== curso.id);
+                            setCursos(newCursos);
+                          }}
+                          className="text-sm bg-red-500 hover:bg-red-600 text-white px-3"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        onClick={() => curso.certificadoUrl && window.open(curso.certificadoUrl, "_blank")}
+                        variant="outline"
+                        className="flex-1 text-sm"
+                        disabled={!curso.certificadoUrl}
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        Ver
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+              
+              {/* Card para agregar nuevo curso - solo en modo edición */}
+              {isEditing && (
+                <div className="space-y-3 border-2 border-dashed border-gray-300 rounded-lg p-4">
+                  <h4 className="text-md font-medium text-gray-700">Agregar Nuevo Curso</h4>
+                  <div className="w-full h-48 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center">
+                    <div className="text-center text-gray-400">
+                      <BookOpen className="w-8 h-8 mx-auto mb-2" />
+                      <p className="text-sm">Nuevo curso</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => {
+                        const nuevoCurso = {
+                          id: Date.now().toString(),
+                          nombre: '',
+                          certificadoUrl: '',
+                          certificadoFile: null,
+                        };
+                        setCursos([...cursos, nuevoCurso]);
+                      }}
+                      className="flex-1 text-sm bg-green-500 hover:bg-green-600 text-white"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      Agregar Curso
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
       default:
         return null;
     }
