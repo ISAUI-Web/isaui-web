@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Button, buttonVariants } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
-import { ArrowLeft, User, Save, Camera, Upload } from "lucide-react"
+import { ArrowLeft, User, Save, Camera, Upload, Eye, BookOpen, Building2, Clock, Calendar, Trash2 } from "lucide-react"
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 
 const API_BASE = 'http://localhost:3000';
@@ -19,6 +19,7 @@ const tabs = [
   { id: "estudios", label: "Estudios" },
   { id: "laboral", label: "Situación laboral y responsabilidades" },
   { id: "documentacion", label: "Documentación" },
+  { id: "cursos", label: "Cursos" },
 ]
 
 export default function CrearLegajoProfesor() {
@@ -63,6 +64,7 @@ export default function CrearLegajoProfesor() {
       titulo_secundarioUrl: '',
       titulo_terciarioUrl: '',
       examen_psicofisicoUrl: '',
+      regimen_de_compatibilidadUrl: '',
     },
   });
   // Estados para almacenar los archivos (File objects)
@@ -71,12 +73,23 @@ export default function CrearLegajoProfesor() {
   const [tituloSecundarioFile, setTituloSecundarioFile] = useState<File | null>(null);
   const [tituloTerciarioFile, setTituloTerciarioFile] = useState<File | null>(null);
   const [examenPsicofisicoFile, setExamenPsicofisicoFile] = useState<File | null>(null);
+  const [regimenCompatibilidadFile, setRegimenCompatibilidadFile] = useState<File | null>(null);
+  
+  // Estados para cursos
+  const [cursos, setCursos] = useState<Array<{
+    id: string;
+    nombre: string;
+    certificadoUrl: string;
+    certificadoFile: File | null;
+  }>>([]);
+  
   const [errors, setErrors] = useState<Record<string, string>>({});
   const dniFrenteInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
   const dniDorsoInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
   const tituloSecundarioInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
   const tituloTerciarioInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
   const examenPsicofisicoInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
+  const regimenCompatibilidadInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
 
   // Mapeo de setters para los archivos
   const fileSetters: Record<string, React.Dispatch<React.SetStateAction<File | null>>> = {
@@ -85,6 +98,7 @@ export default function CrearLegajoProfesor() {
     titulo_secundario: setTituloSecundarioFile,
     titulo_terciario: setTituloTerciarioFile,
     examen_psicofisico: setExamenPsicofisicoFile,
+    regimen_de_compatibilidad: setRegimenCompatibilidadFile,
   };
 
   // Generalizado para todos los tipos de documentos
@@ -94,6 +108,7 @@ export default function CrearLegajoProfesor() {
     titulo_secundario: tituloSecundarioInputRef,
     titulo_terciario: tituloTerciarioInputRef,
     examen_psicofisico: examenPsicofisicoInputRef,
+    regimen_de_compatibilidad: regimenCompatibilidadInputRef,
   };
 
   const handleFileInputChange = (
@@ -578,6 +593,7 @@ export default function CrearLegajoProfesor() {
             <input ref={tituloSecundarioInputRef} type="file" accept="image/*,application/pdf" onChange={e => handleFileInputChange(e, "titulo_secundario")} className="hidden" />
             <input ref={tituloTerciarioInputRef} type="file" accept="image/*,application/pdf" onChange={e => handleFileInputChange(e, "titulo_terciario")} className="hidden" />
             <input ref={examenPsicofisicoInputRef} type="file" accept="image/*,application/pdf" onChange={e => handleFileInputChange(e, "examen_psicofisico")} className="hidden" />
+            <input ref={regimenCompatibilidadInputRef} type="file" accept="image/*,application/pdf" onChange={e => handleFileInputChange(e, "regimen_de_compatibilidad")} className="hidden" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {Object.keys(fileInputRefs).map((docType) => {
                 const docUrl = formData.documentos[`${docType}Url`];
@@ -586,13 +602,16 @@ export default function CrearLegajoProfesor() {
                   docType === 'dniDorso' ? dniDorsoFile :
                   docType === 'titulo_secundario' ? tituloSecundarioFile :
                   docType === 'titulo_terciario' ? tituloTerciarioFile :
+                  docType === 'regimen_de_compatibilidad' ? regimenCompatibilidadFile :
                   examenPsicofisicoFile;
+
 
                 const docTitle = 
                   docType === 'dniFrente' ? 'DNI - Frente' :
                   docType === 'dniDorso' ? 'DNI - Dorso' :
                   docType === 'titulo_secundario' ? 'Título Nivel Secundario' :
                   docType === 'titulo_terciario' ? 'Título Nivel Terciario/Superior' :
+                  docType === 'regimen_de_compatibilidad' ? 'Régimen de Compatibilidad' :
                   'Examen Psicofísico';
 
                 return (
@@ -636,10 +655,125 @@ export default function CrearLegajoProfesor() {
             </div>
           </div>
         );
-      default:
-        return null;
+      case "cursos":
+        return (
+          <div className="text-gray-500 text-center py-8 col-span-2">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Cursos del Profesor</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Cursos existentes con formato igual a documentación */}
+              {cursos.map((curso) => (
+                <div key={curso.id} className="space-y-3">
+                  {/* Input editable para el nombre del curso (en lugar de título fijo) */}
+                  <Input
+                    value={curso.nombre}
+                    onChange={(e) => {
+                      const newCursos = [...cursos];
+                      const cursoIndex = newCursos.findIndex(c => c.id === curso.id);
+                      if (cursoIndex !== -1) {
+                        newCursos[cursoIndex].nombre = e.target.value;
+                        setCursos(newCursos);
+                      }
+                    }}
+                    className="text-md font-medium text-gray-700"
+                    placeholder="Nombre del curso"
+                  />
+                  
+                  {/* Imagen/placeholder - igual que documentación */}
+                  <div className="relative group">
+                    {curso.certificadoUrl ? (
+                      <img
+                        src={curso.certificadoUrl}
+                        alt={curso.nombre}
+                        className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                        <div className="text-center text-gray-500">
+                          <Camera className="w-8 h-8 mx-auto mb-2" />
+                          <p className="text-sm">No hay imagen disponible</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Nombre del archivo si existe */}
+                  {curso.certificadoFile && (
+                    <div className="text-sm text-gray-600 truncate mt-1" title={curso.certificadoFile.name}>
+                      {curso.certificadoFile.name}
+                    </div>
+                  )}
+
+                  {/* Botones Subir y Eliminar */}
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = 'image/*,application/pdf';
+                        input.onchange = (e: any) => {
+                          const file = e.target.files?.[0] || null;
+                          if (file) {
+                            const newCursos = [...cursos];
+                            const cursoIndex = newCursos.findIndex(c => c.id === curso.id);
+                            if (cursoIndex !== -1) {
+                              newCursos[cursoIndex].certificadoFile = file;
+                              newCursos[cursoIndex].certificadoUrl = URL.createObjectURL(file);
+                              setCursos(newCursos);
+                            }
+                          }
+                        };
+                        input.click();
+                      }}
+                      className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      {curso.certificadoUrl ? "Cambiar" : "Subir"}
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        const newCursos = cursos.filter(c => c.id !== curso.id);
+                        setCursos(newCursos);
+                      }}
+                      className="text-sm bg-red-500 hover:bg-red-600 text-white px-3"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              
+              {/* Card para agregar nuevo curso - al final */}
+              <div className="space-y-3 border-2 border-dashed border-gray-300 rounded-lg p-4">
+                <h4 className="text-md font-medium text-gray-700">Agregar Nuevo Curso</h4>
+                <div className="w-full h-48 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center">
+                  <div className="text-center text-gray-400">
+                    <BookOpen className="w-8 h-8 mx-auto mb-2" />
+                    <p className="text-sm">Nuevo curso</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => {
+                      const nuevoCurso = {
+                        id: Date.now().toString(),
+                        nombre: '',
+                        certificadoUrl: '',
+                        certificadoFile: null,
+                      };
+                      setCursos([...cursos, nuevoCurso]);
+                    }}
+                    className="flex-1 text-sm bg-green-500 hover:bg-green-600 text-white"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Agregar Curso
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
     }
-  }
+  } // <-- Add this closing brace to end renderTabContent
 
   // Botón CREAR
   const handleCreate = async () => {
