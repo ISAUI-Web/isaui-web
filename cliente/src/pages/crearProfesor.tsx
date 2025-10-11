@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Button, buttonVariants } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
-import { ArrowLeft, User, Save, Camera, Upload } from "lucide-react"
+import { ArrowLeft, User, Save, Camera, Upload, Eye, BookOpen, Building2, Clock, Calendar } from "lucide-react"
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 
 const API_BASE = 'http://localhost:3000';
@@ -19,6 +19,7 @@ const tabs = [
   { id: "estudios", label: "Estudios" },
   { id: "laboral", label: "Situación laboral y responsabilidades" },
   { id: "documentacion", label: "Documentación" },
+  { id: "cursos", label: "Cursos" },
 ]
 
 export default function CrearLegajoProfesor() {
@@ -63,6 +64,7 @@ export default function CrearLegajoProfesor() {
       titulo_secundarioUrl: '',
       titulo_terciarioUrl: '',
       examen_psicofisicoUrl: '',
+      regimen_de_compatibilidadUrl: '',
     },
   });
   // Estados para almacenar los archivos (File objects)
@@ -71,12 +73,14 @@ export default function CrearLegajoProfesor() {
   const [tituloSecundarioFile, setTituloSecundarioFile] = useState<File | null>(null);
   const [tituloTerciarioFile, setTituloTerciarioFile] = useState<File | null>(null);
   const [examenPsicofisicoFile, setExamenPsicofisicoFile] = useState<File | null>(null);
+  const [regimenCompatibilidadFile, setRegimenCompatibilidadFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const dniFrenteInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
   const dniDorsoInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
   const tituloSecundarioInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
   const tituloTerciarioInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
   const examenPsicofisicoInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
+  const regimenCompatibilidadInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
 
   // Mapeo de setters para los archivos
   const fileSetters: Record<string, React.Dispatch<React.SetStateAction<File | null>>> = {
@@ -85,6 +89,7 @@ export default function CrearLegajoProfesor() {
     titulo_secundario: setTituloSecundarioFile,
     titulo_terciario: setTituloTerciarioFile,
     examen_psicofisico: setExamenPsicofisicoFile,
+    regimen_de_compatibilidad: setRegimenCompatibilidadFile,
   };
 
   // Generalizado para todos los tipos de documentos
@@ -94,6 +99,7 @@ export default function CrearLegajoProfesor() {
     titulo_secundario: tituloSecundarioInputRef,
     titulo_terciario: tituloTerciarioInputRef,
     examen_psicofisico: examenPsicofisicoInputRef,
+    regimen_de_compatibilidad: regimenCompatibilidadInputRef,
   };
 
   const handleFileInputChange = (
@@ -578,6 +584,7 @@ export default function CrearLegajoProfesor() {
             <input ref={tituloSecundarioInputRef} type="file" accept="image/*,application/pdf" onChange={e => handleFileInputChange(e, "titulo_secundario")} className="hidden" />
             <input ref={tituloTerciarioInputRef} type="file" accept="image/*,application/pdf" onChange={e => handleFileInputChange(e, "titulo_terciario")} className="hidden" />
             <input ref={examenPsicofisicoInputRef} type="file" accept="image/*,application/pdf" onChange={e => handleFileInputChange(e, "examen_psicofisico")} className="hidden" />
+            <input ref={regimenCompatibilidadInputRef} type="file" accept="image/*,application/pdf" onChange={e => handleFileInputChange(e, "regimen_de_compatibilidad")} className="hidden" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {Object.keys(fileInputRefs).map((docType) => {
                 const docUrl = formData.documentos[`${docType}Url`];
@@ -586,13 +593,16 @@ export default function CrearLegajoProfesor() {
                   docType === 'dniDorso' ? dniDorsoFile :
                   docType === 'titulo_secundario' ? tituloSecundarioFile :
                   docType === 'titulo_terciario' ? tituloTerciarioFile :
+                  docType === 'regimen_de_compatibilidad' ? regimenCompatibilidadFile :
                   examenPsicofisicoFile;
+
 
                 const docTitle = 
                   docType === 'dniFrente' ? 'DNI - Frente' :
                   docType === 'dniDorso' ? 'DNI - Dorso' :
                   docType === 'titulo_secundario' ? 'Título Nivel Secundario' :
                   docType === 'titulo_terciario' ? 'Título Nivel Terciario/Superior' :
+                  docType === 'regimen_de_compatibilidad' ? 'Régimen de Compatibilidad' :
                   'Examen Psicofísico';
 
                 return (
@@ -636,10 +646,10 @@ export default function CrearLegajoProfesor() {
             </div>
           </div>
         );
-      default:
+      case "cursos":
         return null;
     }
-  }
+  } // <-- Add this closing brace to end renderTabContent
 
   // Botón CREAR
   const handleCreate = async () => {
