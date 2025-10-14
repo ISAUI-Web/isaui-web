@@ -99,7 +99,7 @@ export default function AdminMatriculacion() {
       // Navegamos usando el ID del aspirante para que la página de detalle funcione
       navigate(`/detLegajo/${id}`); 
     } else {
-      navigate(`/detLegajoProfesor`);
+      navigate(`/detLegajoProfesor/${id}`);
     }
   };
   const [filterCarrera, setFilterCarrera] = useState("");
