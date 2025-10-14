@@ -9,6 +9,7 @@ import {
 import { Usuario } from '../usuario/usuario.entity';
 import { LegajoDocente } from '../legajo-docente/legajo-docente.entity';
 import { Documento } from '../documento/documento.entity';
+import { Curso } from '../curso/curso.entity';
 
 @Entity()
 export class Docente {
@@ -93,12 +94,30 @@ export class Docente {
   @Column({ nullable: true })
   anio_egreso_superior: string;
 
+  @Column({ nullable: true })
+  trabajo: string;
+
+  @Column({ nullable: true })
+  horas_diarias: string;
+
+  @Column({ nullable: true })
+  descripcion_trabajo: string;
+
+  @Column({ nullable: true })
+  personas_cargo: string;
+
+  @Column({ nullable: true })
+  observaciones_docente: string;
+
   @OneToOne(() => Usuario)
   @JoinColumn({ name: 'usuario_id' })
   usuario: Usuario;
 
   @OneToMany(() => Documento, (documento) => documento.docente)
   documentos: Documento[];
+
+  @OneToMany(() => Curso, (curso) => curso.docente, { cascade: true })
+  cursos: Curso[];
 
   @Column({ default: true })
   activo: boolean;

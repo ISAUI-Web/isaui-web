@@ -7,8 +7,9 @@ import {
   Get,
   Patch,
   Param,
+  NotFoundException,
 } from '@nestjs/common';
-import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { DocenteService } from './docente.service';
@@ -18,50 +19,71 @@ import { CreateDocenteDto } from './dto/create-docente.dto';
 export class DocenteController {
   constructor(private readonly docenteService: DocenteService) {}
 
-    @Get()
+  @Get()
   async findAll() {
     return await this.docenteService.findAll();
   }
 
-   @Patch(':id')
-  async updateActivo(@Param('id') id: number, @Body() body: { activo: boolean }) {
+  @Patch(':id')
+  async updateActivo(
+    @Param('id') id: number,
+    @Body() body: { activo: boolean },
+  ) {
     return await this.docenteService.updateActivo(id, body.activo);
+  }
+
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    try {
+      const docente = await this.docenteService.findOne(+id);
+      return docente;
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 
   @Post()
   @UseInterceptors(
-    FileFieldsInterceptor(
-      [
-        { name: 'dniFrente', maxCount: 1 },
-        { name: 'dniDorso', maxCount: 1 },
-        { name: 'titulo_secundario', maxCount: 1 },
-        { name: 'titulo_terciario', maxCount: 1 },
-        { name: 'examen_psicofisico', maxCount: 1 },
-      ],
-      {
-        storage: diskStorage({
-          destination: './uploads', // Carpeta donde se guardan los archivos
-          filename: (req, file, cb) => {
-            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-            const ext = extname(file.originalname);
-            const originalName = file.fieldname.replace(/\s/g, '_');
-            cb(null, `${originalName}-${uniqueSuffix}${ext}`);
-          },
-        }),
-      },
-    ),
+    AnyFilesInterceptor({
+      storage: diskStorage({
+        destination: './uploads', // Carpeta donde se guardan los archivos
+        filename: (req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          // Si es un archivo de curso, usamos un nombre genérico.
+          // Si no, usamos el fieldname como antes.
+          const prefix = file.fieldname.startsWith('cursos[')
+            ? 'curso-certificado'
+            : file.fieldname.replace(/\s/g, '_');
+          cb(null, `${prefix}-${uniqueSuffix}${ext}`);
+        },
+      }),
+    }),
   )
   create(
     @Body() createDocenteDto: CreateDocenteDto,
     @UploadedFiles()
-    files: {
-      dniFrente?: Express.Multer.File[];
-      dniDorso?: Express.Multer.File[];
-      titulo_secundario?: Express.Multer.File[];
-      titulo_terciario?: Express.Multer.File[];
-      examen_psicofisico?: Express.Multer.File[];
-    },
+    files: Array<Express.Multer.File>,
   ) {
     return this.docenteService.create(createDocenteDto, files);
+  }
+
+  @Patch(':id/update')
+  @UseInterceptors(
+    AnyFilesInterceptor({
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          const prefix = file.fieldname.startsWith('cursos[') ? 'curso-certificado' : file.fieldname.replace(/\s/g, '_');
+          cb(null, `${prefix}-${uniqueSuffix}${ext}`);
+        },
+      }),
+    }),
+  )
+  update(@Param('id') id: string, @Body() updateDocenteDto: CreateDocenteDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+    return this.docenteService.update(+id, updateDocenteDto, files);
   }
 }

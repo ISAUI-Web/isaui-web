@@ -35,7 +35,7 @@ export default function App() {
       <Route path="/formMatriculacion/:id" element={<FormMatriculacion />} />
       <Route path="/loginDNI" element={<LoginDni />} />
       <Route path="/detLegajo/:id" element={<DetalleLegajo />} />
-      <Route path="/detLegajoProfesor" element={<DetalleLegajoProfesor />} />
+      <Route path="/detLegajoProfesor/:id" element={<DetalleLegajoProfesor />} />
       <Route path="/crearAlumno" element={<CrearLegajoAlumno />} />
       <Route path="/crearProfesor" element={<CrearLegajoProfesor />} />
 

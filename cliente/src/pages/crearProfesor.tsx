@@ -809,6 +809,19 @@ export default function CrearLegajoProfesor() {
     if (tituloSecundarioFile) payload.append('titulo_secundario', tituloSecundarioFile);
     if (tituloTerciarioFile) payload.append('titulo_terciario', tituloTerciarioFile);
     if (examenPsicofisicoFile) payload.append('examen_psicofisico', examenPsicofisicoFile);
+    if (regimenCompatibilidadFile) payload.append('regimen_de_compatibilidad', regimenCompatibilidadFile);
+
+    // Adjuntar cursos y sus certificados
+    cursos.forEach((curso, index) => {
+      if (curso.nombre) {
+        // Serializamos el objeto del curso (sin el archivo) a un string JSON.
+        payload.append('cursos[]', JSON.stringify({ nombre: curso.nombre }));
+        if (curso.certificadoFile) {
+          // Adjuntamos el archivo con una clave que coincida con el índice.
+          payload.append(`cursos[${index}][certificadoFile]`, curso.certificadoFile);
+        }
+      }
+    });
 
     try {
       const response = await fetch(`${API_BASE}/docente`, {

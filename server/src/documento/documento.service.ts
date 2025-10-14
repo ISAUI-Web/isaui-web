@@ -62,6 +62,7 @@ export class DocumentoService {
     titulo_secundario: 'Título Nivel Secundario',
     titulo_terciario: 'Título Nivel Terciario/Superior',
     examen_psicofisico: 'Examen Psicofísico',
+    regimen_de_compatibilidad: 'Régimen de Compatibilidad',
   };
 
   async guardarDocumentosAspirante(
@@ -145,6 +146,40 @@ export class DocumentoService {
         await manager.save(documento);
       }
     }
+  }
+
+  async getDocumentosByDocenteId(
+    docenteId: number,
+  ): Promise<{ [key: string]: string | null }> {
+    const documentos = await this.documentoRepository.find({
+      where: { docente: { id: docenteId } },
+    });
+
+    const documentosMapeados: { [key: string]: string | null } = {};
+
+    // Mapeo inverso: de 'tipo' en BD a 'key' en el frontend
+    const tipoToKeyMap: { [key: string]: string } = {
+      'DNI Frente': 'dniFrenteUrl',
+      'DNI Dorso': 'dniDorsoUrl',
+      'Título Nivel Secundario': 'titulo_secundarioUrl',
+      'Título Nivel Terciario/Superior': 'titulo_terciarioUrl',
+      'Examen Psicofísico': 'examen_psicofisicoUrl',
+      'Régimen de Compatibilidad': 'regimen_de_compatibilidadUrl',
+    };
+
+    // Inicializar todas las posibles URLs a null
+    Object.values(tipoToKeyMap).forEach(key => {
+      documentosMapeados[key] = null;
+    });
+
+    documentos.forEach((doc) => {
+      const key = tipoToKeyMap[doc.tipo];
+      if (key) {
+        documentosMapeados[key] = `/uploads/${doc.archivo_pdf}`;
+      }
+    });
+
+    return documentosMapeados;
   }
 
   async getDocumentosByAspiranteId(
