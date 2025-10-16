@@ -277,7 +277,7 @@ export default function DetalleLegajo() {
     'anio_egreso_medio', 'provincia_medio', 'titulo_medio',
     'completo_nivel_superior', 'carrera_superior', 'institucion_superior',
     'provincia_superior', 'anio_ingreso_superior', 'anio_egreso_superior',
-    'trabajo', 'horas_diarias', 'descripcion_trabajo', 'personas_cargo'
+    'trabajo', 'horas_diarias', 'descripcion_trabajo', 'personas_cargo', 'ciclo_lectivo'
   ];
 
   // Iteramos sobre las claves permitidas y las agregamos al FormData si existen en el estado
@@ -705,7 +705,33 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                 <div className="text-blue-600 font-medium">{formData.estado_matriculacion}</div>
               )}
             </div>
-
+            {/* CICLO LECTIVO */}
+            <div>
+              <Label className="text-sm font-medium text-gray-700 mb-1 block">CICLO LECTIVO</Label>
+              {isEditing ? (
+                <select
+                  value={formData.ciclo_lectivo || ""}
+                  onChange={(e) => handleInputChange("ciclo_lectivo", e.target.value)}
+                  className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
+                >
+                  <option value="">Seleccionar año</option>
+                  <option value="2015">2015</option>
+                  <option value="2016">2016</option>
+                  <option value="2017">2017</option>
+                  <option value="2018">2018</option>
+                  <option value="2019">2019</option>
+                  <option value="2020">2020</option>
+                  <option value="2021">2021</option>
+                  <option value="2022">2022</option>
+                  <option value="2023">2023</option>
+                  <option value="2024">2024</option>
+                  <option value="2025">2025</option>
+                  <option value="2026">2026</option>
+                </select>
+              ) : (
+                <div className="text-blue-600 font-medium">{formData.ciclo_lectivo}</div>
+              )}
+            </div>
           </div>
         );
       case "estudios":

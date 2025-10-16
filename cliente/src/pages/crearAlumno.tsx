@@ -67,6 +67,7 @@ export default function CrearLegajoAlumno() {
     ciudad_nacimiento: '',
     provincia_nacimiento: '',
     carrera: '',
+    ciclo_lectivo: "",
     estado_preinscripcion: '',
     estado_matriculacion: '',
     completo_nivel_medio: '',
@@ -192,6 +193,7 @@ export default function CrearLegajoAlumno() {
       if (!data.ciudad_nacimiento) newErrors.ciudad_nacimiento = "La ciudad de nacimiento es requerida"
       if (!data.provincia_nacimiento) newErrors.provincia_nacimiento = "La provincia es requerida"
       if (!data.sexo) newErrors.sexo = "El sexo es requerido"
+
     }
 
     if (step === 2) {
@@ -299,8 +301,11 @@ export default function CrearLegajoAlumno() {
     if (grupoSanguineoFile) payload.append('grupo_sanguineo', grupoSanguineoFile);
     if (cudFile) payload.append('cud', cudFile);
     if (emmacFile) payload.append('emmac', emmacFile);
-
+    if (formData.ciclo_lectivo) {
+  payload.append('ciclo_lectivo', Number(formData.ciclo_lectivo).toString());
+}
     try {
+      console.log('Ciclo lectivo enviado:', formData.ciclo_lectivo);
       const response = await fetch(`${API_URL}/legajo-estudiante/crear-alumno-completo`, {
         method: 'POST',
         body: payload,
@@ -569,6 +574,28 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
               </select>
               {errorCarreras && <div className="text-red-500 text-xs mt-1">{errorCarreras}</div>}
               {errors.carrera && <div className="text-red-500 text-xs mt-1">{errors.carrera}</div>}
+            </div>
+	    <div>
+              <Label className="text-sm font-medium text-gray-700 mb-1 block">CICLO LECTIVO</Label>
+              <select
+                value={formData.ciclo_lectivo}
+                onChange={(e) => setFormData({ ...formData, ciclo_lectivo: e.target.value })}
+                className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
+              >
+                <option value="">Seleccionar ciclo lectivo</option>
+                <option value="2015">2015</option>
+                <option value="2016">2016</option>
+                <option value="2017">2017</option>
+                <option value="2018">2018</option>
+                <option value="2019">2019</option>
+                <option value="2020">2020</option>
+                <option value="2021">2021</option>
+                <option value="2022">2022</option>
+                <option value="2023">2023</option>
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+              </select>
+              {errors.ciclo_lectivo && <div className="text-red-500 text-xs mt-1">{errors.ciclo_lectivo}</div>}
             </div>
           </div>
         );
