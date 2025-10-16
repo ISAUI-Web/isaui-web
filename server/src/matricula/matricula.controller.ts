@@ -31,20 +31,21 @@ export class MatriculaController {
   }
 
   @Put(':aspiranteId/estado')
-async updateEstado(
-  @Param('aspiranteId', ParseIntPipe) aspiranteId: number,
-  @Body('estado') estado: string,
-) {
-  // Validar que el estado sea uno de los permitidos
-  const estadosPermitidos = ['pendiente', 'en espera', 'confirmado', 'rechazado'] as const;
-  if (!estadosPermitidos.includes(estado as any)) {
-    throw new BadRequestException('Estado inválido');
-  }
+  async updateEstado(
+    @Param('aspiranteId', ParseIntPipe) aspiranteId: number,
+    @Body('estado') estado: string,
+  ) {
+    // Validar que el estado sea uno de los permitidos
+    const estadosPermitidos = ['pendiente', 'en espera', 'confirmado', 'rechazado'] as const;
+    if (!estadosPermitidos.includes(estado as any)) {
+      throw new BadRequestException('Estado inválido');
+    }
 
-  // Llamar al servicio con tipo seguro
-  return this.matriculaService.updateEstadoForAspirante(
-    aspiranteId,
-    estado as 'pendiente' | 'en espera' | 'confirmado' | 'rechazado'
-  );
-}
+    // Llamar al servicio con tipo seguro
+    return this.matriculaService.updateEstadoForAspirante(
+      aspiranteId,
+      estado as 'pendiente' | 'en espera' | 'confirmado' | 'rechazado',
+      new Date().getFullYear(), // Usamos el año actual como ciclo lectivo por defecto
+    );
+  }
 }

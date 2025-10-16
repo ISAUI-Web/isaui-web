@@ -1,28 +1,33 @@
-import { Controller, Get, Param, ParseIntPipe, Patch, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Put,
+  Body,
+} from '@nestjs/common';
 import { EstudianteService } from './estudiante.service';
+import { UpdateEstudianteDto } from './dto/update-estudiante.dto';
 
 @Controller('estudiante')
 export class EstudianteController {
   constructor(private readonly estudianteService: EstudianteService) {}
 
   @Get()
-  async findAll() {
+  findAll() {
     return this.estudianteService.findAll();
   }
 
-  @Get('by-aspirante/:aspiranteId')
-  async findByAspiranteId(
-    @Param('aspiranteId', ParseIntPipe) aspiranteId: number,
-  ) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return this.estudianteService.findByAspiranteId(aspiranteId);
+  @Get('by-aspirante/:id')
+  findByAspiranteId(@Param('id', ParseIntPipe) id: number) {
+    return this.estudianteService.findByAspiranteId(id);
   }
-  
-     @Patch(':id')
-  async updateActivo(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() body: { activo: boolean },
+
+  @Put(':id')
+  update(
+    @Param('id') id: string,
+    @Body() updateEstudianteDto: UpdateEstudianteDto,
   ) {
-    return this.estudianteService.updateActivo(id, body.activo);
+    return this.estudianteService.update(+id, updateEstudianteDto);
   }
 }

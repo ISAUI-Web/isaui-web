@@ -31,6 +31,10 @@ export default function CrearLegajoAlumno() {
   const [loadingCarreras, setLoadingCarreras] = useState(false);
   const [errorCarreras, setErrorCarreras] = useState<string | null>(null);
 
+  // Generar años para el selector de ciclo lectivo
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 11 }, (_, i) => currentYear - i); // Genera años desde el actual hasta 10 años atrás
+
   useEffect(() => {
     setLoadingCarreras(true);
     fetch('http://localhost:3000/carrera')
@@ -67,6 +71,7 @@ export default function CrearLegajoAlumno() {
     ciudad_nacimiento: '',
     provincia_nacimiento: '',
     carrera: '',
+    ciclo_lectivo: '', // <-- AÑADIR CAMPO AL ESTADO
     estado_preinscripcion: '',
     estado_matriculacion: '',
     completo_nivel_medio: '',
@@ -191,6 +196,10 @@ export default function CrearLegajoAlumno() {
       }
       if (!data.ciudad_nacimiento) newErrors.ciudad_nacimiento = "La ciudad de nacimiento es requerida"
       if (!data.provincia_nacimiento) newErrors.provincia_nacimiento = "La provincia es requerida"
+      // NUEVA VALIDACIÓN
+      if (!data.ciclo_lectivo) {
+        newErrors.ciclo_lectivo = "El ciclo lectivo es requerido";
+      } // La validación de formato ya no es necesaria con un select
       if (!data.sexo) newErrors.sexo = "El sexo es requerido"
     }
 
@@ -280,7 +289,12 @@ export default function CrearLegajoAlumno() {
         if (key === 'completo_nivel_medio' || key === 'completo_nivel_superior' || key === 'trabajo' || key === 'personas_cargo') {
             value = value === 'Sí' ? 'true' : (value === 'No' ? 'false' : value);
         }
-        payload.append(key, value);
+        // Asegurarnos de que el ciclo_lectivo se envíe como número si es posible
+        if (key === 'ciclo_lectivo') {
+          payload.append(key, Number(value).toString());
+        } else {
+          payload.append(key, value);
+        }
       }
     });
 
@@ -569,6 +583,21 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
               </select>
               {errorCarreras && <div className="text-red-500 text-xs mt-1">{errorCarreras}</div>}
               {errors.carrera && <div className="text-red-500 text-xs mt-1">{errors.carrera}</div>}
+            </div>
+            {/* NUEVO CAMPO PARA CICLO LECTIVO */}
+            <div>
+              <Label className="text-sm font-medium text-gray-700 mb-1 block">CICLO LECTIVO</Label>
+              <select
+                value={formData.ciclo_lectivo}
+                onChange={(e) => handleInputChange("ciclo_lectivo", e.target.value)}
+                className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
+              >
+                <option value="">Seleccionar ciclo lectivo</option>
+                {years.map((year) => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+              {errors.ciclo_lectivo && <div className="text-red-500 text-xs mt-1">{errors.ciclo_lectivo}</div>}
             </div>
           </div>
         );

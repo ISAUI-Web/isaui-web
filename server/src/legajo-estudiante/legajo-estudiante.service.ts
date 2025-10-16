@@ -81,6 +81,7 @@ export class LegajoEstudianteService {
         await this.matriculaService.updateEstadoForAspirante(
           aspirante.id,
           'confirmado',
+          (createAspiranteDto as any).ciclo_lectivo,
           queryRunner,
         );
 
