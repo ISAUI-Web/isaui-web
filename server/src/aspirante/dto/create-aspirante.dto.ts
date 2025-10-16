@@ -243,4 +243,9 @@ export class CreateAspiranteDto {
   @IsNumber()
   @IsNotEmpty()
   carrera_id: number;
+
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  @IsNotEmpty()
+  ciclo_lectivo: number;
 }

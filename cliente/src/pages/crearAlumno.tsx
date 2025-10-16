@@ -266,65 +266,71 @@ export default function CrearLegajoAlumno() {
 
     const payload = new FormData();
 
-    // Mapear y agregar datos del formulario
-    const carreraSeleccionada = carreras.find(c => c.nombre === formData.carrera);
-    if (carreraSeleccionada) {
-      payload.append('carrera_id', carreraSeleccionada.id.toString());
-    }
-
-    Object.keys(formData).forEach(key => {
-      if (key !== 'documentos' && key !== 'carrera' && formData[key] !== null && formData[key] !== '') {
-        let value = formData[key];
-        if (typeof value === 'boolean') {
-          value = value.toString();
-        }
-        // Mapeo de valores de selects a lo que espera el backend si es necesario
-        if (key === 'completo_nivel_medio' || key === 'completo_nivel_superior' || key === 'trabajo' || key === 'personas_cargo') {
-            value = value === 'Sí' ? 'true' : (value === 'No' ? 'false' : value);
-        }
-        payload.append(key, value);
-      }
-    });
-
-    // Añadir estados por defecto para el flujo de creación integral
-    payload.append('estado_preinscripcion', 'confirmado');
-    payload.append('estado_matriculacion', 'confirmado');
-
-    // Adjuntar todos los archivos
-    if (dniFrenteFile) payload.append('dniFrente', dniFrenteFile);
-    if (dniDorsoFile) payload.append('dniDorso', dniDorsoFile);
-    if (cusFile) payload.append('cus', cusFile);
-    if (fotoCarnetFile) payload.append('foto_carnet', fotoCarnetFile);
-    if (isaFile) payload.append('isa', isaFile);
-    if (partidaNacimientoFile) payload.append('partida_nacimiento', partidaNacimientoFile);
-    if (analiticoFile) payload.append('analitico', analiticoFile);
-    if (grupoSanguineoFile) payload.append('grupo_sanguineo', grupoSanguineoFile);
-    if (cudFile) payload.append('cud', cudFile);
-    if (emmacFile) payload.append('emmac', emmacFile);
-    if (formData.ciclo_lectivo) {
-  payload.append('ciclo_lectivo', Number(formData.ciclo_lectivo).toString());
+// === Carrera ===
+const carreraSeleccionada = carreras.find(c => c.nombre === formData.carrera);
+if (carreraSeleccionada) {
+  payload.append('carrera_id', carreraSeleccionada.id.toString());
 }
-    try {
-      console.log('Ciclo lectivo enviado:', formData.ciclo_lectivo);
-      const response = await fetch(`${API_URL}/legajo-estudiante/crear-alumno-completo`, {
-        method: 'POST',
-        body: payload,
-      });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        const errorMessage = Array.isArray(errorData.message) ? errorData.message.join(', ') : errorData.message;
-        throw new Error(errorMessage || 'Error al crear el legajo del alumno.');
-      }
+// === Ciclo lectivo ===
+if (formData.ciclo_lectivo) {
+  payload.append('ciclo_lectivo', formData.ciclo_lectivo.toString());
+}
 
-      const result = await response.json();
-      alert(`Legajo del alumno ${result.estudiante.nombre} ${result.estudiante.apellido} creado con éxito.`);
-      navigate('/legajo');
-    } catch (error: any) {
-      console.error('Error en la creación del legajo:', error);
-      alert(`Hubo un problema al crear el legajo: ${error.message}`);
+// === Datos personales y formulario ===
+Object.keys(formData).forEach(key => {
+  if (key !== 'documentos' && key !== 'carrera' && key !== 'ciclo_lectivo' && formData[key] !== null && formData[key] !== '') {
+    let value = formData[key];
+
+    // Convertir booleans a strings (Sí/No)
+    if (typeof value === 'boolean') {
+      value = value.toString();
     }
-  };
+    if (['completo_nivel_medio','completo_nivel_superior','trabajo','personas_cargo'].includes(key)) {
+      value = value === 'Sí' ? 'true' : (value === 'No' ? 'false' : value);
+    }
+
+    payload.append(key, value);
+  }
+});
+
+// === Estados por defecto ===
+payload.append('estado_preinscripcion', 'confirmado');
+payload.append('estado_matriculacion', 'confirmado');
+
+// === Archivos ===
+if (dniFrenteFile) payload.append('dniFrente', dniFrenteFile);
+if (dniDorsoFile) payload.append('dniDorso', dniDorsoFile);
+if (cusFile) payload.append('cus', cusFile);
+if (fotoCarnetFile) payload.append('foto_carnet', fotoCarnetFile);
+if (isaFile) payload.append('isa', isaFile);
+if (partidaNacimientoFile) payload.append('partida_nacimiento', partidaNacimientoFile);
+if (analiticoFile) payload.append('analitico', analiticoFile);
+if (grupoSanguineoFile) payload.append('grupo_sanguineo', grupoSanguineoFile);
+if (cudFile) payload.append('cud', cudFile);
+if (emmacFile) payload.append('emmac', emmacFile);
+
+// === Enviar al backend ===
+try {
+  const response = await fetch(`${API_URL}/legajo-estudiante/crear-alumno-completo`, {
+    method: 'POST',
+    body: payload,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    const errorMessage = Array.isArray(errorData.message) ? errorData.message.join(', ') : errorData.message;
+    throw new Error(errorMessage || 'Error al crear el legajo del alumno.');
+  }
+
+  const result = await response.json();
+  alert(`Legajo del alumno ${result.estudiante.nombre} ${result.estudiante.apellido} creado con éxito.`);
+  navigate('/legajo');
+} catch (error: any) {
+  console.error('Error en la creación del legajo:', error);
+  alert(`Hubo un problema al crear el legajo: ${error.message}`);
+}
+  }
 
 
 
