@@ -263,6 +263,9 @@ export default function CrearLegajoAlumno() {
       alert("Por favor, completa todos los campos obligatorios en todas las pestañas antes de crear el legajo.");
       return;
     }
+console.log('--- FormData antes de armar payload ---');
+console.log('formData:', formData);
+console.log('formData.ciclo_lectivo:', formData.ciclo_lectivo);
 
     const payload = new FormData();
 
@@ -274,6 +277,7 @@ if (carreraSeleccionada) {
 
 // === Ciclo lectivo ===
 if (formData.ciclo_lectivo) {
+  console.log('Agregando ciclo_lectivo al payload:', formData.ciclo_lectivo);
   payload.append('ciclo_lectivo', formData.ciclo_lectivo.toString());
 }
 
@@ -585,7 +589,10 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
               <Label className="text-sm font-medium text-gray-700 mb-1 block">CICLO LECTIVO</Label>
               <select
                 value={formData.ciclo_lectivo}
-                onChange={(e) => setFormData({ ...formData, ciclo_lectivo: e.target.value })}
+                onChange={(e) => setFormData({ 
+    ...formData, 
+    ciclo_lectivo: e.target.value ? Number(e.target.value) : undefined 
+  })}
                 className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
               >
                 <option value="">Seleccionar ciclo lectivo</option>

@@ -149,8 +149,9 @@ export class MatriculaService {
   }
 
   async updateEstadoForAspirante(
-    aspiranteId: number,
+    aspiranteId: number,  
     nuevoEstado: 'pendiente' | 'en espera' | 'confirmado' | 'rechazado',
+    cicloLectivo: number,
     queryRunner?: QueryRunner,
   ) {
     const performUpdate = async (manager: EntityManager) => {
@@ -183,6 +184,7 @@ export class MatriculaService {
           // Crear el registro de estudiante
           await this.estudianteService.crearEstudianteDesdeAspirante(
             matricula.aspirante,
+            cicloLectivo,
             queryRunner, // Propagar el queryRunner
           );
         }

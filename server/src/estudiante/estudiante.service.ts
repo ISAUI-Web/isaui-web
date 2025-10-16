@@ -105,6 +105,7 @@ export class EstudianteService {
 
   async crearEstudianteDesdeAspirante(
     aspirante: Aspirante,
+    cicloLectivo?: number, 
     queryRunner?: QueryRunner,
   ): Promise<Estudiante> {
     const manager = queryRunner
@@ -125,7 +126,7 @@ export class EstudianteService {
     const nuevoEstudiante = this.estudianteRepository.create({
       aspirante: aspirante,
       año_actual: 1,
-      ciclo_lectivo: new Date().getFullYear(),
+      ciclo_lectivo: cicloLectivo,
       activo: true,
     });
 

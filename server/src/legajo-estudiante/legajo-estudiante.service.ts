@@ -60,6 +60,8 @@ export class LegajoEstudianteService {
         await this.documentoService.guardarDocumentosAspirante(aspirante, files, queryRunner);
       }
 
+    
+
       const preinscripcion = await queryRunner.manager.findOneBy(
         Preinscripcion,
         { aspirante: { id: aspirante.id } },
@@ -81,6 +83,7 @@ export class LegajoEstudianteService {
         await this.matriculaService.updateEstadoForAspirante(
           aspirante.id,
           'confirmado',
+          (createAspiranteDto as any).ciclo_lectivo,
           queryRunner,
         );
 

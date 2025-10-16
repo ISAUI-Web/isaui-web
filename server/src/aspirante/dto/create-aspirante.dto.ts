@@ -244,8 +244,8 @@ export class CreateAspiranteDto {
   @IsNotEmpty()
   carrera_id: number;
 
-  @Transform(({ value }) => Number(value))
-  @IsNumber()
-  @IsNotEmpty()
-  ciclo_lectivo: number;
+  @IsOptional()
+  @Transform(({ value }) => value !== undefined ? Number(value) : undefined)
+  @IsNumber({}, { message: 'El ciclo lectivo debe ser un número válido' })
+  ciclo_lectivo?: number;
 }
