@@ -70,6 +70,10 @@ export default function DetalleLegajo() {
   const [isUploadingImage, setIsUploadingImage] = useState<string | null>(null)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   
+  // Generar años para el selector de ciclo lectivo
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 11 }, (_, i) => currentYear - i); // Genera años desde el actual hasta 10 años atrás
+
   // Estado para manejar los archivos seleccionados para subir
   const [dniFrenteFile, setDniFrenteFile] = useState<File | null>(null);
   const [dniDorsoFile, setDniDorsoFile] = useState<File | null>(null);
@@ -276,7 +280,7 @@ export default function DetalleLegajo() {
     'estado_matriculacion', 'completo_nivel_medio', 'anio_ingreso_medio',
     'anio_egreso_medio', 'provincia_medio', 'titulo_medio',
     'completo_nivel_superior', 'carrera_superior', 'institucion_superior',
-    'provincia_superior', 'anio_ingreso_superior', 'anio_egreso_superior',
+    'provincia_superior', 'anio_ingreso_superior', 'anio_egreso_superior', 'ciclo_lectivo',
     'trabajo', 'horas_diarias', 'descripcion_trabajo', 'personas_cargo'
   ];
 
@@ -339,24 +343,20 @@ export default function DetalleLegajo() {
       throw new Error(detailedMessage);
     }
 
-    const updatedAspirante = await res.json();
+    const updatedLegajo = await res.json();
+
+    // Formateamos la fecha que viene del backend
+    const formattedDate = updatedLegajo.fecha_nacimiento
+      ? updatedLegajo.fecha_nacimiento.split('T')[0]
+      : "";
 
     setFormData({
-      ...updatedAspirante, //campos del aspirante
+      ...formData, // Mantiene el estado actual
+      ...updatedLegajo, // Sobrescribe con los datos actualizados del backend
+      fecha_nacimiento: formattedDate,
       documentos: {
-        // Reconstruimos el objeto anidado que la UI necesita para renderizar las imágenes.
-        dniFrenteUrl: updatedAspirante.dniFrenteUrl || null,
-        dniDorsoUrl: updatedAspirante.dniDorsoUrl || null,
-        dniFrenteNombre: updatedAspirante.dniFrenteUrl?.split('/').pop() || "",
-        dniDorsoNombre: updatedAspirante.dniDorsoUrl?.split('/').pop() || "",
-        cusUrl: updatedAspirante.cusUrl || null,
-        isaUrl: updatedAspirante.isaUrl || null,
-        partida_nacimientoUrl: updatedAspirante.partida_nacimientoUrl || null,
-        analiticoUrl: updatedAspirante.analiticoUrl || null,
-        grupo_sanguineoUrl: updatedAspirante.grupo_sanguineoUrl || null,
-        cudUrl: updatedAspirante.cudUrl || null,
-        emmacUrl: updatedAspirante.emmacUrl || null,
-        foto_carnetUrl: updatedAspirante.foto_carnetUrl || null,
+        ...formData.documentos, // Mantiene las URLs de documentos existentes
+        ...updatedLegajo, // Sobrescribe con las nuevas URLs si las hay
       }
     });
     setIsEditing(false);
@@ -675,6 +675,25 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                 <div className="text-blue-600 font-medium">{formData.carrera}</div>
               )}
               {errors.carrera && <div className="text-red-500 text-xs mt-1">{errors.carrera}</div>}
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-700 mb-1 block">CICLO LECTIVO</Label>
+              {isEditing ? (
+                <select
+                  value={formData.ciclo_lectivo || ""}
+                  onChange={(e) => handleInputChange("ciclo_lectivo", e.target.value)}
+                  className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
+                >
+                  <option value="">Seleccionar ciclo lectivo</option>
+                  {years.map((year) => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+              ) : (
+                <div className="text-blue-600 font-medium">
+                  {formData.ciclo_lectivo}
+                </div>
+              )}
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">ESTADO DE PREINSCRIPCIÓN</Label>

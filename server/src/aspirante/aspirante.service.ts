@@ -16,6 +16,8 @@ import PDFDocument from 'pdfkit';
 import { Preinscripcion } from '../preinscripcion/preinscripcion.entity';
 import { Matricula } from '../matricula/matricula.entity';
 import { Carrera } from '../carrera/carrera.entity';
+import { EstudianteService } from '../estudiante/estudiante.service';
+import { Estudiante } from '../estudiante/estudiante.entity';
 
 @Injectable()
 export class AspiranteService {
@@ -26,10 +28,13 @@ export class AspiranteService {
     private readonly preinscripcionService: PreinscripcionService,
     private readonly constanciaService: ConstanciaService,
     private readonly matriculaService: MatriculaService,
+    private readonly estudianteService: EstudianteService,
     @InjectRepository(Preinscripcion)
     private readonly preinscripcionRepository: Repository<Preinscripcion>,
     @InjectRepository(Carrera)
     private readonly carreraRepository: Repository<Carrera>,
+    @InjectRepository(Estudiante)
+    private readonly estudianteRepository: Repository<Estudiante>,
   ) {}
 
   async create(
@@ -118,7 +123,7 @@ export class AspiranteService {
     id: number,
     updateAspiranteDto: UpdateAspiranteDto,
     archivos?: { [fieldname: string]: Express.Multer.File[] },
-  ): Promise<Aspirante> {
+  ): Promise<any> {
     // Se carga la relación con preinscripciones para asegurar que leemos el estado correcto.
     const aspirante = await this.aspiranteRepository.findOne({
       where: { id },
@@ -135,8 +140,12 @@ export class AspiranteService {
     const estadoMatriculacionAnterior = matricula?.estado;
 
     // Separamos los estados del resto de los datos para no guardarlos en la tabla de aspirantes.
-    const { estado_preinscripcion, estado_matriculacion, ...datosAspirante } =
-      updateAspiranteDto;
+    const {
+      estado_preinscripcion,
+      estado_matriculacion,
+      ciclo_lectivo, // Extraemos el ciclo lectivo para manejarlo por separado
+      ...datosAspirante
+    } = updateAspiranteDto;
 
     const updated = this.aspiranteRepository.merge(aspirante, datosAspirante);
     const saved = await this.aspiranteRepository.save(updated);
@@ -144,6 +153,16 @@ export class AspiranteService {
     // Si se subieron nuevos archivos, los guardamos.
     if (archivos && Object.keys(archivos).length > 0) {
       await this.documentoService.guardarDocumentosAspirante(saved, archivos);
+    }
+
+    // Si se proporcionó un ciclo_lectivo, actualizamos la entidad Estudiante.
+    if (ciclo_lectivo) {
+      const estudiante = await this.estudianteRepository.findOneBy({
+        aspirante: { id: id },
+      });
+      if (estudiante) {
+        await this.estudianteRepository.update(estudiante.id, { ciclo_lectivo });
+      }
     }
 
     // Se actualiza el estado en la tabla 'preinscripcion' si ha cambiado.
@@ -190,6 +209,10 @@ export class AspiranteService {
         throw new BadRequestException('Estado de matrícula inválido');
       }
 
+      // La clave es que updateEstadoForAspirante ya maneja la transacción internamente.
+      // No necesitamos el queryRunner aquí.
+      // Y no necesitamos hacer nada con su valor de retorno, porque al final
+      // construiremos la respuesta de forma unificada.
       await this.matriculaService.updateEstadoForAspirante(
         id,
         estado_matriculacion as
@@ -197,10 +220,35 @@ export class AspiranteService {
           | 'en espera'
           | 'confirmado'
           | 'rechazado',
+        (updateAspiranteDto as any).ciclo_lectivo || new Date().getFullYear(),
       );
     }
 
-    return saved;
+    // Devolvemos el legajo completo del estudiante, que ya contiene los datos actualizados.
+    // Esto asegura que el frontend reciba el ciclo_lectivo correcto.
+    try {
+      const legajoCompleto = await this.estudianteService.findByAspiranteId(id);
+      return legajoCompleto;
+    } catch (error) {
+      // Si findByAspiranteId lanza NotFoundException (porque el aspirante no es estudiante),
+      // lo capturamos y construimos una respuesta consistente.
+      if (error instanceof NotFoundException) {
+        // Volvemos a buscar el aspirante para obtener todos los datos actualizados,
+        // incluyendo los documentos y relaciones, y lo devolvemos con la estructura esperada.
+        const aspiranteActualizado = await this.findOne(id);
+        const preinscripcion = aspiranteActualizado.preinscripciones?.[0];
+        const matricula = aspiranteActualizado.matriculas?.[0];
+
+        return {
+          ...aspiranteActualizado, // Mantenemos los datos del aspirante
+          ciclo_lectivo: updateAspiranteDto.ciclo_lectivo, // Devolvemos el ciclo lectivo actualizado
+          estado_preinscripcion: preinscripcion?.estado || 'N/A',
+          estado_matriculacion: matricula?.estado || 'no matriculado',
+        };
+      }
+      // Si es otro tipo de error, lo relanzamos para que no se oculte.
+      throw error;
+    }
   }
 
   private async getPreinscripcionesForReport(

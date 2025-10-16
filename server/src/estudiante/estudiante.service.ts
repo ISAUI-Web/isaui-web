@@ -12,6 +12,7 @@ import { Estudiante } from './estudiante.entity';
 import { Aspirante } from '../aspirante/aspirante.entity';
 import { Matricula } from '../matricula/matricula.entity';
 import { Documento } from '../documento/documento.entity';
+import { UpdateEstudianteDto } from './dto/update-estudiante.dto';
 
 @Injectable()
 export class EstudianteService {
@@ -28,16 +29,16 @@ export class EstudianteService {
   ) {}
 
   async findAll(): Promise<any[]> {
-  const estudiantes = await this.estudianteRepository.find({
-    where: { activo: true }, // 👈 filtra solo los activos
-    relations: {
-      aspirante: {
-        preinscripciones: {
-          carrera: true,
+    const estudiantes = await this.estudianteRepository.find({
+      where: { activo: true }, // 👈 filtra solo los activos
+      relations: {
+        aspirante: {
+          preinscripciones: {
+            carrera: true,
+          },
         },
       },
-    },
-  });
+    });
 
     return estudiantes.map((estudiante) => {
       return {
@@ -105,6 +106,7 @@ export class EstudianteService {
 
   async crearEstudianteDesdeAspirante(
     aspirante: Aspirante,
+    cicloLectivo: number,
     queryRunner?: QueryRunner,
   ): Promise<Estudiante> {
     const manager = queryRunner
@@ -125,7 +127,7 @@ export class EstudianteService {
     const nuevoEstudiante = this.estudianteRepository.create({
       aspirante: aspirante,
       año_actual: 1,
-      ciclo_lectivo: new Date().getFullYear(),
+      ciclo_lectivo: cicloLectivo,
       activo: true,
     });
 
@@ -147,6 +149,24 @@ export class EstudianteService {
     return estudianteGuardado;
   }
   async updateActivo(id: number, activo: boolean) {
-  return this.estudianteRepository.update(id, { activo });
-}
+    return this.estudianteRepository.update(id, { activo });
+  }
+
+  async update(
+    id: number,
+    updateEstudianteDto: UpdateEstudianteDto,
+  ): Promise<Estudiante> {
+    const estudiante = await this.estudianteRepository.findOneBy({ id });
+    if (!estudiante) {
+      throw new NotFoundException(`Estudiante con ID ${id} no encontrado.`);
+    }
+
+    // Mezcla los datos del DTO en la entidad existente
+    const updatedEstudiante = this.estudianteRepository.merge(
+      estudiante,
+      updateEstudianteDto,
+    );
+
+    return this.estudianteRepository.save(updatedEstudiante);
+  }
 }
