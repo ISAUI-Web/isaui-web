@@ -349,7 +349,6 @@ export default function DetalleLegajoProfesor() {
     try {
       const pdf = new jsPDF()
 
-      // Helper function to convert image URL to base64
       const getImageBase64 = async (url: string): Promise<string | null> => {
         try {
           const response = await fetch(url)
@@ -366,7 +365,7 @@ export default function DetalleLegajoProfesor() {
         }
       }
 
-      let yPosition = 20 // Start at top of page
+      let yPosition = 20 
 
       const printDate = new Date().toLocaleDateString("es-AR", {
         day: "2-digit",
@@ -377,10 +376,9 @@ export default function DetalleLegajoProfesor() {
       pdf.setFont("helvetica", "normal")
       pdf.setTextColor(100, 100, 100)
       pdf.text(`Fecha de impresión: ${printDate}`, 200, yPosition, { align: "right" })
-      pdf.setTextColor(0, 0, 0) // Reset to black
+      pdf.setTextColor(0, 0, 0)
       yPosition += 10
 
-      // Title
       pdf.setFontSize(18)
       pdf.setFont("helvetica", "bold")
       pdf.text(`Legajo del Profesor`, 105, yPosition, { align: "center" })
@@ -393,7 +391,6 @@ export default function DetalleLegajoProfesor() {
       const leftX = 20
       const lineHeight = 6
 
-      // Personal Data Section
       pdf.setFontSize(12)
       pdf.setFont("helvetica", "bold")
       pdf.text("DATOS PERSONALES", leftX, yPosition)
@@ -426,7 +423,6 @@ export default function DetalleLegajoProfesor() {
 
       yPosition += 5
 
-      // Education Section
       pdf.setFontSize(12)
       pdf.setFont("helvetica", "bold")
       pdf.text("ESTUDIOS", leftX, yPosition)
@@ -467,7 +463,6 @@ export default function DetalleLegajoProfesor() {
 
       yPosition += 5
 
-      // Work Situation Section
       pdf.setFontSize(12)
       pdf.setFont("helvetica", "bold")
       pdf.text("SITUACIÓN LABORAL", leftX, yPosition)
@@ -492,7 +487,6 @@ export default function DetalleLegajoProfesor() {
         yPosition += lineHeight
       })
 
-      // Collect all documents with their titles
       const documents = [
         { url: formData.documentos?.dniFrenteUrl, title: "DNI - Frente" },
         { url: formData.documentos?.dniDorsoUrl, title: "DNI - Dorso" },
@@ -502,7 +496,6 @@ export default function DetalleLegajoProfesor() {
         { url: formData.documentos?.regimen_de_compatibilidadUrl, title: "Régimen de Compatibilidad" },
       ].filter((doc) => doc.url)
 
-      // Add courses to documents
       cursos.forEach((curso) => {
         if (curso.certificadoUrl) {
           documents.push({
@@ -516,54 +509,45 @@ export default function DetalleLegajoProfesor() {
         pdf.addPage()
         yPosition = 20
 
-        // Add documentation title on the new page
         pdf.setFontSize(12)
         pdf.setFont("helvetica", "bold")
         pdf.text("DOCUMENTACIÓN Y CURSOS", 20, yPosition)
         yPosition += 10
 
-        // Process documents two at a time
         for (let i = 0; i < documents.length; i += 2) {
           const doc1 = documents[i]
           const doc2 = documents[i + 1]
 
-          // If this is not the first pair of images, add a new page
           if (i > 0) {
             pdf.addPage()
             yPosition = 20
           }
 
-          // Add first image
           const fullUrl1 = abs(doc1.url)
           const base64_1 = await getImageBase64(fullUrl1)
 
           if (base64_1) {
-            // Add document title
             pdf.setFontSize(11)
             pdf.setFont("helvetica", "bold")
             pdf.text(doc1.title, 20, yPosition)
             yPosition += 7
 
-            // Add image
             const imgWidth = 170
             const imgHeight = 110
             pdf.addImage(base64_1, "JPEG", 20, yPosition, imgWidth, imgHeight)
             yPosition += imgHeight + 15
           }
 
-          // Add second image if it exists
           if (doc2) {
             const fullUrl2 = abs(doc2.url)
             const base64_2 = await getImageBase64(fullUrl2)
 
             if (base64_2) {
-              // Add document title
               pdf.setFontSize(11)
               pdf.setFont("helvetica", "bold")
               pdf.text(doc2.title, 20, yPosition)
               yPosition += 7
 
-              // Add image
               const imgWidth = 170
               const imgHeight = 110
               pdf.addImage(base64_2, "JPEG", 20, yPosition, imgWidth, imgHeight)
@@ -572,12 +556,11 @@ export default function DetalleLegajoProfesor() {
         }
       }
 
-      // Save the PDF
       pdf.save(`Legajo_Profesor_${formData.apellido}_${formData.nombre}_${formData.dni}.pdf`)
 
-      console.log("[v0] PDF generated successfully with all documentation and courses")
+      console.log("[v0] PDF Generado correctamente")
     } catch (error: any) {
-      console.error("[v0] Error generating PDF:", error)
+      console.error("[v0] Error generando PDF:", error)
       alert(`Hubo un error al generar el PDF: ${error.message}`)
     }
   }
