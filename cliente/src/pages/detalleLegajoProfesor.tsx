@@ -5,8 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Button, buttonVariants } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
-import { ArrowLeft, User, Save, Edit, Eye, X, Camera, Upload, BookOpen, Trash2, Building2, Clock, Calendar } from "lucide-react"
+import { ArrowLeft, User, Save, Edit, Eye, X, Camera, Upload, BookOpen, Trash2, Building2, Clock, Calendar, FileText } from "lucide-react"
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import jsPDF from "jspdf"
 const API_BASE = 'http://localhost:3000';
 const abs = (u?: string | null) => (u ? (u.startsWith('http') || u.startsWith('blob:') ? u : `${API_BASE}/${u.startsWith('/') ? u.substring(1) : u}`) : '');
 
@@ -343,6 +344,226 @@ export default function DetalleLegajoProfesor() {
       alert(`Hubo un problema al actualizar el legajo: ${error.message}`);
     }
   };
+  
+  const handleGeneratePDF = async () => {
+    try {
+      const pdf = new jsPDF()
+
+      const getImageBase64 = async (url: string): Promise<string | null> => {
+        try {
+          const response = await fetch(url)
+          const blob = await response.blob()
+          return new Promise((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onloadend = () => resolve(reader.result as string)
+            reader.onerror = reject
+            reader.readAsDataURL(blob)
+          })
+        } catch (error) {
+          console.error("[v0] Error loading image:", url, error)
+          return null
+        }
+      }
+
+      let yPosition = 20 
+
+      const printDate = new Date().toLocaleDateString("es-AR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
+      pdf.setFontSize(9)
+      pdf.setFont("helvetica", "normal")
+      pdf.setTextColor(100, 100, 100)
+      pdf.text(`Fecha de impresión: ${printDate}`, 200, yPosition, { align: "right" })
+      pdf.setTextColor(0, 0, 0)
+      yPosition += 10
+
+      pdf.setFontSize(18)
+      pdf.setFont("helvetica", "bold")
+      pdf.text(`Legajo del Profesor`, 105, yPosition, { align: "center" })
+      yPosition += 8
+
+      pdf.setFontSize(14)
+      pdf.text(`${formData.nombre} ${formData.apellido}`, 105, yPosition, { align: "center" })
+      yPosition += 12
+
+      const leftX = 20
+      const lineHeight = 6
+
+      pdf.setFontSize(12)
+      pdf.setFont("helvetica", "bold")
+      pdf.text("DATOS PERSONALES", leftX, yPosition)
+      yPosition += lineHeight + 2
+
+      pdf.setFontSize(10)
+      pdf.setFont("helvetica", "normal")
+
+      const personalData = [
+        `Nombre: ${formData.nombre || "N/A"}`,
+        `Apellido: ${formData.apellido || "N/A"}`,
+        `Sexo: ${formData.sexo || "N/A"}`,
+        `DNI: ${formData.dni || "N/A"}`,
+        `CUIL/CUIT: ${formData.cuil || "N/A"}`,
+        `Domicilio: ${formData.domicilio || "N/A"}`,
+        `Localidad: ${formData.localidad || "N/A"}`,
+        `Barrio: ${formData.barrio || "N/A"}`,
+        `Código Postal: ${formData.codigo_postal || "N/A"}`,
+        `Teléfono: ${formData.telefono || "N/A"}`,
+        `Email: ${formData.email || "N/A"}`,
+        `Fecha de Nacimiento: ${formData.fecha_nacimiento || "N/A"}`,
+        `Ciudad de Nacimiento: ${formData.ciudad_nacimiento || "N/A"}`,
+        `Provincia: ${formData.provincia_nacimiento || "N/A"}`,
+      ]
+
+      personalData.forEach((line) => {
+        pdf.text(line, leftX, yPosition)
+        yPosition += lineHeight
+      })
+
+      yPosition += 5
+
+      pdf.setFontSize(12)
+      pdf.setFont("helvetica", "bold")
+      pdf.text("ESTUDIOS", leftX, yPosition)
+      yPosition += lineHeight + 2
+
+      pdf.setFontSize(10)
+      pdf.setFont("helvetica", "normal")
+
+      const educationData = [`Nivel Medio: ${formData.completo_nivel_medio || "N/A"}`]
+
+      if (formData.completo_nivel_medio === "Sí") {
+        educationData.push(
+          `Año Ingreso: ${formData.anio_ingreso_medio || "N/A"}`,
+          `Año Egreso: ${formData.anio_egreso_medio || "N/A"}`,
+          `Provincia: ${formData.provincia_medio || "N/A"}`,
+          `Título: ${formData.titulo_medio || "N/A"}`,
+        )
+      }
+
+      educationData.push(`Nivel Superior: ${formData.completo_nivel_superior || "N/A"}`)
+
+      if (formData.completo_nivel_superior === "Sí" || formData.completo_nivel_superior === "En curso") {
+        educationData.push(
+          `Carrera: ${formData.carrera_superior || "N/A"}`,
+          `Institución: ${formData.institucion_superior || "N/A"}`,
+          `Provincia: ${formData.provincia_superior || "N/A"}`,
+          `Año Ingreso: ${formData.anio_ingreso_superior || "N/A"}`,
+        )
+        if (formData.completo_nivel_superior === "Sí") {
+          educationData.push(`Año Egreso: ${formData.anio_egreso_superior || "N/A"}`)
+        }
+      }
+
+      educationData.forEach((line) => {
+        pdf.text(line, leftX, yPosition)
+        yPosition += lineHeight
+      })
+
+      yPosition += 5
+
+      pdf.setFontSize(12)
+      pdf.setFont("helvetica", "bold")
+      pdf.text("SITUACIÓN LABORAL", leftX, yPosition)
+      yPosition += lineHeight + 2
+
+      pdf.setFontSize(10)
+      pdf.setFont("helvetica", "normal")
+
+      const workData = [`Trabaja: ${formData.trabajo || "N/A"}`]
+
+      if (formData.trabajo === "Sí") {
+        workData.push(
+          `Horas Diarias: ${formData.horas_diarias || "N/A"}`,
+          `Descripción: ${formData.descripcion_trabajo || "N/A"}`,
+        )
+      }
+
+      workData.push(`Personas a Cargo: ${formData.personas_cargo || "N/A"}`)
+
+      workData.forEach((line) => {
+        pdf.text(line, leftX, yPosition)
+        yPosition += lineHeight
+      })
+
+      const documents = [
+        { url: formData.documentos?.dniFrenteUrl, title: "DNI - Frente" },
+        { url: formData.documentos?.dniDorsoUrl, title: "DNI - Dorso" },
+        { url: formData.documentos?.titulo_secundarioUrl, title: "Título Nivel Secundario" },
+        { url: formData.documentos?.titulo_terciarioUrl, title: "Título Nivel Terciario/Superior" },
+        { url: formData.documentos?.examen_psicofisicoUrl, title: "Examen Psicofísico" },
+        { url: formData.documentos?.regimen_de_compatibilidadUrl, title: "Régimen de Compatibilidad" },
+      ].filter((doc) => doc.url)
+
+      cursos.forEach((curso) => {
+        if (curso.certificadoUrl) {
+          documents.push({
+            url: curso.certificadoUrl,
+            title: `Curso: ${curso.nombre}`,
+          })
+        }
+      })
+
+      if (documents.length > 0) {
+        pdf.addPage()
+        yPosition = 20
+
+        pdf.setFontSize(12)
+        pdf.setFont("helvetica", "bold")
+        pdf.text("DOCUMENTACIÓN Y CURSOS", 20, yPosition)
+        yPosition += 10
+
+        for (let i = 0; i < documents.length; i += 2) {
+          const doc1 = documents[i]
+          const doc2 = documents[i + 1]
+
+          if (i > 0) {
+            pdf.addPage()
+            yPosition = 20
+          }
+
+          const fullUrl1 = abs(doc1.url)
+          const base64_1 = await getImageBase64(fullUrl1)
+
+          if (base64_1) {
+            pdf.setFontSize(11)
+            pdf.setFont("helvetica", "bold")
+            pdf.text(doc1.title, 20, yPosition)
+            yPosition += 7
+
+            const imgWidth = 170
+            const imgHeight = 110
+            pdf.addImage(base64_1, "JPEG", 20, yPosition, imgWidth, imgHeight)
+            yPosition += imgHeight + 15
+          }
+
+          if (doc2) {
+            const fullUrl2 = abs(doc2.url)
+            const base64_2 = await getImageBase64(fullUrl2)
+
+            if (base64_2) {
+              pdf.setFontSize(11)
+              pdf.setFont("helvetica", "bold")
+              pdf.text(doc2.title, 20, yPosition)
+              yPosition += 7
+
+              const imgWidth = 170
+              const imgHeight = 110
+              pdf.addImage(base64_2, "JPEG", 20, yPosition, imgWidth, imgHeight)
+            }
+          }
+        }
+      }
+
+      pdf.save(`Legajo_Profesor_${formData.apellido}_${formData.nombre}_${formData.dni}.pdf`)
+
+      console.log("[v0] PDF Generado correctamente")
+    } catch (error: any) {
+      console.error("[v0] Error generando PDF:", error)
+      alert(`Hubo un error al generar el PDF: ${error.message}`)
+    }
+  }
 
   const handleEdit = () => {
     setIsEditing(true)
@@ -1213,6 +1434,13 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                      <Edit className="w-4 h-4" />
                      EDITAR
                    </Button>
+		   <Button
+                    onClick={handleGeneratePDF}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg flex items-center gap-2"
+                  >
+                    <FileText className="w-4 h-4" />
+                    GENERAR PDF
+                  </Button>
                  </>
                 )}
             </div>
