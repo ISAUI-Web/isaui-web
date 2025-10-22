@@ -1823,7 +1823,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                    </Button>
 		   <Button
                     onClick={handleGeneratePDF}
-                    className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg flex items-center gap-2"
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg flex items-center gap-2"
                   >
                     <FileText className="w-4 h-4" />
                     GENERAR PDF
