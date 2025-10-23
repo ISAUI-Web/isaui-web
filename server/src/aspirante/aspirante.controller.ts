@@ -15,7 +15,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
-import { diskStorage, memoryStorage } from 'multer';
+import { memoryStorage } from 'multer';
 import { extname } from 'path';
 import { AspiranteService } from './aspirante.service';
 import { Response } from 'express';
