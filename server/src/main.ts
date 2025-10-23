@@ -24,4 +24,9 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT ?? 3000);
 }
-void bootstrap();
+bootstrap().catch(err => {
+  // Asegurarnos de que cualquier error en el arranque se imprima en la consola.
+  // Esto es crucial para la depuración en entornos como Vercel.
+  console.error('Error fatal durante el arranque de la aplicación:', err);
+  process.exit(1);
+});
