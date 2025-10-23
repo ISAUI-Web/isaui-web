@@ -9,8 +9,7 @@ import { QueryRunner, Repository } from 'typeorm';
 import { Documento } from './documento.entity';
 import { Aspirante } from '../aspirante/aspirante.entity';
 import { MatriculaService } from '../matricula/matricula.service';
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import { v2 as cloudinary } from 'cloudinary';
 import { Docente } from '../docente/docente.entity';
 
 type ArchivosMatriculacion = {
@@ -37,15 +36,6 @@ export class DocumentoService {
     private matriculaService: MatriculaService,
   ) {}
 
-  private readonly uploadPath = path.join(
-    __dirname,
-    '..',
-    '..',
-    'public',
-    'uploads',
-    'documentos',
-  );
-
   private tipoDocumentoMap: { [key: string]: string } = {
     dniFrente: 'DNI Frente',
     dniDorso: 'DNI Dorso',
@@ -65,6 +55,24 @@ export class DocumentoService {
     regimen_de_compatibilidad: 'Régimen de Compatibilidad',
   };
 
+  private async uploadToCloudinary(file: Express.Multer.File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'documentos', // Carpeta en Cloudinary donde se guardarán los archivos
+          resource_type: 'auto',
+        },
+        (error, result) => {
+          if (error) {
+            return reject(error);
+          }
+          resolve(result.secure_url);
+        },
+      );
+      uploadStream.end(file.buffer);
+    });
+  }
+
   async guardarDocumentosAspirante(
     aspirante: Aspirante,
     archivos: { [fieldname: string]: Express.Multer.File[] },
@@ -80,9 +88,8 @@ export class DocumentoService {
         const file = fileArray[0];
         const tipoDocumento = this.tipoDocumentoMap[fieldName] || fieldName;
 
-        // El archivo ya fue guardado en disco por Multer con el nombre correcto.
-        // Solo necesitamos el nombre del archivo para guardarlo en la BD.
-        const filename = file.filename;
+        // Subir el archivo a Cloudinary y obtener la URL
+        const fileUrl = await this.uploadToCloudinary(file);
 
         // Crear o actualizar el registro del documento en la BD
         let documento = await manager.findOne(Documento, {
@@ -90,14 +97,14 @@ export class DocumentoService {
         });
 
         if (documento) {
-          // Opcional: borrar el archivo antiguo si se está reemplazando
-          documento.archivo_pdf = filename; // Actualiza con el nuevo nombre de archivo
+          // Opcional: lógica para borrar el archivo antiguo de Cloudinary si se reemplaza
+          documento.archivo_pdf = fileUrl; // Actualiza con la nueva URL
         } else {
           documento = manager.create(Documento, {
             aspirante: aspirante,
             tipo: tipoDocumento,
             descripcion: `Documento de ${tipoDocumento}`,
-            archivo_pdf: filename,
+            archivo_pdf: fileUrl,
             fecha_subida: new Date(),
             validado: false,
           });
@@ -120,8 +127,8 @@ export class DocumentoService {
       const fileArray = archivos[fieldName];
       if (fileArray && fileArray.length > 0) {
         const file = fileArray[0];
-        // El archivo ya fue guardado en disco por Multer con el nombre correcto.
-        const filename = file.filename;
+        // Subir el archivo a Cloudinary y obtener la URL
+        const fileUrl = await this.uploadToCloudinary(file);
         const tipoDocumento = this.tipoDocumentoMap[fieldName] || fieldName;
 
         // Crear o actualizar el registro del documento en la BD
@@ -130,15 +137,15 @@ export class DocumentoService {
         });
 
         if (documento) {
-          // Opcional: borrar el archivo antiguo si se está reemplazando
-          documento.archivo_pdf = filename; // Actualiza con el nuevo nombre de archivo
+          // Opcional: lógica para borrar el archivo antiguo de Cloudinary si se reemplaza
+          documento.archivo_pdf = fileUrl; // Actualiza con la nueva URL
           documento.fecha_subida = new Date();
         } else {
           documento = manager.create(Documento, {
             docente: docente,
             tipo: tipoDocumento,
             descripcion: `Documento de ${tipoDocumento}`,
-            archivo_pdf: filename,
+            archivo_pdf: fileUrl,
             fecha_subida: new Date(),
             validado: false,
           });
@@ -175,7 +182,8 @@ export class DocumentoService {
     documentos.forEach((doc) => {
       const key = tipoToKeyMap[doc.tipo];
       if (key) {
-        documentosMapeados[key] = `/uploads/${doc.archivo_pdf}`;
+        // La BD ahora guarda la URL completa, así que la usamos directamente
+        documentosMapeados[key] = doc.archivo_pdf;
       }
     });
 
@@ -209,7 +217,8 @@ export class DocumentoService {
     documentos.forEach((doc) => {
       const key = tipoToKeyMap[doc.tipo];
       if (key) {
-        documentosMapeados[key] = `/uploads/documentos/${doc.archivo_pdf}`;
+        // La BD ahora guarda la URL completa, así que la usamos directamente
+        documentosMapeados[key] = doc.archivo_pdf;
       }
     });
 
@@ -253,14 +262,17 @@ export class DocumentoService {
         where: { tipo, aspirante: { id: aspirante.id } },
       });
 
+      // Subir el archivo a Cloudinary y obtener la URL
+      const fileUrl = await this.uploadToCloudinary(file);
+
       if (documento) {
-        // Opcional: aquí se podría agregar lógica para borrar el archivo antiguo del disco
-        documento.archivo_pdf = file.filename;
+        // Opcional: lógica para borrar el archivo antiguo de Cloudinary
+        documento.archivo_pdf = fileUrl;
       } else {
         documento = this.documentoRepository.create({
           tipo,
           descripcion: `Documento de matriculación: ${tipo}`,
-          archivo_pdf: file.filename,
+          archivo_pdf: fileUrl,
           aspirante: aspirante,
         });
       }

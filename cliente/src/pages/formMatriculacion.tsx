@@ -81,7 +81,7 @@ export default function FormMatriculacion() {
         if (value) data.append(key, value)
       })
 
-      const response = await fetch(`http://localhost:3000/documento/upload/aspirante/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/documento/upload/aspirante/${id}`, {
         method: "POST",
         body: data, // se manda como multipart/form-data
       })
@@ -90,17 +90,9 @@ export default function FormMatriculacion() {
         throw new Error("Error al enviar los documentos")
       }
 
-    // Llamar al endpoint de matrícula para generar la constancia y enviar el mail
-    const matriculaResponse = await fetch(`http://localhost:3000/matricula/formalizar/${id}`, {
-      method: "POST",
-    });
-
-    if (!matriculaResponse.ok) {
-      throw new Error("Error al formalizar la matrícula y enviar la constancia");
-    }
-
-    alert("¡Formulario enviado y mail de constancia enviado con éxito!");
-    navigate("/");
+      // El backend ahora se encarga de formalizar la matrícula automáticamente.
+      alert("¡Documentos de matriculación enviados con éxito! Recibirás la constancia por correo.");
+      navigate("/");
     } catch (err) {
       console.error(err)
       alert("Hubo un problema al enviar el formulario.")

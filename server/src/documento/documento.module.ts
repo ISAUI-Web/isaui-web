@@ -6,6 +6,7 @@ import { DocumentoController } from './documento.controller';
 import { LegajoEstudiante } from '../legajo-estudiante/legajo-estudiante.entity';
 import { LegajoDocente } from '../legajo-docente/legajo-docente.entity';
 import { Aspirante } from '../aspirante/aspirante.entity';
+import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 import { MatriculaModule } from '../matricula/matricula.module';
 
 @Module({
@@ -17,6 +18,7 @@ import { MatriculaModule } from '../matricula/matricula.module';
       Aspirante,
     ]),
     forwardRef(() => MatriculaModule),
+    CloudinaryModule,
   ],
   controllers: [DocumentoController],
   providers: [DocumentoService],
