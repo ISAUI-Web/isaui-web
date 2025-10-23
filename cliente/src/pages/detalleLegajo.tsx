@@ -9,7 +9,7 @@ import { ArrowLeft, User, Save, Edit, Eye, X, Camera, Upload, FileText } from "l
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import jsPDF from "jspdf"
 
-const API_BASE = 'http://localhost:3000';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 const abs = (u?: string | null) => {
   if (!u) return '';
   return u.startsWith('http') || u.startsWith('blob:') ? u : `${API_BASE}${u}`;

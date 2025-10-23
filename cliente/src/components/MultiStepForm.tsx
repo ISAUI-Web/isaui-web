@@ -259,7 +259,7 @@ const [carrerasOptions, setCarrerasOptions] = useState<{ value: string; label: s
 
 useEffect(() => {
   const fetchCarreras = async () => {
-    const res = await fetch("http://localhost:3000/carrera"); // tu endpoint
+    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/carrera`); // tu endpoint
     const data: Carrera[] = await res.json();
 
     // solo activas
@@ -488,7 +488,7 @@ useEffect(() => {
 
     // 3: Hacer una llamada unica al backend.
     // El controlador de 'aspirante' ya se encarga de crear la preinscripción y enviar la constancia.
-    const aspiranteResponse = await fetch('http://localhost:3000/aspirante', {
+    const aspiranteResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/aspirante`, {
       method: 'POST',
       body: formPayload,
     });

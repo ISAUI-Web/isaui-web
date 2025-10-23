@@ -8,7 +8,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
+import { memoryStorage } from 'multer';
 import { extname } from 'path';
 import { DocumentoService } from './documento.service';
 
@@ -31,15 +31,7 @@ export class DocumentoController {
   @Post('upload/aspirante/:aspiranteId')
   @UseInterceptors(
     FileFieldsInterceptor(matriculacionFields, {
-      storage: diskStorage({
-        destination: './uploads/documentos',
-        filename: (req, file, cb) => {
-          const uniqueSuffix =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname);
-          cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
-        },
-      }),
+      storage: memoryStorage(), // <--- CAMBIO CLAVE: de diskStorage a memoryStorage
       limits: {
         fileSize: 5 * 1024 * 1024, // 5MB
       },
