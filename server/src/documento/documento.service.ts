@@ -79,6 +79,22 @@ export class DocumentoService {
     });
   }
 
+  private async deleteFromCloudinary(publicId: string): Promise<any> {
+    return new Promise((resolve, reject) => {
+      cloudinary.uploader.destroy(publicId, (error, result) => {
+        if (error) {
+          return reject(error);
+        }
+        resolve(result);
+      });
+    });
+  }
+
+  private getPublicIdFromUrl(url: string): string | null {
+    const match = url.match(/\/documentos\/([^/.]+)/);
+    return match ? `documentos/${match[1]}` : null;
+  }
+
   async guardarDocumentosAspirante(
     aspirante: Aspirante,
     archivos: { [fieldname: string]: Express.Multer.File[] },
@@ -103,7 +119,12 @@ export class DocumentoService {
         });
 
         if (documento) {
-          // Opcional: lógica para borrar el archivo antiguo de Cloudinary si se reemplaza
+          // Borrar el archivo antiguo de Cloudinary antes de actualizar la URL
+          const publicId = this.getPublicIdFromUrl(documento.archivo_pdf);
+          if (publicId) {
+            await this.deleteFromCloudinary(publicId).catch(console.error);
+          }
+
           documento.archivo_pdf = fileUrl; // Actualiza con la nueva URL
         } else {
           documento = manager.create(Documento, {
@@ -143,7 +164,12 @@ export class DocumentoService {
         });
 
         if (documento) {
-          // Opcional: lógica para borrar el archivo antiguo de Cloudinary si se reemplaza
+          // Borrar el archivo antiguo de Cloudinary antes de actualizar la URL
+          const publicId = this.getPublicIdFromUrl(documento.archivo_pdf);
+          if (publicId) {
+            await this.deleteFromCloudinary(publicId).catch(console.error);
+          }
+
           documento.archivo_pdf = fileUrl; // Actualiza con la nueva URL
           documento.fecha_subida = new Date();
         } else {
