@@ -15,7 +15,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
+import { diskStorage, memoryStorage } from 'multer';
 import { extname } from 'path';
 import { AspiranteService } from './aspirante.service';
 import { Response } from 'express';
@@ -200,19 +200,7 @@ export class AspiranteController {
         { name: 'emmac', maxCount: 1 },
       ],
       {
-        storage: memoryStorage(), // Usar memoria en lugar de disco
-        limits: {
-          fileSize: 5 * 1024 * 1024, // 5MB
-        },
-        fileFilter: (req, file, cb) => {
-          const allowed = /jpg|jpeg|png/;
-          const ext = extname(file.originalname).toLowerCase();
-          if (allowed.test(ext)) {
-            cb(null, true);
-          } else {
-            cb(new Error('Solo se permiten archivos JPG o PNG'), false);
-          }
-        },
+        storage: memoryStorage(),
       },
     ),
   )
