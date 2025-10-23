@@ -66,7 +66,13 @@ export class DocumentoService {
           if (error) {
             return reject(error);
           }
-          resolve(result.secure_url);
+          // Añadimos una comprobación para asegurar que 'result' no es undefined.
+          if (result) {
+            resolve(result.secure_url);
+          } else {
+            // Si no hay error pero tampoco resultado, rechazamos la promesa.
+            reject(new Error('La subida a Cloudinary falló sin devolver un resultado.'));
+          }
         },
       );
       uploadStream.end(file.buffer);
