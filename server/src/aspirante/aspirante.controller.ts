@@ -15,7 +15,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
+import { memoryStorage } from 'multer';
 import { extname } from 'path';
 import { AspiranteService } from './aspirante.service';
 import { Response } from 'express';
@@ -78,26 +78,7 @@ export class AspiranteController {
         { name: 'dniDorso', maxCount: 1 },
       ],
       {
-        storage: diskStorage({
-          destination: './uploads/documentos',
-          filename: (
-            req: any,
-            file: Express.Multer.File,
-            cb: (error: Error | null, filename: string) => void,
-          ) => {
-            if (
-              'originalname' in file &&
-              typeof file.originalname === 'string'
-            ) {
-              const uniqueSuffix =
-                Date.now() + '-' + Math.round(Math.random() * 1e9);
-              const ext = extname(file.originalname);
-              cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
-            } else {
-              cb(new Error('Archivo inválido'), ''); //línea válida para tipado
-            }
-          },
-        }),
+        storage: memoryStorage(), // Usar memoria en lugar de disco
         limits: {
           fileSize: 5 * 1024 * 1024, // 5MB
         },
@@ -219,26 +200,7 @@ export class AspiranteController {
         { name: 'emmac', maxCount: 1 },
       ],
       {
-        storage: diskStorage({
-          destination: './uploads/documentos',
-          filename: (
-            req: any,
-            file: Express.Multer.File,
-            cb: (error: Error | null, filename: string) => void,
-          ) => {
-            if (
-              'originalname' in file &&
-              typeof file.originalname === 'string'
-            ) {
-              const uniqueSuffix =
-                Date.now() + '-' + Math.round(Math.random() * 1e9);
-              const ext = extname(file.originalname);
-              cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
-            } else {
-              cb(new Error('Archivo inválido'), ''); //línea válida para tipado
-            }
-          },
-        }),
+        storage: memoryStorage(), // Usar memoria en lugar de disco
         limits: {
           fileSize: 5 * 1024 * 1024, // 5MB
         },
