@@ -65,7 +65,7 @@ export default function Cupos() {
     const fetchCuposData = async () => {
       try {
         setIsLoading(true)
-        const response = await fetch("http://localhost:3000/carrera")
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/carrera`)
         if (!response.ok) throw new Error("Error al cargar los datos de cupos")
         const data = await response.json()
         // Asegura que los campos sean números

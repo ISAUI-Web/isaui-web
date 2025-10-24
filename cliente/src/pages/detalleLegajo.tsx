@@ -215,8 +215,8 @@ export default function DetalleLegajo() {
   useEffect(() => {
   const fetchLegajo = async () => {
     setIsLoading(true);
-    try {
-      const response = await fetch(`http://localhost:3000/estudiante/by-aspirante/${id}`);
+    try { // CORRECCIÓN: Usar la variable de entorno para la URL de la API.
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/estudiante/by-aspirante/${id}`);
       if (!response.ok) throw new Error('Error al cargar el legajo del estudiante');
 
       const estudianteData = await response.json();
@@ -331,7 +331,7 @@ export default function DetalleLegajo() {
   if (emmacFile) data.append('emmac', emmacFile);
 
   try {
-    const res = await fetch(`http://localhost:3000/aspirante/${id}`, {
+    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/aspirante/${id}`, {
       method: 'PUT',
       // NO establecemos Content-Type, el navegador lo hará automáticamente para FormData
       body: data,

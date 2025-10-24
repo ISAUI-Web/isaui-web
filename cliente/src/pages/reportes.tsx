@@ -103,7 +103,7 @@ export default function Reportes() {
   useEffect(() => {
     const fetchCarreras = async () => {
       try {
-        const response = await fetch("http://localhost:3000/carrera")
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/carrera`)
         if (!response.ok) throw new Error("Error al cargar carreras")
 
         const data = await response.json()
@@ -188,18 +188,18 @@ export default function Reportes() {
 
       switch (tipoReporteSeleccionado) {
         case "cupos":
-          url = "http://localhost:3000/carrera/reportes/cupos";
+          url = `${import.meta.env.VITE_API_BASE_URL}/carrera/reportes/cupos`;
           filename = "reporte-cupos.pdf";
           break;
         case "preinscriptos":
-          url = "http://localhost:3000/aspirante/reportes/preinscriptos"; // Endpoint a crear
+          url = `${import.meta.env.VITE_API_BASE_URL}/aspirante/reportes/preinscriptos`; // Endpoint a crear
           filename = "reporte-preinscriptos.pdf";
           if (estadoSeleccionado !== "todos") {
             params.append('estado', estadoSeleccionado);
           }
           break;
         case "matriculados":
-          url = "http://localhost:3000/aspirante/reportes/matriculados"; // Endpoint a crear
+          url = `${import.meta.env.VITE_API_BASE_URL}/aspirante/reportes/matriculados`; // Endpoint a crear
           filename = "reporte-matriculados.pdf";
           if (estadoSeleccionado !== "todos") {
             params.append('estado', estadoSeleccionado);

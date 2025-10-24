@@ -33,8 +33,8 @@ import logo2 from "../assets/logo2.png"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
 
 // URL base para API
-const API_BASE_URL_CARRERA = "http://localhost:3000/carrera";
-const API_BASE_URL_USUARIO = "http://localhost:3000/usuario";
+const API_BASE_URL_CARRERA = `${import.meta.env.VITE_API_BASE_URL}/carrera`;
+const API_BASE_URL_USUARIO = `${import.meta.env.VITE_API_BASE_URL}/usuario`;
 
 type Carrera = {
   id: number;

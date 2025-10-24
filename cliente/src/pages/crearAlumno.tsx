@@ -8,12 +8,11 @@ import { Label } from "../components/ui/label"
 import { ArrowLeft, User, Save, Edit, Eye, X, Camera, Upload } from "lucide-react"
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 
-const API_BASE = 'http://localhost:3000';
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 const abs = (u?: string | null) => {
   if (!u) return '';
   return u.startsWith('http') || u.startsWith('blob:') ? u : `${API_BASE}${u}`;
 };
-const API_URL = 'http://localhost:3000';
 
 // Datos de ejemplo del aspirante
 
@@ -37,7 +36,7 @@ export default function CrearLegajoAlumno() {
 
   useEffect(() => {
     setLoadingCarreras(true);
-    fetch('http://localhost:3000/carrera')
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/carrera`)
       .then(res => {
         if (!res.ok) throw new Error('Error al obtener carreras');
         return res.json();
@@ -315,7 +314,7 @@ export default function CrearLegajoAlumno() {
     if (emmacFile) payload.append('emmac', emmacFile);
 
     try {
-      const response = await fetch(`${API_URL}/legajo-estudiante/crear-alumno-completo`, {
+      const response = await fetch(`${API_BASE}/legajo-estudiante/crear-alumno-completo`, {
         method: 'POST',
         body: payload,
       });

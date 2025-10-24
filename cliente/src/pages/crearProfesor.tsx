@@ -8,7 +8,7 @@ import { Label } from "../components/ui/label"
 import { ArrowLeft, User, Save, Camera, Upload, Eye, BookOpen, Building2, Clock, Calendar, Trash2 } from "lucide-react"
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 
-const API_BASE = 'http://localhost:3000';
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 const abs = (u?: string | null) => {
   if (!u) return '';
   return u.startsWith('http') || u.startsWith('blob:') ? u : `${API_BASE}${u}`;
