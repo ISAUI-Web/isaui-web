@@ -56,6 +56,20 @@ export class DocenteController {
     return this.docenteService.create(createDocenteDto, files);
   }
 
+  @Post('crear-docente-completo')
+  @UseInterceptors(
+    AnyFilesInterceptor({
+      storage: memoryStorage(),
+    }),
+  )
+  createComplete(
+    @Body() createDocenteDto: CreateDocenteDto,
+    @UploadedFiles()
+    files: Array<Express.Multer.File>,
+  ) {
+    return this.docenteService.create(createDocenteDto, files);
+  }
+
   @Patch(':id/update')
   @UseInterceptors(
     AnyFilesInterceptor({

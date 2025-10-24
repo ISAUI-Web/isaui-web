@@ -331,8 +331,12 @@ export default function DetalleLegajo() {
   if (emmacFile) data.append('emmac', emmacFile);
 
   try {
-    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/aspirante/${id}`, {
-      method: 'PUT',
+    // CORRECCIÓN: La ruta para actualizar un legajo de estudiante debe apuntar al controlador
+    // de 'estudiante', no al de 'aspirante'. El backend ya tiene un endpoint para esto.
+    // Usamos el ID del estudiante (formData.id) en lugar del ID del aspirante (id de la URL).
+    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/estudiante/${formData.id}`, {
+      // El método correcto para una actualización parcial es PATCH, pero PUT también funciona aquí.
+      method: 'PUT', 
       // NO establecemos Content-Type, el navegador lo hará automáticamente para FormData
       body: data,
     });

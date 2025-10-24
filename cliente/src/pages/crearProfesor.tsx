@@ -824,7 +824,7 @@ export default function CrearLegajoProfesor() {
     });
 
     try {
-      const response = await fetch(`${API_BASE}/docente`, {
+      const response = await fetch(`${API_BASE}/docente/crear-docente-completo`, {
         method: 'POST',
         body: payload,
       });
