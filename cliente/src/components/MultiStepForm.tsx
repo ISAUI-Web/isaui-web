@@ -259,16 +259,23 @@ const [carrerasOptions, setCarrerasOptions] = useState<{ value: string; label: s
 
 useEffect(() => {
   const fetchCarreras = async () => {
-    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/carrera`); // tu endpoint
-    const data: Carrera[] = await res.json();
+    try {
+      // CORRECCIÓN: Usar la variable de entorno para la URL de la API.
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/carrera`);
+      if (!res.ok) throw new Error('No se pudo conectar al servidor para cargar las carreras.');
+      const data: Carrera[] = await res.json();
 
-    // solo activas
-    const activas = data.filter(c => c.activo);
+      // solo activas
+      const activas = data.filter(c => c.activo);
 
-    setCarreras(activas);
-    setCarrerasOptions(
-      activas.map(c => ({ value: c.id.toString(), label: c.nombre }))
-    );
+      setCarreras(activas);
+      setCarrerasOptions(
+        activas.map(c => ({ value: c.id.toString(), label: c.nombre }))
+      );
+    } catch (err) {
+      console.error("Error al cargar carreras:", err);
+      alert("Error al cargar carreras: No se pudo conectar con el servidor.");
+    }
   };
 
   fetchCarreras();
@@ -467,15 +474,22 @@ useEffect(() => {
         formData.completo_nivel_superior === 'COMPLETO' ? 'Sí'
         : formData.completo_nivel_superior === 'EN_CURSO' ? 'En curso'
         : 'No',
-      trabajo: (formData.trabajo === 'SI').toString(), // Se mantiene como booleano
-      personas_cargo: (formData.personas_cargo === 'SI').toString(),
+      // CORRECCIÓN: El backend espera un booleano, no un string 'true'/'false'.
+      // Convertimos 'SI' a true y 'NO' a false.
+      trabajo: formData.trabajo === 'SI',
+      personas_cargo: formData.personas_cargo === 'SI',
     };
 
     // 2: Poblar el FormData con los datos corregidos y listos para el backend.
     Object.entries(backendData).forEach(([key, value]) => {
       // Excluimos campos que se manejan por separado (archivos) o que no deben enviarse (lógica de UI).
       if (key !== 'dniFrente' && key !== 'dniDorso' && key !== 'carrera' && key !== 'numeroRegistro' && value !== null && value !== undefined) {
-        formPayload.append(key, value as string);
+        // CORRECCIÓN: Asegurarnos de que los valores booleanos se envíen como strings 'true' o 'false'.
+        if (typeof value === 'boolean') {
+          formPayload.append(key, value.toString());
+        } else {
+          formPayload.append(key, value as string);
+        }
       }
     });
 
@@ -488,6 +502,7 @@ useEffect(() => {
 
     // 3: Hacer una llamada unica al backend.
     // El controlador de 'aspirante' ya se encarga de crear la preinscripción y enviar la constancia.
+    // CORRECCIÓN: Usar la variable de entorno para la URL de la API.
     const aspiranteResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/aspirante`, {
       method: 'POST',
       body: formPayload,
