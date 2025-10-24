@@ -468,8 +468,9 @@ useEffect(() => {
     const backendData = {
       ...formData,
       carrera_id: formData.carrera,
-      // Se mapean los valores del frontend a los strings que el backend espera.
-      completo_nivel_medio: formData.completo_nivel_medio === 'SI' ? 'Sí' : 'No',
+      // CORRECCIÓN: El backend espera un booleano para este campo.
+      // Convertimos 'SI' a true y 'NO' a false.
+      completo_nivel_medio: formData.completo_nivel_medio === 'SI',
       completo_nivel_superior:
         formData.completo_nivel_superior === 'COMPLETO' ? 'Sí'
         : formData.completo_nivel_superior === 'EN_CURSO' ? 'En curso'
