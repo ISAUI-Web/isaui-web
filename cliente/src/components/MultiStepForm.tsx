@@ -484,7 +484,7 @@ useEffect(() => {
     // 2: Poblar el FormData con los datos corregidos y listos para el backend.
     Object.entries(backendData).forEach(([key, value]) => {
       // Excluimos campos que se manejan por separado (archivos) o que no deben enviarse (lógica de UI).
-      if (key !== 'dniFrente' && key !== 'dniDorso' && key !== 'carrera' && key !== 'numeroRegistro' && value !== null && value !== undefined) {
+      if (key !== 'dniFrente' && key !== 'dniDorso' && key !== 'carrera' && key !== 'numeroRegistro' && key !== 'ciclo_lectivo' && value !== null && value !== undefined) {
         // CORRECCIÓN: Asegurarnos de que los valores booleanos se envíen como strings 'true' o 'false'.
         if (typeof value === 'boolean') {
           formPayload.append(key, value.toString());
