@@ -9,7 +9,7 @@ import { Textarea } from "../components/ui/textarea"
 import { ArrowLeft, User, Save, Edit, Eye, X, Camera, Upload } from "lucide-react"
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 
-const API_BASE = 'http://localhost:3000';
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 const abs = (u?: string | null) => {
   if (!u) return '';
   return u.startsWith('http') || u.startsWith('blob:') ? u : `${API_BASE}${u}`;
@@ -179,7 +179,7 @@ export default function DetalleAspirante() {
   useEffect(() => {
   const fetchAspirante = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/aspirante/${id}`)
+      const response = await fetch(`${API_BASE}/aspirante/${id}`)
       if (!response.ok) throw new Error('Error al cargar el aspirante')
 
       const data = await response.json()
@@ -295,7 +295,7 @@ export default function DetalleAspirante() {
   if (emmacFile) data.append('emmac', emmacFile);
 
   try {
-    const res = await fetch(`http://localhost:3000/aspirante/${id}`, {
+    const res = await fetch(`${API_BASE}/aspirante/${id}`, {
       method: 'PUT',
       // NO establecemos Content-Type, el navegador lo hará automáticamente para FormData
       body: data,
@@ -435,7 +435,14 @@ export default function DetalleAspirante() {
 const fromMatriculacion = location.state?.from === "/matriculacion";
 
   if (!formData) {
-    return <div className="text-white text-center mt-10">Cargando datos del aspirante...</div>
+    return (
+      <div className="min-h-screen bg-[#1F6680] flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-xl">Cargando datos del aspirante...</p>
+        </div>
+      </div>
+    );
   }
 
   const renderTabContent = () => {
