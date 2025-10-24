@@ -12,25 +12,24 @@ export class UsuarioController {
 
   // 🔑 LOGIN
   @Post('login')
-  async login(
-    @Body() loginDto: LoginUsuarioDto,
-    @Res({ passthrough: true }) res: Response, // 👈 permite enviar cookie
-  ) {
-    // El servicio devuelve el JWT
-    const token = await this.usuarioService.validarUsuario(
-      loginDto.nombre_usuario,
-      loginDto.contraseña,
-    );
+async login(
+  @Res({ passthrough: true }) res: Response, 
+  @Body() loginDto: LoginUsuarioDto
+) {
+  // Esto devuelve solo el token
+  const token = await this.usuarioService.validarUsuario(loginDto.nombre_usuario, loginDto.contraseña);
 
-    // Guardamos el token en una cookie segura
-    res.cookie('jwt', token, {
-      httpOnly: true, // 👈 no accesible desde JS
-      secure: true,   // 👈 solo HTTPS (en Vercel)
-      sameSite: 'strict', // evita envío a otros orígenes
-    });
+  // Guardamos el token en la cookie HTTP-only
+  res.cookie('jwt', token, {
+    httpOnly: true,
+    secure: true,      // solo HTTPS
+    sameSite: 'strict',
+    maxAge: 1000 * 60 * 60 * 24, // 1 día por ejemplo
+  });
 
-    return { message: 'Login exitoso' };
-  }
+  // Opcional: devolver mensaje o info mínima del usuario
+  return { mensaje: 'Login exitoso' };
+}
 
   
   // 📌 CRUD
