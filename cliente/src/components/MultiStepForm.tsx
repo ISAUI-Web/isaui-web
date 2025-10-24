@@ -510,9 +510,15 @@ useEffect(() => {
     });
 
     if (!aspiranteResponse.ok) {
-      const errorData = await aspiranteResponse.json(); // NestJS envía un objeto de error detallado.
-      const errorMessage = errorData.mensaje || 'Hubo un error al enviar el formulario. Por favor, revisa los datos ingresados.';
-      alert(errorMessage);
+      // **MEJORA EN EL MANEJO DE ERRORES**
+      // NestJS envía un objeto de error con una propiedad 'message'.
+      // Si 'message' es un array (común en errores de validación), lo unimos.
+      // Si es un string, lo usamos directamente.
+      const errorData = await aspiranteResponse.json();
+      const serverMessage = Array.isArray(errorData.message) 
+        ? errorData.message.join('\n') 
+        : errorData.message || 'Error desconocido del servidor.';
+      alert(`Error del servidor:\n${serverMessage}`);
       console.error('Error del servidor:', errorData); // Loguear el error completo para depuración.
       return;
     }

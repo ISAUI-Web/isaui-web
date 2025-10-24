@@ -102,51 +102,24 @@ export class AspiranteController {
       dniDorso?: Express.Multer.File[];
     },
   ) {
-    try {
-      // Validar acá si los archivos son requeridos
-      if (!files.dniFrente?.length || !files.dniDorso?.length) {
-        throw new BadRequestException('Se requieren ambas imágenes del DNI.');
-      }
-
-      // Centralizamos la lógica en el servicio.
-      // El método `create` del servicio ahora se encarga de crear el aspirante,
-      // guardar los documentos y crear la preinscripción en un solo paso.
-      const aspirante = await this.aspiranteService.create(
-        createAspiranteDto,
-        files,
-      );
-
-      return {
-        aspirante,
-        mensaje: 'Aspirante y documentos recibidos correctamente.',
-      };
-    } catch (error: unknown) {
-      console.error(' Error en AspiranteController.create:', error);
-
-      if (error instanceof Error) {
-        if (
-          error instanceof BadRequestException ||
-          error.message.includes('Solo se permiten archivos JPG o PNG') ||
-          error.message.includes('Archivo inválido') ||
-          error.message.includes('Se requieren ambas imágenes del DNI.')
-        ) {
-          throw new BadRequestException({
-            mensaje: error.message,
-            detalle: error.stack || error.message,
-          });
-        }
-
-        throw new InternalServerErrorException({
-          mensaje:
-            'Error interno en el servidor. Intente nuevamente más tarde.',
-          detalle: error.stack || error.message,
-        });
-      }
-
-      throw new InternalServerErrorException({
-        mensaje: 'Ocurrió un error inesperado.',
-      });
+    // Simplificamos el manejo de errores. Dejamos que los pipes de validación de NestJS hagan su trabajo.
+    // Si hay un error de validación, NestJS automáticamente lanzará un BadRequestException con detalles.
+    
+    // Validar acá si los archivos son requeridos
+    if (!files.dniFrente?.length || !files.dniDorso?.length) {
+      throw new BadRequestException('Se requieren ambas imágenes del DNI.');
     }
+
+    // El método `create` del servicio ahora se encarga de todo.
+    const aspirante = await this.aspiranteService.create(
+      createAspiranteDto,
+      files,
+    );
+
+    return {
+      aspirante,
+      mensaje: 'Aspirante y documentos recibidos correctamente.',
+    };
   }
 
   @Get()
