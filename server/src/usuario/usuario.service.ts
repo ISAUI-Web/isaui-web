@@ -42,31 +42,39 @@ export class UsuarioService implements OnModuleInit {
   }
 
   // 🔑 LOGIN
-  async validarUsuario(nombre_usuario: string, contraseña: string) {
-    const usuario = await this.usuarioRepo.findOne({
-      where: { nombre_usuario },
-    });
-    if (!usuario)
-      throw new UnauthorizedException('Usuario o contraseña incorrectos');
+ async validarUsuario(nombre_usuario: string, contraseña: string) {
+  // 1. Buscar usuario por nombre de usuario
+  const usuario = await this.usuarioRepo.findOne({
+    where: { nombre_usuario },
+  });
 
-    const esValida = await bcrypt.compare(contraseña, usuario.contraseña_hash);
-    if (!esValida)
-      throw new UnauthorizedException('Usuario o contraseña incorrectos');
-
-    // Generar JWT
-    const payload = { sub: usuario.id, rol: usuario.rol };
-    const token = await this.jwtService.signAsync(payload);
-
-    return {
-      mensaje: 'Login exitoso',
-      token,
-      usuario: {
-        id: usuario.id,
-        rol: usuario.rol,
-        nombre_usuario: usuario.nombre_usuario,
-      },
-    };
+  if (!usuario) {
+    throw new UnauthorizedException('Usuario o contraseña incorrectos');
   }
+
+  // 2. Verificar contraseña
+  const esValida = await bcrypt.compare(contraseña, usuario.contraseña_hash);
+  if (!esValida) {
+    throw new UnauthorizedException('Usuario o contraseña incorrectos');
+  }
+
+  // 3. Crear el payload para el token
+  const payload = { sub: usuario.id, rol: usuario.rol };
+
+  // 4. Generar JWT (puedes agregar expiresIn en el módulo JWT)
+  const token = await this.jwtService.signAsync(payload);
+
+  // 5. Retornar los datos esenciales
+  return {
+    mensaje: 'Login exitoso',
+    token,
+    usuario: {
+      id: usuario.id,
+      rol: usuario.rol,
+      nombre_usuario: usuario.nombre_usuario,
+    },
+  };
+}
 
   // 📌 CRUD
   async findAll(): Promise<Usuario[]> {

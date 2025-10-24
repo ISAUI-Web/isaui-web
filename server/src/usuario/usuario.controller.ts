@@ -1,4 +1,5 @@
-import { Controller, Patch, Post, Body, Get, Put, Param, Delete, ParseIntPipe, NotFoundException } from '@nestjs/common';
+import { Controller, Patch, Post, Body, Get, Put, Param, Delete, ParseIntPipe, NotFoundException, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { UsuarioService } from './usuario.service';
 import { LoginUsuarioDto } from './dto/login-usuario.dto';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
@@ -11,13 +12,26 @@ export class UsuarioController {
 
   // 🔑 LOGIN
   @Post('login')
-  async login(@Body() loginDto: LoginUsuarioDto) {
-    return this.usuarioService.validarUsuario(
+  async login(
+    @Body() loginDto: LoginUsuarioDto,
+    @Res({ passthrough: true }) res: Response, // 👈 permite enviar cookie
+  ) {
+    // El servicio devuelve el JWT
+    const token = await this.usuarioService.validarUsuario(
       loginDto.nombre_usuario,
       loginDto.contraseña,
     );
+
+    // Guardamos el token en una cookie segura
+    res.cookie('jwt', token, {
+      httpOnly: true, // 👈 no accesible desde JS
+      secure: true,   // 👈 solo HTTPS (en Vercel)
+      sameSite: 'strict', // evita envío a otros orígenes
+    });
+
+    return { message: 'Login exitoso' };
   }
-  
+
   
   // 📌 CRUD
   @Get()

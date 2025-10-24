@@ -61,44 +61,33 @@ export default function Login() {
   setIsLoading(true);
 
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/usuario/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        nombre_usuario: formData.usuario, 
-        contraseña: formData.contraseña,
-      }),
-    });
+  const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/usuario/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include', // 👈 envía y recibe cookies
+    body: JSON.stringify({
+      nombre_usuario: formData.usuario, 
+      contraseña: formData.contraseña,
+    }),
+  });
 
-    if (!response.ok) {
-      
-      const errorData = await response.json();
-      setErrors({ general: errorData.message || 'Error en el login' });
-      setIsLoading(false);
-      return;
-    }
-
-    const data = await response.json();
-
-
-    // Ejemplo: data.token, data.usuario
-    // Guardamos token si "recordarme" está marcado
-    if (formData.recordarme && data.token) {
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('usuario', JSON.stringify(data.usuario));
-    }
-
+  if (!response.ok) {
+    const errorData = await response.json();
+    setErrors({ general: errorData.message || 'Error en el login' });
     setIsLoading(false);
-    navigate('/admin'); // Redirigimos al panel admin
-
-  } catch (error) {
-    console.error(error);
-    setErrors({ general: 'Error de conexión con el servidor' });
-    setIsLoading(false);
+    return;
   }
-};
+
+  // ✅ No es necesario leer token ni guardarlo en localStorage
+  setIsLoading(false);
+  navigate('/admin');
+
+} catch (error) {
+  console.error(error);
+  setErrors({ general: 'Error de conexión con el servidor' });
+  setIsLoading(false);
+}
+}
 
 
   const handleBack = () => {

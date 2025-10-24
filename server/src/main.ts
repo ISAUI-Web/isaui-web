@@ -2,23 +2,33 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
+  // Middleware de seguridad recomendado
+  app.use(helmet());
+
+  // Necesario para leer cookies (por ejemplo, extraer el JWT)
+  app.use(cookieParser());
+
+  // Configuración CORS — IMPORTANTE para cookies
   app.enableCors({
-    origin: configService.get('CORS_ORIGIN'),
+    origin: configService.get('CORS_ORIGIN'), // Ej: https://isaui-web.vercel.app
+    credentials: true, // 👈 permite el envío de cookies entre frontend y backend
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  // Configura el ValidationPipe global
+  // Validación global
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // Elimina campos no definidos en los DTOs
-      forbidNonWhitelisted: true, // Lanza error si llegan campos no permitidos
-      transform: true, // Convierte los tipos automáticamente según el DTO
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
     }),
   );
 
