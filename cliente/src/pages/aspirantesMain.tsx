@@ -74,7 +74,7 @@ export default function AdminAspirantes() {
 
 
   useEffect(() => {
-    fetch("http://localhost:3000/aspirante")
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/aspirante`)
       .then((res) => {
         if (!res.ok) throw new Error("Error al traer los aspirantes");
         return res.json();
@@ -157,7 +157,7 @@ const handleMenuItemClick = (itemId: string) => {
 // Move handleEstado outside handleMenuItemClick and keep only one definition
 const handleEstado = async (id: number, nuevoEstado: "en espera" | "confirmado" | "rechazado") => {
   try {
-    const res = await fetch(`http://localhost:3000/aspirante/${id}`, {
+    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/aspirante/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json"
@@ -406,6 +406,3 @@ const handleEstado = async (id: number, nuevoEstado: "en espera" | "confirmado" 
     </div>
   )
 }
-
-
-
