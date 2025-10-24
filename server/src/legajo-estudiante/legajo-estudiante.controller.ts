@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { LegajoEstudianteService } from './legajo-estudiante.service';
-import { diskStorage } from 'multer';
+import { memoryStorage } from 'multer';
 import { extname } from 'path';
 import { CreateAspiranteDto } from '../aspirante/dto/create-aspirante.dto';
 
@@ -32,15 +32,7 @@ export class LegajoEstudianteController {
         { name: 'emmac', maxCount: 1 },
       ],
       {
-        storage: diskStorage({
-          destination: './uploads/documentos',
-          filename: (req, file, cb) => {
-            const uniqueSuffix =
-              Date.now() + '-' + Math.round(Math.random() * 1e9);
-            const ext = extname(file.originalname);
-            cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
-          },
-        }),
+        storage: memoryStorage(),
       },
     ),
   )
