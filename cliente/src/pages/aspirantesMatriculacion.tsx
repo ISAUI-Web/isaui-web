@@ -77,7 +77,7 @@ export default function AdminMatriculacion() {
   const [filterEstado, setFilterEstado] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:3000/matricula")
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/matricula`)
         .then(res => {
         if (!res.ok) throw new Error("Error al traer las matrículas");
         return res.json();
@@ -158,7 +158,7 @@ const handleMenuItemClick = (itemId: string) => {
 // Move handleEstado outside handleMenuItemClick and keep only one definition
 const handleEstado = async (aspiranteId: number, nuevoEstado: "en espera" | "confirmado" | "rechazado") => {
   try {
-    const res = await fetch(`http://localhost:3000/matricula/${aspiranteId}/estado`, {
+    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/matricula/${aspiranteId}/estado`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ estado: nuevoEstado })

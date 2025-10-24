@@ -6,9 +6,9 @@ import { Button, buttonVariants } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
 import { ArrowLeft, User, Save, Edit, Eye, X, Camera, Upload, BookOpen, Trash2, Building2, Clock, Calendar, FileText } from "lucide-react"
-import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import jsPDF from "jspdf"
-const API_BASE = 'http://localhost:3000';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import jsPDF from "jspdf";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 const abs = (u?: string | null) => (u ? (u.startsWith('http') || u.startsWith('blob:') ? u : `${API_BASE}/${u.startsWith('/') ? u.substring(1) : u}`) : '');
 
 // Datos de ejemplo del aspirante

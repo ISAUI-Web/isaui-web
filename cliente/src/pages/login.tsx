@@ -61,7 +61,7 @@ export default function Login() {
   setIsLoading(true);
 
   try {
-    const response = await fetch('http://localhost:3000/usuario/login', {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/usuario/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

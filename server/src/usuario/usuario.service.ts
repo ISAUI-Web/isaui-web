@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Usuario, RolUsuario } from './usuario.entity';
@@ -8,12 +8,38 @@ import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 
 @Injectable()
-export class UsuarioService {
+export class UsuarioService implements OnModuleInit {
   constructor(
     @InjectRepository(Usuario)
     private usuarioRepo: Repository<Usuario>,
     private jwtService: JwtService,
   ) {}
+
+  /**
+   * Este método se ejecuta una vez que el módulo de usuario se ha inicializado.
+   * Es el lugar perfecto para crear el usuario administrador si no existe.
+   */
+  async onModuleInit() {
+    await this.seedAdminUser();
+  }
+
+  private async seedAdminUser() {
+    const adminExists = await this.usuarioRepo.findOne({ where: { rol: RolUsuario.ADMIN_GENERAL } });
+
+    if (!adminExists) {
+      console.log('Admin user not found, seeding...');
+      const adminUser = this.usuarioRepo.create({
+        nombre_usuario: process.env.ADMIN_USER || 'admin',
+        rol: RolUsuario.ADMIN_GENERAL,
+        activo: true,
+      });
+
+      const salt = await bcrypt.genSalt(10);
+      adminUser.contraseña_hash = await bcrypt.hash(process.env.ADMIN_PASS || 'admin123', salt);
+      await this.usuarioRepo.save(adminUser);
+      console.log('Admin user seeded successfully.');
+    }
+  }
 
   // 🔑 LOGIN
   async validarUsuario(nombre_usuario: string, contraseña: string) {

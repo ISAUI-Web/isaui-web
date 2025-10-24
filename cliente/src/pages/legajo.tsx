@@ -105,8 +105,9 @@ export default function AdminMatriculacion() {
   const [filterCarrera, setFilterCarrera] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:3000/estudiante") // <--- CAMBIO: Usamos el nuevo endpoint
-        .then(res => {
+    // Usamos la variable de entorno para la URL base de la API
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/estudiante`)
+      .then(res => {
         if (!res.ok) throw new Error("Error al traer los legajos de estudiantes");
         return res.json();
         })
@@ -122,7 +123,8 @@ export default function AdminMatriculacion() {
     }, []);
 
     useEffect(() => {
-  fetch("http://localhost:3000/docente")
+  // Usamos la variable de entorno para la URL base de la API
+  fetch(`${import.meta.env.VITE_API_BASE_URL}/docente`)
     .then(res => {
       if (!res.ok) throw new Error("Error al traer los profesores");
       return res.json();
@@ -211,7 +213,7 @@ const handleMenuItemClick = (itemId: string) => {
      if (!confirm(`¿Está seguro de que desea desactivar el legajo de ${nombre} ${apellido}?`)) return;
 
   try {
-    const response = await fetch(`http://localhost:3000/estudiante/${id}`, {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/estudiante/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ activo: false }), 
@@ -232,7 +234,7 @@ const handleMenuItemClick = (itemId: string) => {
   if (!confirm(`¿Está seguro de que desea desactivar el legajo de ${nombre} ${apellido}?`)) return;
 
   try {
-    const response = await fetch(`http://localhost:3000/docente/${id}`, {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/docente/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ activo: false }),
