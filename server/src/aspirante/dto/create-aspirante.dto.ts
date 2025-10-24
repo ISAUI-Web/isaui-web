@@ -245,11 +245,11 @@ export class CreateAspiranteDto {
   carrera_id: number;
 
   @Transform(({ value }) => (value ? Number(value) : undefined))
+  @IsOptional() // <-- ¡SOLUCIÓN! Hacemos que el campo sea opcional.
   @IsNumber({}, { message: 'El ciclo lectivo debe ser un número' })
-  @IsNotEmpty({ message: 'El ciclo lectivo no puede estar vacío' })
   @Min(2000, { message: 'El ciclo lectivo parece ser un año inválido.' })
   @Max(new Date().getFullYear() + 5, {
     message: 'El ciclo lectivo es demasiado a futuro.',
   })
-  ciclo_lectivo: number;
+  ciclo_lectivo?: number; // También lo marcamos como opcional en el tipo.
 }
