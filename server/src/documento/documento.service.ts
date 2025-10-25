@@ -11,6 +11,7 @@ import { Aspirante } from '../aspirante/aspirante.entity';
 import { MatriculaService } from '../matricula/matricula.service';
 import { v2 as cloudinary } from 'cloudinary';
 import { Docente } from '../docente/docente.entity';
+import { Curso } from '../curso/curso.entity';
 
 type ArchivosMatriculacion = {
   // Corresponden a los 'field' del frontend
@@ -24,6 +25,7 @@ type ArchivosMatriculacion = {
   emmac?: Express.Multer.File[];
   foto_carnet?: Express.Multer.File[];
 };
+type CursoConArchivo = { certificadoFile?: Express.Multer.File[] };
 
 @Injectable()
 export class DocumentoService {
@@ -34,6 +36,8 @@ export class DocumentoService {
     private readonly aspiranteRepository: Repository<Aspirante>,
     @Inject(forwardRef(() => MatriculaService))
     private matriculaService: MatriculaService,
+    @InjectRepository(Curso)
+    private readonly cursoRepository: Repository<Curso>,
   ) {}
 
   private tipoDocumentoMap: { [key: string]: string } = {
@@ -183,6 +187,54 @@ export class DocumentoService {
           });
         }
         await manager.save(documento);
+      }
+    }
+  }
+
+  async guardarCertificadosCurso(
+    docente: Docente,
+    cursosData: { id?: number | string; nombre: string }[],
+    archivosCursos: CursoConArchivo[],
+    queryRunner?: QueryRunner,
+  ): Promise<void> {
+    const manager = queryRunner
+      ? queryRunner.manager
+      : this.cursoRepository.manager;
+
+    for (let i = 0; i < cursosData.length; i++) {
+      const cursoInfo = cursosData[i];
+      const archivoInfo = archivosCursos[i];
+      const file = archivoInfo?.certificadoFile?.[0];
+
+      let certificadoUrl = null;
+
+      // Si hay un archivo, lo subimos a Cloudinary
+      if (file) {
+        certificadoUrl = await this.uploadToCloudinary(file);
+      }
+
+      // Si el curso tiene un ID, es un curso existente que podría estar actualizándose.
+      if (cursoInfo.id && typeof cursoInfo.id === 'number') {
+        const cursoExistente = await manager.findOne(Curso, {
+          where: { id: cursoInfo.id },
+        });
+        if (cursoExistente) {
+          cursoExistente.nombre = cursoInfo.nombre;
+          // Si se subió un nuevo certificado, actualizamos la URL.
+          // Opcional: podrías borrar el certificado antiguo de Cloudinary aquí.
+          if (certificadoUrl) {
+            cursoExistente.certificado_url = certificadoUrl;
+          }
+          await manager.save(cursoExistente);
+        }
+      } else {
+        // Si no tiene ID, es un curso nuevo.
+        const nuevoCurso = manager.create(Curso, {
+          nombre: cursoInfo.nombre,
+          certificado_url: certificadoUrl, // Será la URL de Cloudinary o null
+          docente: docente,
+        });
+        await manager.save(nuevoCurso);
       }
     }
   }

@@ -146,9 +146,7 @@ export default function DetalleLegajoProfesor() {
           const cursosMapeados = data.cursos.map((curso: any) => ({
             id: curso.id,
             nombre: curso.nombre,
-            // CONSTRUIR LA RUTA CORRECTA: El backend solo guarda el nombre del archivo.
-            // Aquí le añadimos el prefijo /uploads/ para que la URL sea válida.
-            certificadoUrl: curso.certificado_url ? `/uploads/${curso.certificado_url}` : '',
+            certificadoUrl: curso.certificado_url || '', // La URL completa ya viene de Cloudinary
             certificadoFile: null, // No tenemos el archivo al cargar
           }));
           setCursos(cursosMapeados);
