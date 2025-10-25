@@ -6,6 +6,7 @@ import { DocumentoController } from './documento.controller';
 import { LegajoEstudiante } from '../legajo-estudiante/legajo-estudiante.entity';
 import { LegajoDocente } from '../legajo-docente/legajo-docente.entity';
 import { Aspirante } from '../aspirante/aspirante.entity';
+import { Curso } from '../curso/curso.entity'; // Importar la entidad Curso
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 import { MatriculaModule } from '../matricula/matricula.module';
 
@@ -16,6 +17,7 @@ import { MatriculaModule } from '../matricula/matricula.module';
       LegajoEstudiante,
       LegajoDocente,
       Aspirante,
+      Curso, // Añadir la entidad Curso aquí
     ]),
     forwardRef(() => MatriculaModule),
     CloudinaryModule,
