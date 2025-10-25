@@ -169,7 +169,10 @@ export class DocumentoService {
 
         if (documento) {
           // Borrar el archivo antiguo de Cloudinary antes de actualizar la URL
-          const publicId = this.getPublicIdFromUrl(documento.archivo_pdf);
+          // Se verifica que la URL sea de Cloudinary para no intentar borrar archivos locales/placeholders
+          const isCloudinaryUrl = documento.archivo_pdf.includes('cloudinary.com');
+          const publicId = isCloudinaryUrl ? this.getPublicIdFromUrl(documento.archivo_pdf) : null;
+
           if (publicId) {
             await this.deleteFromCloudinary(publicId).catch(console.error);
           }
@@ -221,8 +224,14 @@ export class DocumentoService {
         if (cursoExistente) {
           cursoExistente.nombre = cursoInfo.nombre;
           // Si se subió un nuevo certificado, actualizamos la URL.
-          // Opcional: podrías borrar el certificado antiguo de Cloudinary aquí.
           if (certificadoUrl) {
+            // Borrar el certificado antiguo de Cloudinary antes de actualizar la URL
+            if (cursoExistente.certificado_url && cursoExistente.certificado_url.includes('cloudinary.com')) {
+              const publicId = this.getPublicIdFromUrl(cursoExistente.certificado_url);
+              if (publicId) {
+                await this.deleteFromCloudinary(publicId).catch(console.error);
+              }
+            }
             cursoExistente.certificado_url = certificadoUrl;
           }
           await manager.save(cursoExistente);
