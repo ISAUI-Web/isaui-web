@@ -158,13 +158,15 @@ export class DocenteService {
 
       // 4. Guardar los cursos y sus certificados
       if (cursosData && Array.isArray(cursosData)) {
-        const parsedCursosData = cursosData.map(cursoStr => {
-            try {
-                return JSON.parse(cursoStr);
-            } catch (e) {
-                throw new BadRequestException('Formato de cursos inválido. Se esperaba un array de strings JSON.');
-            }
-        });
+        let parsedCursosData;
+        try {
+          parsedCursosData = cursosData.map(cursoStr => JSON.parse(cursoStr));
+        } catch (e) {
+          throw new BadRequestException(
+            'Formato de cursos inválido. Se esperaba un array de strings JSON.',
+          );
+        }
+
         await this.documentoService.guardarCertificadosCurso(
           docenteGuardado,
           parsedCursosData,
@@ -234,13 +236,14 @@ export class DocenteService {
 
       // 4. Sincronizar cursos
       if (cursosData && Array.isArray(cursosData)) {
-        const cursosFrontend = cursosData.map(cursoStr => {
-            try {
-                return JSON.parse(cursoStr);
-            } catch (e) {
-                throw new BadRequestException('Formato de cursos inválido. Se esperaba un array de strings JSON.');
-            }
-        });
+        let cursosFrontend;
+        try {
+          cursosFrontend = cursosData.map(cursoStr => JSON.parse(cursoStr));
+        } catch (e) {
+          throw new BadRequestException(
+            'Formato de cursos inválido. Se esperaba un array de strings JSON.',
+          );
+        }
 
         const idsCursosFrontend = cursosFrontend.map(c => c.id).filter(id => typeof id === 'number');
 

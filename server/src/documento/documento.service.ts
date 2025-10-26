@@ -209,7 +209,7 @@ export class DocumentoService {
       const archivoInfo = archivosCursos[i];
       const file = archivoInfo?.certificadoFile?.[0];
 
-      let certificadoUrl = null;
+      let certificadoUrl: string | null = null;
 
       // Si hay un archivo, lo subimos a Cloudinary
       if (file) {
@@ -240,7 +240,7 @@ export class DocumentoService {
         // Si no tiene ID, es un curso nuevo.
         const nuevoCurso = manager.create(Curso, {
           nombre: cursoInfo.nombre,
-          certificado_url: certificadoUrl, // Será la URL de Cloudinary o null
+          certificado_url: certificadoUrl || undefined, // Será la URL o undefined
           docente: docente,
         });
         await manager.save(nuevoCurso);
