@@ -306,6 +306,13 @@ export default function DetalleLegajo() {
       // no intente validar un campo opcional vacío.
       if (value !== '') {
         data.append(key, value);
+      } else {
+        // --- INICIO DE LA SOLUCIÓN ---
+        // Si el valor es una cadena vacía, y el campo es uno de los que debe limpiarse,
+        // lo enviamos explícitamente para que el backend lo ponga a NULL.
+        if (['horas_diarias', 'descripcion_trabajo'].includes(key)) {
+          data.append(key, '');
+        }
       }
     }
   });
