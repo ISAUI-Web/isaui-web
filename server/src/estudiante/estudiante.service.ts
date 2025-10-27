@@ -87,10 +87,10 @@ export class EstudianteService {
     const aspiranteData = {
       ...aspirante,
       carrera: carreraNombre,
-      // Con la entidad actualizada, los valores ya vienen como "Sí", "No", o "En curso".
-      // No se necesita más transformación aquí.
-      // Los campos como `trabajo`, `personas_cargo`, `completo_nivel_medio`, etc.,
-      // se pasan tal como vienen de la base de datos.
+      // SOLUCIÓN: Como la base de datos ya guarda "Sí" o "No", no se necesita ninguna transformación.
+      // Simplemente pasamos los valores tal como vienen.
+      // La lógica anterior (`aspirante.trabajo ? 'Sí' : 'No'`) era incorrecta
+      // porque un string "No" se evalúa como `true`.
       estado_preinscripcion: preinscripcion?.estado || 'N/A',
       estado_matriculacion: matricula?.estado || 'no matriculado',
       ...documentosMapeados,
