@@ -225,15 +225,15 @@ export class CreateAspiranteDto {
   })
   trabajo: string;
 
-  @ValidateIf((o) => o.trabajo === true)
   @Transform(({ value }) => (value === '' || value === null ? null : Number(value)))
+  @ValidateIf((o) => o.trabajo === 'Sí')
   @IsNotEmpty({ message: 'Las horas diarias son requeridas si trabaja' })
   @IsNumber()
   @Min(1)
   @Max(24)
   horas_diarias?: number;
 
-  @ValidateIf((o) => o.trabajo === true)
+  @ValidateIf((o) => o.trabajo === 'Sí')
   @IsNotEmpty({ message: 'La descripción del trabajo es requerida si trabaja' })
   @IsString()
   descripcion_trabajo?: string;
