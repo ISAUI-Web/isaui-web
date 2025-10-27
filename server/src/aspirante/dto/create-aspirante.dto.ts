@@ -225,12 +225,11 @@ export class CreateAspiranteDto {
   })
   trabajo: string;
 
-  // Este transformador SIEMPRE se ejecuta primero, convirtiendo '' o null a null.
-  // Se asegura de que un string vacío se convierta a null ANTES de las validaciones.
-  // 1. @Type intenta convertir el valor a Número. Si es '', lo convierte a NaN.
-  @Type(() => Number)
-  // 2. @Transform se ejecuta DESPUÉS de @Type. Si el valor es NaN (porque venía como ''), lo convierte a null.
-  @Transform(({ value }) => (isNaN(value) ? null : value))
+  // SOLUCIÓN DEFINITIVA: Un único transformador que maneja todos los casos.
+  // Este decorador se ejecuta antes que los validadores.
+  // 1. Si el valor es un string vacío, null o undefined, lo convierte a `null`.
+  // 2. Si no, intenta convertirlo a un número.
+  @Transform(({ value }) => (value === '' || value === null || value === undefined ? null : Number(value)))
   // Las siguientes validaciones SÓLO se ejecutan si trabajo es 'Sí'.
   @ValidateIf((o) => o.trabajo === 'Sí')
   @IsNotEmpty({ message: 'Las horas diarias son requeridas si trabaja' })
