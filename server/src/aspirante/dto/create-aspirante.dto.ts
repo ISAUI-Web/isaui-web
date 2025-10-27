@@ -13,7 +13,7 @@ import {
   Min,
   Max,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 const transformToBoolean = ({ value }: { value: any }): boolean | any => {
   if (typeof value === 'string') {
@@ -227,13 +227,15 @@ export class CreateAspiranteDto {
 
   // Este transformador SIEMPRE se ejecuta primero, convirtiendo '' o null a null.
   // Se asegura de que un string vacío se convierta a null ANTES de las validaciones.
-  @Transform(({ value }) => (value === '' || value === null || value === undefined ? null : Number(value)))
+  @Transform(({ value }) => (value === '' || value === null || value === undefined ? null : value))
+  // @Type le dice a class-validator que espere un número, pero después de que @Transform actúe.
+  @Type(() => Number)
   // Las siguientes validaciones SÓLO se ejecutan si trabajo es 'Sí'.
   @ValidateIf((o) => o.trabajo === 'Sí')
   @IsNotEmpty({ message: 'Las horas diarias son requeridas si trabaja' })
   // Con esta opción, si el valor es null (gracias al @Transform), @IsNumber no se quejará.
   // Solo validará que sea un número si el valor NO es null.
-  @IsNumber({}, { message: 'Las horas diarias deben ser un número' })
+  @IsNumber({ allowNaN: false, allowInfinity: false }, { message: 'Las horas diarias deben ser un número válido' })
   @Min(1)
   @Max(24)
   horas_diarias?: number;
