@@ -179,6 +179,10 @@ export class EstudianteService {
       );
     }
 
+    // --- INICIO DE LA SOLUCIÓN ---
+    // Prevenimos la sobreescritura del ID del aspirante.
+    delete updateData['id'];
+
     // Actualizamos los datos del aspirante con los datos del formulario
     // Object.assign es seguro aquí porque los DTOs filtran propiedades no deseadas
     Object.assign(aspirante, updateData);
@@ -189,6 +193,7 @@ export class EstudianteService {
     // Guardamos los cambios en el aspirante y el estudiante
     await this.estudianteRepository.manager.save(aspirante);
     await this.estudianteRepository.manager.save(estudiante);
+    // --- FIN DE LA SOLUCIÓN ---
 
     // Si se subieron archivos, los procesamos
     if (files && Object.keys(files).length > 0) {
