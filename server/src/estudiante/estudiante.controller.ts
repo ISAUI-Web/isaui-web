@@ -4,6 +4,7 @@ import {
   Param,
   ParseIntPipe,
   Put,
+  Patch,
   Body,
 } from '@nestjs/common';
 import { EstudianteService } from './estudiante.service';
@@ -29,5 +30,13 @@ export class EstudianteController {
     @Body() updateEstudianteDto: UpdateEstudianteDto,
   ) {
     return this.estudianteService.update(+id, updateEstudianteDto);
+  }
+
+  @Patch(':id')
+  updateActivo(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('activo') activo: boolean,
+  ) {
+    return this.estudianteService.updateActivo(id, activo);
   }
 }

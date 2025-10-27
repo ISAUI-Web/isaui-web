@@ -149,7 +149,12 @@ export class EstudianteService {
     return estudianteGuardado;
   }
   async updateActivo(id: number, activo: boolean) {
-    return this.estudianteRepository.update(id, { activo });
+    const estudiante = await this.estudianteRepository.findOneBy({ id });
+    if (!estudiante) {
+      throw new NotFoundException(`Estudiante con ID ${id} no encontrado.`);
+    }
+    await this.estudianteRepository.update(id, { activo });
+    return { ...estudiante, activo };
   }
 
   async update(
