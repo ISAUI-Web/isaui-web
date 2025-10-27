@@ -159,19 +159,43 @@ export class EstudianteService {
 
   async update(
     id: number,
-    updateEstudianteDto: UpdateEstudianteDto,
+    updateData: UpdateEstudianteDto,
+    files?: { [fieldname: string]: Express.Multer.File[] },
   ): Promise<Estudiante> {
-    const estudiante = await this.estudianteRepository.findOneBy({ id });
+    // Buscamos el estudiante junto con su aspirante relacionado
+    const estudiante = await this.estudianteRepository.findOne({
+      where: { id },
+      relations: ['aspirante'],
+    });
+
     if (!estudiante) {
       throw new NotFoundException(`Estudiante con ID ${id} no encontrado.`);
     }
 
-    // Mezcla los datos del DTO en la entidad existente
-    const updatedEstudiante = this.estudianteRepository.merge(
-      estudiante,
-      updateEstudianteDto,
-    );
+    const aspirante = estudiante.aspirante;
+    if (!aspirante) {
+      throw new NotFoundException(
+        `No se encontró el aspirante asociado al estudiante con ID ${id}`,
+      );
+    }
 
-    return this.estudianteRepository.save(updatedEstudiante);
+    // Actualizamos los datos del aspirante con los datos del formulario
+    // Object.assign es seguro aquí porque los DTOs filtran propiedades no deseadas
+    Object.assign(aspirante, updateData);
+
+    // Actualizamos los datos del estudiante (ej: ciclo_lectivo)
+    Object.assign(estudiante, updateData);
+
+    // Guardamos los cambios en el aspirante y el estudiante
+    await this.estudianteRepository.manager.save(aspirante);
+    await this.estudianteRepository.manager.save(estudiante);
+
+    // Si se subieron archivos, los procesamos
+    if (files && Object.keys(files).length > 0) {
+      await this.documentoService.guardarDocumentos(aspirante, files);
+    }
+
+    // Devolvemos el estudiante actualizado, recargando las relaciones para obtener las nuevas URLs
+    return this.findByAspiranteId(aspirante.id);
   }
 }
