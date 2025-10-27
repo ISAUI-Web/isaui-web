@@ -32,6 +32,7 @@ export default function DetalleLegajo() {
 
   const [activeTab, setActiveTab] = useState("datos")
   const [isEditing, setIsEditing] = useState(false)
+  const [estudianteId, setEstudianteId] = useState<number | null>(null); // <-- NUEVO ESTADO
   const [formData, setFormData] = useState<any>({
     nombre: '',
     apellido: '',
@@ -235,8 +236,10 @@ export default function DetalleLegajo() {
       // La solución es combinar los datos del estudiante y los datos del aspirante anidado.
       // Y lo más importante, construir el objeto `documentos` a partir del objeto `aspirante` anidado.
       setFormData({
-        ...estudianteData, // Copia los datos del estudiante (id, año_actual, etc.)
+        // Ya no propagamos estudianteData para evitar sobreescribir el ID
         ...estudianteData.aspirante, // Copia los datos del aspirante (nombre, dni, etc.)
+        ciclo_lectivo: estudianteData.ciclo_lectivo, // Copiamos campos específicos del estudiante
+        año_actual: estudianteData.año_actual,
         fecha_nacimiento: formattedDate,
         documentos: {
           // El error estaba aquí. No se estaba leyendo del objeto anidado.
@@ -244,6 +247,7 @@ export default function DetalleLegajo() {
           ...estudianteData.aspirante,
         },
       });
+      setEstudianteId(estudianteData.id); // Guardamos el ID del estudiante por separado
     } catch (error) {
       console.error("❌ Error:", error)
     } finally {
@@ -334,7 +338,7 @@ export default function DetalleLegajo() {
     // CORRECCIÓN: La ruta para actualizar un legajo de estudiante debe apuntar al controlador
     // de 'estudiante', no al de 'aspirante'. El backend ya tiene un endpoint para esto.
     // Usamos el ID del estudiante (formData.id) en lugar del ID del aspirante (id de la URL).
-    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/estudiante/${formData.id}`, {
+    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/estudiante/${estudianteId}`, {
       // El método correcto para una actualización parcial es PATCH, pero PUT también funciona aquí.
       method: 'PUT', 
       // NO establecemos Content-Type, el navegador lo hará automáticamente para FormData
