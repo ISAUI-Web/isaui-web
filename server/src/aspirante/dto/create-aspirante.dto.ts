@@ -218,9 +218,12 @@ export class CreateAspiranteDto {
   @Max(new Date().getFullYear() + 1)
   anio_egreso_superior?: number;
 
-  @Transform(transformToBoolean)
-  @IsBoolean()
-  trabajo: boolean;
+  @Transform(transformToEstadoEstudio)
+  @IsString()
+  @IsIn(['Sí', 'No'], {
+    message: 'El estado de trabajo debe ser Sí o No',
+  })
+  trabajo: string;
 
   @ValidateIf((o) => o.trabajo === true)
   @Transform(({ value }) => (value === '' || value === null ? null : Number(value)))
@@ -235,9 +238,12 @@ export class CreateAspiranteDto {
   @IsString()
   descripcion_trabajo?: string;
 
-  @Transform(transformToBoolean)
-  @IsBoolean()
-  personas_cargo: boolean;
+  @Transform(transformToEstadoEstudio)
+  @IsString()
+  @IsIn(['Sí', 'No'], {
+    message: 'El estado de personas a cargo debe ser Sí o No',
+  })
+  personas_cargo: string;
 
   @Transform(({ value }) => Number(value))
   @IsNumber()

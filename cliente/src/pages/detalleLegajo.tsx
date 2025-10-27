@@ -299,16 +299,8 @@ export default function DetalleLegajo() {
         value = String(value);
       }
 
-      // Mapeo de valores de selects a lo que espera el backend si es necesario
-      // (ej: 'Sí' -> 'true', 'No' -> 'false')
-      if (['completo_nivel_medio', 'completo_nivel_superior', 'trabajo', 'personas_cargo'].includes(key)) {
-        if (value === 'Sí') {
-          value = 'true';
-        } else if (value === 'No') {
-          value = 'false';
-        }
-        // Si es 'En curso', se mantiene como está
-      }
+      // Con los DTOs corregidos, ya no necesitamos convertir 'Sí' a 'true'.
+      // Simplemente enviamos el valor del select ('Sí', 'No', 'En curso').
 
       // Si el valor es una cadena vacía, no lo enviamos para que el backend
       // no intente validar un campo opcional vacío.
@@ -1127,7 +1119,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
               <Label className="text-sm font-medium text-gray-700 mb-1 block">¿TRABAJA ACTUALMENTE?</Label>
               {isEditing ? (
                 <select
-                  value={formData.trabajo}
+                  value={formData.trabajo || 'No'}
                   onChange={(e) => handleInputChange('trabajo', e.target.value)}
                   className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
                 >
@@ -1135,7 +1127,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                   <option value="No">No</option>
                 </select>
               ) : (
-                  <div className="text-blue-600 font-medium">{formData.trabajo}</div>
+                  <div className="text-blue-600 font-medium">{formData.trabajo || 'No'}</div>
               )}
               {errors.trabajo && <div className="text-red-500 text-xs mt-1">{errors.trabajo}</div>}
             </div>
@@ -1144,7 +1136,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
               {isEditing ? (
                 <Input
                   value={formData.horas_diarias || ""}
-                  onChange={(e) => handleInputChange("horas_diarias", e.target.value)}
+                  onChange={(e) => handleInputChange("horas_diarias", e.target.value)}                  
                   className={`w-full ${formData.trabajo === "No" ? "bg-gray-100 cursor-not-allowed" : ""}`}
                   disabled={formData.trabajo === "No"}
                 />
@@ -1171,7 +1163,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
               <Label className="text-sm font-medium text-gray-700 mb-1 block">PERSONAS A CARGO</Label>
               {isEditing ? (
                 <select
-                  value={formData.personas_cargo}
+                  value={formData.personas_cargo || 'No'}
                   onChange={(e) => handleInputChange('personas_cargo', e.target.value)}
                   className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
                 >
@@ -1179,7 +1171,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                   <option value="No">No</option>
                 </select>
               ) : (
-                <div className="text-blue-600 font-medium">{formData.personas_cargo}</div>
+                <div className="text-blue-600 font-medium">{formData.personas_cargo || 'No'}</div>
               )}
               {errors.personas_cargo && <div className="text-red-500 text-xs mt-1">{errors.personas_cargo}</div>}
             </div>

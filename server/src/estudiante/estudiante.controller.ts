@@ -67,17 +67,8 @@ export class EstudianteController {
   private convertToDto(body: any): UpdateEstudianteDto {
     const dto = new UpdateEstudianteDto();
     Object.keys(body).forEach((key) => {
-      if (body[key] === 'true') {
-        dto[key] = true;
-      } else if (body[key] === 'false') {
-        dto[key] = false;
-      } else if (body[key] === 'Sí') {
-        dto[key] = 'Sí';
-      } else if (body[key] === 'No') {
-        dto[key] = 'No';
-      } else {
-        dto[key] = body[key];
-      }
+      // Simplemente asignamos el valor. La validación y transformación se manejan en el DTO.
+      dto[key] = body[key];
     });
     return dto;
   }
