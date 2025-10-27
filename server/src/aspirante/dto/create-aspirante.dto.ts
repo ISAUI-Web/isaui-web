@@ -226,7 +226,7 @@ export class CreateAspiranteDto {
   trabajo: string;
 
   // Este transformador SIEMPRE se ejecuta primero, convirtiendo '' o null a null.
-  @Transform(({ value }) => (value === '' || value === null || value === undefined ? null : Number(value)))
+  @Transform(({ value }) => (value === '' || value === null || value === undefined ? null : Number(value)), { toClassOnly: true })
   // Las siguientes validaciones SÓLO se ejecutan si trabajo es 'Sí'.
   @ValidateIf((o) => o.trabajo === 'Sí')
   @IsNotEmpty({ message: 'Las horas diarias son requeridas si trabaja' })
