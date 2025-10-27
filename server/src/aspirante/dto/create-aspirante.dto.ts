@@ -226,11 +226,14 @@ export class CreateAspiranteDto {
   trabajo: string;
 
   // Este transformador SIEMPRE se ejecuta primero, convirtiendo '' o null a null.
-  @Transform(({ value }) => (value === '' || value === null ? null : Number(value)))
+  // Se asegura de que un string vacío se convierta a null ANTES de las validaciones.
+  @Transform(({ value }) => (value === '' || value === null || value === undefined ? null : Number(value)))
   // Las siguientes validaciones SÓLO se ejecutan si trabajo es 'Sí'.
   @ValidateIf((o) => o.trabajo === 'Sí')
   @IsNotEmpty({ message: 'Las horas diarias son requeridas si trabaja' })
-  @IsNumber()
+  // Con esta opción, si el valor es null (gracias al @Transform), @IsNumber no se quejará.
+  // Solo validará que sea un número si el valor NO es null.
+  @IsNumber({}, { message: 'Las horas diarias deben ser un número' })
   @Min(1)
   @Max(24)
   horas_diarias?: number;
