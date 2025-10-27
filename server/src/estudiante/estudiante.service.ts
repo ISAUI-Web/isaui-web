@@ -87,16 +87,10 @@ export class EstudianteService {
     const aspiranteData = {
       ...aspirante,
       carrera: carreraNombre,
-      // Transformamos los booleanos a strings que el frontend espera
-      trabajo: aspirante.trabajo ? 'Sí' : 'No',
-      personas_cargo: aspirante.personas_cargo ? 'Sí' : 'No',
-      // --- INICIO DE LA SOLUCIÓN ---
-      // Faltaba transformar estos campos
-      completo_nivel_medio: aspirante.completo_nivel_medio ? 'Sí' : 'No',
-      completo_nivel_superior: aspirante.completo_nivel_superior === 'true' || aspirante.completo_nivel_superior === true ? 'Sí' :
-                               aspirante.completo_nivel_superior === 'false' || aspirante.completo_nivel_superior === false ? 'No' :
-                               aspirante.completo_nivel_superior, // Mantiene 'En curso'
-      // --- FIN DE LA SOLUCIÓN ---
+      // Con la entidad actualizada, los valores ya vienen como "Sí", "No", o "En curso".
+      // No se necesita más transformación aquí.
+      // Los campos como `trabajo`, `personas_cargo`, `completo_nivel_medio`, etc.,
+      // se pasan tal como vienen de la base de datos.
       estado_preinscripcion: preinscripcion?.estado || 'N/A',
       estado_matriculacion: matricula?.estado || 'no matriculado',
       ...documentosMapeados,

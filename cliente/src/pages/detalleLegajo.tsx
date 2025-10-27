@@ -359,13 +359,16 @@ export default function DetalleLegajo() {
       ? updatedLegajo.fecha_nacimiento.split('T')[0]
       : "";
 
+    // Reconstruimos el estado del formulario desde cero con la respuesta del backend
+    // para evitar inconsistencias y asegurar que los datos transformados se muestren.
     setFormData({
-      ...formData, // Mantiene el estado actual
-      ...updatedLegajo, // Sobrescribe con los datos actualizados del backend
+      ...updatedLegajo.aspirante, // Datos del aspirante desde la respuesta (ya transformados)
+      ciclo_lectivo: updatedLegajo.ciclo_lectivo,
+      año_actual: updatedLegajo.año_actual,
       fecha_nacimiento: formattedDate,
       documentos: {
-        ...formData.documentos, // Mantiene las URLs de documentos existentes
-        ...updatedLegajo, // Sobrescribe con las nuevas URLs si las hay
+        // Las URLs de los documentos ya vienen dentro de updatedLegajo.aspirante
+        ...updatedLegajo.aspirante,
       }
     });
     setIsEditing(false);

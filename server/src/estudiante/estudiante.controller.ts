@@ -71,6 +71,10 @@ export class EstudianteController {
         dto[key] = true;
       } else if (body[key] === 'false') {
         dto[key] = false;
+      } else if (body[key] === 'Sí') {
+        dto[key] = 'Sí';
+      } else if (body[key] === 'No') {
+        dto[key] = 'No';
       } else {
         dto[key] = body[key];
       }

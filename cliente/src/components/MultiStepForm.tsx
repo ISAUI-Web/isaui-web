@@ -468,29 +468,22 @@ useEffect(() => {
     const backendData = {
       ...formData,
       carrera_id: formData.carrera,
-      // CORRECCIÓN: El backend espera un booleano para este campo.
-      // Convertimos 'SI' a true y 'NO' a false.
-      completo_nivel_medio: formData.completo_nivel_medio === 'SI',
+      // Con la entidad actualizada, ahora enviamos los strings directamente.
+      completo_nivel_medio: formData.completo_nivel_medio === 'SI' ? 'Sí' : 'No',
       completo_nivel_superior:
         formData.completo_nivel_superior === 'COMPLETO' ? 'Sí'
         : formData.completo_nivel_superior === 'EN_CURSO' ? 'En curso'
         : 'No',
-      // CORRECCIÓN: El backend espera un booleano, no un string 'true'/'false'.
-      // Convertimos 'SI' a true y 'NO' a false.
-      trabajo: formData.trabajo === 'SI',
-      personas_cargo: formData.personas_cargo === 'SI',
+      trabajo: formData.trabajo === 'SI' ? 'Sí' : 'No',
+      personas_cargo: formData.personas_cargo === 'SI' ? 'Sí' : 'No',
     };
 
     // 2: Poblar el FormData con los datos corregidos y listos para el backend.
     Object.entries(backendData).forEach(([key, value]) => {
       // Excluimos campos que se manejan por separado (archivos) o que no deben enviarse (lógica de UI).
       if (key !== 'dniFrente' && key !== 'dniDorso' && key !== 'carrera' && key !== 'numeroRegistro' && key !== 'ciclo_lectivo' && value !== null && value !== undefined) {
-        // CORRECCIÓN: Asegurarnos de que los valores booleanos se envíen como strings 'true' o 'false'.
-        if (typeof value === 'boolean') {
-          formPayload.append(key, value.toString());
-        } else {
-          formPayload.append(key, value as string);
-        }
+        // Ya no hay booleanos que convertir, todos los valores son strings.
+        formPayload.append(key, value as string);
       }
     });
 

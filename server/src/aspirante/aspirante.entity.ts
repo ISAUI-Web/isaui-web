@@ -84,8 +84,8 @@ export class Aspirante {
   anio_egreso_superior: number;
 
   // Trabajo y responsabilidades
-  @Column()
-  trabajo: boolean;
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  trabajo: string;
 
   @Column({ nullable: true })
   horas_diarias: number;
@@ -93,8 +93,8 @@ export class Aspirante {
   @Column({ nullable: true })
   descripcion_trabajo: string;
 
-  @Column()
-  personas_cargo: boolean;
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  personas_cargo: string;
 
   @Column({
     type: 'varchar',
