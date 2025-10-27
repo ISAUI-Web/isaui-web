@@ -282,34 +282,43 @@ export default function Mantenimiento() {
     }
 
     try {
-      // Aquí conectarías con tu API de NestJS
-      const response = await fetch(`${API_BASE_URL_CARRERA}/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nombre: updatedData.nombre,
-          cupo_maximo: updatedData.cupoMaximo,
-          cupo_actual: updatedData.cupoActual,
-        }),
-      });
+  const response = await fetch(`${API_BASE_URL_CARRERA}/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      nombre: updatedData.nombre,
+      cupo_maximo: updatedData.cupoMaximo,
+      cupo_actual: updatedData.cupoActual,
+    }),
+  });
 
-      if (!response.ok) {
-        let msg = "Error al actualizar carrera";
-        try {
-          const err = await response.json();
-          msg = (Array.isArray(err.message) ? err.message[0] : err.message) || msg;
-        } catch {}
-        throw new Error(msg);
-      }
+  const data = await response.json(); // la leemos UNA vez
 
-      const actualizada = mapCarreraFromApi(await response.json());
-      setCarreras(carreras.map((c) => (c.id === id ? actualizada : c)));
-      setEditingCarrera(null);
-      alert("Carrera actualizada correctamente");
-    } catch (error: any) {
-      console.error(error);
-      alert(error?.message || "Error al actualizar carrera");
-    }
+  if (!response.ok) {
+    let msg = "Error al actualizar carrera";
+    msg = Array.isArray(data.message) ? data.message[0] : data.message || msg;
+    throw new Error(msg);
+  }
+
+  const actualizadaFromApi = mapCarreraFromApi(data);
+
+  setCarreras(carreras.map((c) =>
+    c.id === id
+      ? { 
+          ...c, // conservamos campos que no se modificaron
+          nombre: actualizadaFromApi.nombre,
+          cupoMaximo: actualizadaFromApi.cupoMaximo,
+          cupoActual: actualizadaFromApi.cupoActual
+        }
+      : c
+  ));
+
+  setEditingCarrera(null);
+  alert("Carrera actualizada correctamente");
+} catch (error: any) {
+  console.error(error);
+  alert(error?.message || "Error al actualizar carrera");
+}
   }
 
   // const handleDeleteCarrera = async (id: number) => {
