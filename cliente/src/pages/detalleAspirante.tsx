@@ -219,10 +219,10 @@ export default function DetalleAspirante() {
         provincia_superior: data.provincia_superior || "",
         anio_ingreso_superior: data.anio_ingreso_superior || "",
         anio_egreso_superior: data.anio_egreso_superior || "",
-        trabajo: data.trabajo === true || data.trabajo === 'Sí' ? 'Sí' : 'No',
+        trabajo: data.trabajo, // El valor ya viene como 'Sí' o 'No'
         horas_diarias: data.horas_diarias || "",
         descripcion_trabajo: data.descripcion_trabajo || "",
-        personas_cargo: data.personas_cargo === true || data.personas_cargo === 'Sí' ? 'Sí' : 'No',
+        personas_cargo: data.personas_cargo, // El valor ya viene como 'Sí' o 'No'
         documentos: {
           dniFrenteUrl: data.dniFrenteUrl || null,
           dniDorsoUrl: data.dniDorsoUrl || null,
@@ -267,8 +267,8 @@ export default function DetalleAspirante() {
     // 'id', 'carrera' no son editables.
     // 'documentos' es un objeto contenedor en el frontend.
     // Las claves de URL/nombre de documentos son enviadas por el backend para visualización,
-    // pero no deben ser reenviadas en el body del PUT, ya que el DTO del backend no las espera.
-    const excludedKeys = ['id', 'documentos', 'carrera', 'dniFrenteUrl', 'dniDorsoUrl', 'dniFrenteNombre', 'dniDorsoNombre'];
+    // pero no deben ser reenviadas en el body del PUT, ya que el DTO del backend no las espera. // <-- Corrección de la lista de exclusión
+    const excludedKeys = ['id', 'documentos', 'carrera', 'dniFrenteUrl', 'dniDorsoUrl', 'dniFrenteNombre', 'dniDorsoNombre', 'cusUrl', 'foto_carnetUrl', 'isaUrl', 'partida_nacimientoUrl', 'analiticoUrl', 'grupo_sanguineoUrl', 'cudUrl', 'emmacUrl'];
 
     if (!excludedKeys.includes(key) && formData[key] !== null) {
       // Aseguramos que los valores booleanos se envíen como strings 'true' o 'false',
@@ -413,7 +413,7 @@ export default function DetalleAspirante() {
     }
 
     if (field === "trabajo" && value === "No") {
-      newFormData.horas_diarias = "";
+      newFormData.horas_diarias = "0";
       newFormData.descripcion_trabajo = "";
     }
 
@@ -853,7 +853,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
               <Label className="text-sm font-medium text-gray-700 mb-1 block">¿TRABAJA ACTUALMENTE?</Label>
               {isEditing ? (
                 <select
-                  value={formData.trabajo}
+                  value={formData.trabajo || 'No'} // <-- CORRECCIÓN: Valor por defecto 'No' si es nulo
                   onChange={(e) => handleInputChange('trabajo', e.target.value)}
                   className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
                 >
@@ -861,7 +861,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                   <option value="No">No</option>
                 </select>
               ) : (
-                  <div className="text-blue-600 font-medium">{formData.trabajo}</div>
+                  <div className="text-blue-600 font-medium">{formData.trabajo || 'No'}</div> // <-- CORRECCIÓN: Valor por defecto 'No'
               )}
               {errors.trabajo && <div className="text-red-500 text-xs mt-1">{errors.trabajo}</div>}
             </div>
@@ -870,12 +870,12 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
               {isEditing ? (
                 <Input
                   value={formData.horas_diarias || ""}
-                  onChange={(e) => handleInputChange("horas_diarias", e.target.value)}
+                  onChange={(e) => handleInputChange("horas_diarias", e.target.value)}                  
                   className={`w-full ${formData.trabajo === "No" ? "bg-gray-100 cursor-not-allowed" : ""}`}
                   disabled={formData.trabajo === "No"}
                 />
               ) : (
-                <div className="text-blue-600 font-medium">{formData.horas_diarias}</div>
+                <div className="text-blue-600 font-medium">{formData.horas_diarias > 0 ? formData.horas_diarias : ''}</div> // <-- CORRECCIÓN: No mostrar si es 0
               )}
               {errors.horas_diarias && <div className="text-red-500 text-xs mt-1">{errors.horas_diarias}</div>}
             </div>
@@ -897,7 +897,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
               <Label className="text-sm font-medium text-gray-700 mb-1 block">PERSONAS A CARGO</Label>
               {isEditing ? (
                 <select
-                  value={formData.personas_cargo}
+                  value={formData.personas_cargo || 'No'} // <-- CORRECCIÓN: Valor por defecto 'No' si es nulo
                   onChange={(e) => handleInputChange('personas_cargo', e.target.value)}
                   className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
                 >
@@ -905,7 +905,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                   <option value="No">No</option>
                 </select>
               ) : (
-                <div className="text-blue-600 font-medium">{formData.personas_cargo}</div>
+                <div className="text-blue-600 font-medium">{formData.personas_cargo || 'No'}</div> // <-- CORRECCIÓN: Valor por defecto 'No'
               )}
               {errors.personas_cargo && <div className="text-red-500 text-xs mt-1">{errors.personas_cargo}</div>}
             </div>
