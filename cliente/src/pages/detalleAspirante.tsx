@@ -853,7 +853,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
               <Label className="text-sm font-medium text-gray-700 mb-1 block">¿TRABAJA ACTUALMENTE?</Label>
               {isEditing ? (
                 <select
-                  value={formData.trabajo || 'No'} // <-- CORRECCIÓN: Valor por defecto 'No' si es nulo
+                  value={formData.trabajo || 'No'}
                   onChange={(e) => handleInputChange('trabajo', e.target.value)}
                   className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
                 >
@@ -861,7 +861,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                   <option value="No">No</option>
                 </select>
               ) : (
-                  <div className="text-blue-600 font-medium">{formData.trabajo || 'No'}</div> // <-- CORRECCIÓN: Valor por defecto 'No'
+                  <div className="text-blue-600 font-medium">{formData.trabajo || 'No'}</div>
               )}
               {errors.trabajo && <div className="text-red-500 text-xs mt-1">{errors.trabajo}</div>}
             </div>
@@ -869,13 +869,13 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
               <Label className="text-sm font-medium text-gray-700 mb-1 block">HORAS DIARIAS</Label>
               {isEditing ? (
                 <Input
-                  value={formData.horas_diarias || ""}
-                  onChange={(e) => handleInputChange("horas_diarias", e.target.value)}                  
+                  value={formData.horas_diarias > 0 ? formData.horas_diarias : ""}
+                  onChange={(e) => handleInputChange("horas_diarias", e.target.value)}
                   className={`w-full ${formData.trabajo === "No" ? "bg-gray-100 cursor-not-allowed" : ""}`}
                   disabled={formData.trabajo === "No"}
                 />
               ) : (
-                <div className="text-blue-600 font-medium">{formData.horas_diarias > 0 ? formData.horas_diarias : ''}</div> // <-- CORRECCIÓN: No mostrar si es 0
+                <div className="text-blue-600 font-medium">{formData.horas_diarias > 0 ? formData.horas_diarias : ''}</div>
               )}
               {errors.horas_diarias && <div className="text-red-500 text-xs mt-1">{errors.horas_diarias}</div>}
             </div>
@@ -897,7 +897,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
               <Label className="text-sm font-medium text-gray-700 mb-1 block">PERSONAS A CARGO</Label>
               {isEditing ? (
                 <select
-                  value={formData.personas_cargo || 'No'} // <-- CORRECCIÓN: Valor por defecto 'No' si es nulo
+                  value={formData.personas_cargo || 'No'}
                   onChange={(e) => handleInputChange('personas_cargo', e.target.value)}
                   className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
                 >
@@ -905,7 +905,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                   <option value="No">No</option>
                 </select>
               ) : (
-                <div className="text-blue-600 font-medium">{formData.personas_cargo || 'No'}</div> // <-- CORRECCIÓN: Valor por defecto 'No'
+                <div className="text-blue-600 font-medium">{formData.personas_cargo || 'No'}</div>
               )}
               {errors.personas_cargo && <div className="text-red-500 text-xs mt-1">{errors.personas_cargo}</div>}
             </div>
