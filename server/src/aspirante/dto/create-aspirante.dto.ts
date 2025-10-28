@@ -225,11 +225,9 @@ export class CreateAspiranteDto {
   })
   trabajo: string;
 
-  // SOLUCIÓN DEFINITIVA: Un único transformador que maneja todos los casos.
-  // Este decorador se ejecuta antes que los validadores.
-  // 1. Si el valor es un string vacío, null o undefined, lo convierte a `null`.
-  // 2. Si no, intenta convertirlo a un número.
-  @Transform(({ value }) => (value === '' || value === null || value === undefined ? null : Number(value)))
+  // Con la nueva lógica del frontend, el valor siempre será un número (o un string numérico).
+  // Este transformador asegura que se guarde como tipo `number`.
+  @Transform(({ value }) => Number(value))
   // Las siguientes validaciones SÓLO se ejecutan si trabajo es 'Sí'.
   @ValidateIf((o) => o.trabajo === 'Sí')
   @IsNotEmpty({ message: 'Las horas diarias son requeridas si trabaja' })

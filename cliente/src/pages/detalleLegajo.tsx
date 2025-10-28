@@ -661,7 +661,7 @@ export default function DetalleLegajo() {
     }
 
     if (field === "trabajo" && value === "No") {
-      newFormData.horas_diarias = "";
+      newFormData.horas_diarias = "0"; // Guardamos 0 como string para consistencia del input
       newFormData.descripcion_trabajo = "";
     }
 
@@ -1139,13 +1139,13 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
               <Label className="text-sm font-medium text-gray-700 mb-1 block">HORAS DIARIAS</Label>
               {isEditing ? (
                 <Input
-                  value={formData.horas_diarias || ""}
+                  value={formData.horas_diarias === 0 ? "" : formData.horas_diarias || ""}
                   onChange={(e) => handleInputChange("horas_diarias", e.target.value)}                  
                   className={`w-full ${formData.trabajo === "No" ? "bg-gray-100 cursor-not-allowed" : ""}`}
                   disabled={formData.trabajo === "No"}
                 />
               ) : (
-                <div className="text-blue-600 font-medium">{formData.horas_diarias}</div>
+                <div className="text-blue-600 font-medium">{formData.horas_diarias > 0 ? formData.horas_diarias : ''}</div>
               )}
               {errors.horas_diarias && <div className="text-red-500 text-xs mt-1">{errors.horas_diarias}</div>}
             </div>
