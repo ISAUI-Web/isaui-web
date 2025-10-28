@@ -321,8 +321,8 @@ useEffect(() => {
       }
 
       if (field === "trabajo" && value === "NO") {
-      newFormData.horas_diarias = "0"; // Guardamos 0 como string para consistencia del input
-      newFormData.descripcion_trabajo = "";
+      newData.horas_diarias = "0"; // Guardamos 0 como string para consistencia del input
+      newData.descripcion_trabajo = "";
       }
 
       return newData

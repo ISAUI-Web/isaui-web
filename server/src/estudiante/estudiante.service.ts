@@ -87,10 +87,6 @@ export class EstudianteService {
     const aspiranteData = {
       ...aspirante,
       carrera: carreraNombre,
-      // SOLUCIÓN: Como la base de datos ya guarda "Sí" o "No", no se necesita ninguna transformación.
-      // Simplemente pasamos los valores tal como vienen.
-      // La lógica anterior (`aspirante.trabajo ? 'Sí' : 'No'`) era incorrecta
-      // porque un string "No" se evalúa como `true`.
       estado_preinscripcion: preinscripcion?.estado || 'N/A',
       estado_matriculacion: matricula?.estado || 'no matriculado',
       ...documentosMapeados,
