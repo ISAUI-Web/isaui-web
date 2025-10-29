@@ -53,13 +53,13 @@ export class UsuarioService implements OnModuleInit {
     if (!esValida)
       throw new UnauthorizedException('Usuario o contraseña incorrectos');
 
-    // Generar JWT
+    // Generar JWT y devolverlo para que el controlador lo ponga en la cookie
     const payload = { sub: usuario.id, rol: usuario.rol };
     const token = await this.jwtService.signAsync(payload);
 
     return {
       mensaje: 'Login exitoso',
-      token,
+      token, // Lo devolvemos para que el controller lo use
       usuario: {
         id: usuario.id,
         rol: usuario.rol,

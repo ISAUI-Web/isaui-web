@@ -85,8 +85,7 @@ export default function Login() {
 
     // Ejemplo: data.token, data.usuario
     // Guardamos token si "recordarme" está marcado
-    if (formData.recordarme && data.token) {
-      localStorage.setItem('token', data.token);
+    if (formData.recordarme && data.usuario) {
       localStorage.setItem('usuario', JSON.stringify(data.usuario));
     }
 

@@ -5,6 +5,8 @@ import { UsuarioService } from './usuario.service';
 import { UsuarioController } from './usuario.controller';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtStrategy } from '../auth/jwt.strategy'; // Asumiendo la ruta
+import { PassportModule } from '@nestjs/passport';
 
 @Module({
   imports: [
@@ -18,9 +20,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         signOptions: { expiresIn: configService.get<string>('JWT_EXPIRES') },
       }),
     }),
+    PassportModule,
   ],
   controllers: [UsuarioController],
-  providers: [UsuarioService],
+  providers: [UsuarioService, JwtStrategy],
   exports: [UsuarioService],
 })
 export class UsuarioModule {}
