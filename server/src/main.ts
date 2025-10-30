@@ -11,12 +11,19 @@ async function bootstrap() {
   app.enableCors({
     origin: (origin, callback) => {
       if (!origin) return callback(null, true); // Permite Postman, localhost, etc.
-
-      const mainFrontend = configService.get('CORS_ORIGIN'); // https://isaui-web-frontend.vercel.app
-
+ 
+      const mainFrontend = configService.get<string>('CORS_ORIGIN'); // https://isaui-web-frontend.vercel.app
+ 
+      // Regex que acepta cualquier subdominio de vercel.app
+      const vercelPreviewRegex = /^https:\/\/.*\.vercel\.app$/;
+ 
+      // Regex para localhost y puertos comunes de desarrollo
+      const localhostRegex = /^http:\/\/localhost(:\d+)?$/;
+ 
       if (
-        origin === mainFrontend || // Coincide con el frontend principal
-        origin.endsWith('.vercel.app') // Coincide con CUALQUIER preview de Vercel
+        origin === mainFrontend || // frontend de producción
+        vercelPreviewRegex.test(origin) || // previews de Vercel
+        localhostRegex.test(origin) // desarrollo local
       ) {
         callback(null, true);
       } else {
