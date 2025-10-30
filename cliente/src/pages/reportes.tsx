@@ -27,10 +27,24 @@ import {
   GraduationCap,
   ChevronDown,
   ChevronRight,
+  RotateCcwKey,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import logo from "../assets/logo.png"
 import logo2 from "../assets/logo2.png"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from "../components/ui/dialog"
+
+import { Input } from "../components/ui/input"
+// Button and Label are already imported earlier in this file
 
 const menuItems = [
   { icon: Home, label: "INICIO", id: "inicio" },
@@ -47,6 +61,7 @@ const menuItems = [
   { icon: FolderOpen, label: "LEGAJO DIGITAL", id: "legajo" },
   { icon: FileText, label: "REPORTES", id: "reportes" },
   { icon: Settings, label: "MANTENIMIENTO", id: "mantenimiento" },
+  { icon: RotateCcwKey, label: "GESTIÓN DE CUENTA", id: "cambio-contrasena" },
 ]
 
 const tiposReporte = [
@@ -282,6 +297,63 @@ export default function Reportes() {
         <div className="flex-1">
           {menuItems.map((item) => {
             const IconComponent = item.icon;
+            if (item.id === 'cambio-contrasena') {
+              return (
+                <div key={item.id}>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <button
+                        className={`w-full flex items-center px-6 py-4 text-white hover:bg-[#31546D] transition-colors ${
+                          activeSection === item.id ? "bg-[#31546D]" : ""
+                        }`}
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <IconComponent className="w-5 h-5 mr-4" />
+                        <span className="text-sm font-medium tracking-wide">{item.label}</span>
+                      </button>
+                    </DialogTrigger>
+
+                    <form onSubmit={(e) => {
+                      e.preventDefault();
+                      const form = e.target as HTMLFormElement;
+                      const newPassword = (form.elements.namedItem('newPassword') as HTMLInputElement).value;
+                      const confirmPassword = (form.elements.namedItem('confirmPassword') as HTMLInputElement).value;
+                      if (!newPassword) { alert('La nueva contraseña es requerida'); return; }
+                      if (newPassword !== confirmPassword) { alert('Las contraseñas no coinciden'); return; }
+                      alert('Contraseña cambiada (simulado)');
+                    }}>
+                      <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                          <DialogTitle>Cambio de contraseña</DialogTitle>
+                          <DialogDescription>
+                            Ingresa la nueva contraseña.
+                          </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="grid gap-4">
+                          <div className="grid gap-3">
+                            <Label htmlFor="new-password">Nueva contraseña</Label>
+                            <Input id="new-password" name="newPassword" type="password" />
+                          </div>
+                          <div className="grid gap-3">
+                            <Label htmlFor="confirm-password">Confirmar nueva contraseña</Label>
+                            <Input id="confirm-password" name="confirmPassword" type="password" />
+                          </div>
+                        </div>
+
+                        <DialogFooter>
+                          <DialogClose asChild>
+                            <Button variant="outline">Cancelar</Button>
+                          </DialogClose>
+                          <Button type="submit">Cambiar</Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </form>
+                  </Dialog>
+                </div>
+              )
+            }
+
             return (
               <div key={item.id}>
                 <button
