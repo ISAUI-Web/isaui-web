@@ -19,6 +19,7 @@ import {
   ChevronDown,
   Settings,
 } from "lucide-react"
+import { logout } from "../lib/auth"
 import logo from "../assets/logo.png"
 import logo2 from "../assets/logo2.png"
 import carrusel1 from "../assets/carrusel1.jpg"
@@ -75,6 +76,7 @@ export default function AdminMain() {
     localStorage.removeItem("adminRemember")
     localStorage.removeItem("adminUser")
     alert("¡Sesión cerrada exitosamente!")
+    logout()
     navigate("/login")
   }
 
