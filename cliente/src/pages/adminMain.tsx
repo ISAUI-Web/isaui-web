@@ -17,6 +17,7 @@ import {
   ChevronRight,
   ChevronDown,
   Settings,
+  RotateCcwKey
 } from "lucide-react"
 import logo from "../assets/logo.png"
 import logo2 from "../assets/logo2.png"
@@ -26,6 +27,20 @@ import carrusel3 from "../assets/carrusel3.jpg"
 import carrusel4 from "../assets/carrusel4.jpg"
 import carrusel5 from "../assets/carrusel5.jpg"
 import { useNavigate } from "react-router-dom"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from "../components/ui/dialog"
+
+import { Button } from "../components/ui/button"
+import { Label } from "../components/ui/label"
+import { Input } from "../components/ui/input"
 
 const carouselImages = [
   carrusel1,
@@ -58,6 +73,7 @@ const menuItems: MenuItem[] = [
   { icon: FolderOpen, label: "LEGAJO DIGITAL", id: "legajo" },
   { icon: FileText, label: "REPORTES", id: "reportes" },
   { icon: Settings, label: "MANTENIMIENTO", id: "mantenimiento" },
+  { icon: RotateCcwKey, label: "GESTIÓN DE CUENTA", id: "cambio-contrasena" }
 ]
 
 export default function AdminMain() {
@@ -168,6 +184,56 @@ const handleMenuItemClick = (itemId: string) => {
         <div className="flex-1">
           {menuItems.map((item) => {
             const IconComponent = item.icon;
+            // Special case: render password-change as a Dialog trigger
+            if (item.id === 'cambio-contrasena') {
+              return (
+                <div key={item.id}>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <button
+                        className={`w-full flex items-center px-6 py-4 text-white hover:bg-[#31546D] transition-colors ${
+                          activeSection === item.id ? "bg-[#31546D]" : ""
+                        }`}
+                        onClick={() => { setIsMenuOpen(false); }}
+                      >
+                        <IconComponent className="w-5 h-5 mr-4" />
+                        <span className="text-sm font-medium tracking-wide">{item.label}</span>
+                      </button>
+                    </DialogTrigger>
+
+                    <form onSubmit={(e) => { e.preventDefault(); alert('Contraseña cambiada (simulado)'); }}>
+                      <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                          <DialogTitle>Cambio de contraseña</DialogTitle>
+                          <DialogDescription>
+                            Ingresa la nueva contraseña.
+                          </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="grid gap-4">
+                          <div className="grid gap-3">
+                            <Label htmlFor="new-password">Nueva contraseña</Label>
+                            <Input id="new-password" name="newPassword" type="password" />
+                          </div>
+                          <div className="grid gap-3">
+                            <Label htmlFor="confirm-password">Confirmar nueva contraseña</Label>
+                            <Input id="confirm-password" name="confirmPassword" type="password" />
+                          </div>
+                        </div>
+
+                        <DialogFooter>
+                          <DialogClose asChild>
+                            <Button variant="outline">Cancelar</Button>
+                          </DialogClose>
+                          <Button type="submit">Cambiar</Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </form>
+                  </Dialog>
+                </div>
+              );
+            }
+
             return (
               <div key={item.id}>
                 <button
@@ -205,7 +271,6 @@ const handleMenuItemClick = (itemId: string) => {
           })}
         </div>
 
-        {/* Logout Button */}
         <div className="p-4 flex-shrink-0">
           <button
             onClick={handleLogout}
