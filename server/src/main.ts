@@ -10,16 +10,13 @@ async function bootstrap() {
 
   app.enableCors({
     origin: (origin, callback) => {
-      const allowedOrigins = [
-        configService.get('CORS_ORIGIN'), // URL principal: https://isaui-web-frontend.vercel.app
-        /\.vercel\.app$/, // Permite CUALQUIER subdominio de preview que termine en .vercel.app
-      ];
+      if (!origin) return callback(null, true); // Permite Postman, localhost, etc.
+
+      const mainFrontend = configService.get('CORS_ORIGIN'); // https://isaui-web-frontend.vercel.app
 
       if (
-        !origin || // Permite herramientas locales como Postman
-        allowedOrigins.some(o =>
-          o instanceof RegExp ? o.test(origin) : o === origin,
-        )
+        origin === mainFrontend || // Coincide con el frontend principal
+        origin.endsWith('.vercel.app') // Coincide con CUALQUIER preview de Vercel
       ) {
         callback(null, true);
       } else {
