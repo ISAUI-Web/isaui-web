@@ -20,11 +20,9 @@ async function bootstrap() {
       // Regex para localhost y puertos comunes de desarrollo
       const localhostRegex = /^http:\/\/localhost(:\d+)?$/;
  
-      if (
-        origin === mainFrontend || // frontend de producción
-        vercelPreviewRegex.test(origin) || // previews de Vercel
-        localhostRegex.test(origin) // desarrollo local
-      ) {
+      // Si el origen es una preview de Vercel, el dominio principal o localhost, se permite.
+      // La regex de Vercel ya cubre el dominio principal.
+      if (vercelPreviewRegex.test(origin) || localhostRegex.test(origin)) {
         callback(null, true);
       } else {
         console.warn('❌ Bloqueado por CORS:', origin);
