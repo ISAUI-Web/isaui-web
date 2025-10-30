@@ -73,7 +73,7 @@ const menuItems: MenuItem[] = [
   { icon: FolderOpen, label: "LEGAJO DIGITAL", id: "legajo" },
   { icon: FileText, label: "REPORTES", id: "reportes" },
   { icon: Settings, label: "MANTENIMIENTO", id: "mantenimiento" },
-  { icon: RotateCcwKey, label: "CAMBIO DE CONTRASEÑA", id: "cambio-contrasena" }
+  { icon: RotateCcwKey, label: "GESTIÓN DE CUENTA", id: "cambio-contrasena" }
 ]
 
 export default function AdminMain() {
