@@ -2,24 +2,24 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as cookieParser from 'cookie-parser';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
-  // Regex para validar las URLs de preview de Vercel
-  const vercelPreviewRegex = /^https:\/\/isaui-web-frontend-git-.*\.vercel\.app$/;
-  const corsOrigin = configService.get('CORS_ORIGIN');
-
   app.enableCors({
     origin: (origin, callback) => {
-      // Permitir solicitudes sin origen (como Postman o apps móviles) o locales
-      if (!origin) return callback(null, true);
+      const allowedOrigins = [
+        configService.get('CORS_ORIGIN'), // URL principal: https://isaui-web-frontend.vercel.app
+        /\.vercel\.app$/, // Permite CUALQUIER subdominio de preview que termine en .vercel.app
+      ];
 
       if (
-        origin === corsOrigin || // URL estable del frontend
-        vercelPreviewRegex.test(origin) // URLs de preview de Vercel
+        !origin || // Permite herramientas locales como Postman
+        allowedOrigins.some(o =>
+          o instanceof RegExp ? o.test(origin) : o === origin,
+        )
       ) {
         callback(null, true);
       } else {
