@@ -2,14 +2,13 @@
 
 import type React from "react"
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
 import { Checkbox } from "../components/ui/checkbox"
 import { Card } from "../components/ui/card"
 import { ArrowLeft, User } from "lucide-react"
-import { useNavigate } from "react-router-dom"
-
 
 interface LoginForm {
   usuario: string
@@ -17,7 +16,7 @@ interface LoginForm {
   recordarme: boolean
 }
 
-export default function Login() {
+export default function LoginPage() {
   const [formData, setFormData] = useState<LoginForm>({
     usuario: "",
     contraseña: "",
@@ -27,7 +26,6 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
 
-
   const handleInputChange = (field: keyof LoginForm, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
     // Limpiar error cuando el usuario empiece a escribir
@@ -36,8 +34,6 @@ export default function Login() {
     }
   }
 
-
-  //VALIDACIONES: DIEGO LUNA NO TE QUEJES DE LAS VALIDACIONES
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
 
@@ -54,52 +50,53 @@ export default function Login() {
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault()
 
-  if (!validateForm()) return;
+    if (!validateForm()) return
 
-  setIsLoading(true);
+    setIsLoading(true)
 
-  try {
-    const response = await fetch('http://localhost:3000/usuario/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        nombre_usuario: formData.usuario, 
-        contraseña: formData.contraseña,
-      }),
-    });
+    try {
+      const response = await fetch('http://localhost:3000/usuario/login', {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          nombre_usuario: formData.usuario,
+          contraseña: formData.contraseña,
+        }),
+      })
 
-    if (!response.ok) {
-      
-      const errorData = await response.json();
-      setErrors({ general: errorData.message || 'Error en el login' });
-      setIsLoading(false);
-      return;
+      if (!response.ok) {
+        const errorData = await response.json()
+        setErrors({ general: errorData.message || "Error en el login" })
+        setIsLoading(false)
+        return
+      }
+
+      const data = await response.json()
+
+      if (data.token) {
+        localStorage.setItem("token", data.token)
+        localStorage.setItem("usuario", JSON.stringify(data.usuario))
+
+        // Si no marcó "recordarme", podríamos agregar una flag para limpiar después
+        if (!formData.recordarme) {
+          localStorage.setItem("sessionOnly", "true")
+        } else {
+          localStorage.removeItem("sessionOnly")
+        }
+      }
+
+      setIsLoading(false)
+      navigate("/admin") // Redirigimos al panel admin
+    } catch (error) {
+      console.error(error)
+      setErrors({ general: "Error de conexión con el servidor" })
+      setIsLoading(false)
     }
-
-    const data = await response.json();
-
-
-    // Ejemplo: data.token, data.usuario
-    // Guardamos token si "recordarme" está marcado
-    if (formData.recordarme && data.token) {
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('usuario', JSON.stringify(data.usuario));
-    }
-
-    setIsLoading(false);
-    navigate('/admin'); // Redirigimos al panel admin
-
-  } catch (error) {
-    console.error(error);
-    setErrors({ general: 'Error de conexión con el servidor' });
-    setIsLoading(false);
   }
-};
-
 
   const handleBack = () => {
     navigate("/")

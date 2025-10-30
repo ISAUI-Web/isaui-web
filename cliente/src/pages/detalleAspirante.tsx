@@ -1,5 +1,6 @@
 "use client"
-
+import { ProtectedRoute } from "../components/protected-route"
+import { RolUsuario } from "../lib/types"
 import { useState, useEffect, useRef } from "react"
 import { Card } from "../components/ui/card"
 import { Button } from "../components/ui/button"
@@ -1567,6 +1568,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
   }
 
   return (
+    <ProtectedRoute allowedRoles={[RolUsuario.ADMIN_GENERAL, RolUsuario.GESTOR_ACADEMICO]}>
     <div className="min-h-screen bg-[#1F6680] from-teal-600 to-teal-800 relative p-4">
       {/* Franjas laterales decorativas */}
       <div className="absolute left-0 top-0 h-full w-16 bg-[#274357]"></div>
@@ -1644,5 +1646,6 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
         </Card>
       </div>
     </div>
+    </ProtectedRoute>
   )
 }

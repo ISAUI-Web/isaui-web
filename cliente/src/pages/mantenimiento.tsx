@@ -1,6 +1,7 @@
 "use client"
 
-
+import { ProtectedRoute } from "../components/protected-route"
+import { RolUsuario } from "../lib/types"
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 
@@ -789,6 +790,8 @@ export default function Mantenimiento() {
   )
 
   return (
+    
+<ProtectedRoute allowedRoles={[RolUsuario.ADMIN_GENERAL]}>
     <div className="min-h-screen bg-[#1F6680] from-teal-600 to-teal-800 relative">
       {/* Header */}
       <header className="bg-slate-800 h-16 flex items-center px-4 relative z-50">
@@ -919,5 +922,6 @@ export default function Mantenimiento() {
         </div>
       </main>
     </div>
+    </ProtectedRoute>
   )
 }
