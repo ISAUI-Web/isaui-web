@@ -4,15 +4,16 @@ import type React from "react"
 
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { type RolUsuario, hasAnyRole, isAuthenticated } from "../lib/auth"
+import { type RolUsuario, hasAnyRole, isAuthenticated, getUserRole } from "../lib/auth"
 
 interface ProtectedRouteProps {
   children: React.ReactNode
   allowedRoles?: RolUsuario[]
   redirectTo?: string
+  roleRedirects?: Partial<Record<RolUsuario, string>>
 }
 
-export function ProtectedRoute({ children, allowedRoles, redirectTo = "/login" }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, allowedRoles, redirectTo = "/login", roleRedirects }: ProtectedRouteProps) {
   const navigate = useNavigate()
   const [isAuthorized, setIsAuthorized] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -27,6 +28,14 @@ export function ProtectedRoute({ children, allowedRoles, redirectTo = "/login" }
     // Si se especificaron roles, verificar autorización
     if (allowedRoles && allowedRoles.length > 0) {
       if (!hasAnyRole(allowedRoles)) {
+        if (roleRedirects) {
+          const userRole = getUserRole()
+          if (userRole && roleRedirects[userRole]) {
+            navigate(roleRedirects[userRole]!)
+            return
+          }
+        }
+        // Si no hay redirección específica, ir a unauthorized
         navigate("/login")
         return
       }
@@ -34,7 +43,7 @@ export function ProtectedRoute({ children, allowedRoles, redirectTo = "/login" }
 
     setIsAuthorized(true)
     setIsLoading(false)
-  }, [allowedRoles, redirectTo, navigate])
+  }, [allowedRoles, redirectTo, roleRedirects, navigate])
 
   if (isLoading) {
     return (
