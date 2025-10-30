@@ -65,6 +65,15 @@ const mapCarreraFromApi = (c: any): Carrera => ({
   activo: c.activo,
 });
 
+ // Mapper para usuarios del backend -> frontend
+const mapUsuarioFromApi = (u: any) => ({
+  id: u.id,
+  usuario: u.nombre_usuario,
+  email: u.correo,
+  rol: u.rol,
+  activo: u.activo,
+  });
+
 // Datos de ejemplo para carreras
 const carrerasData = [
   { id: 1, nombre: "DESARROLLO DE SOFTWARE", cupoMaximo: 30 },
@@ -128,7 +137,7 @@ export default function Mantenimiento() {
   const [errors, setErrors] = useState<{ nombre?: string; cupoMaximo?: string }>({});
 
   // Estados para usuarios
-  const [usuarios, setUsuarios] = useState(usuariosData)
+  const [usuarios, setUsuarios] = useState<any[]>([])
   const [editingUsuario, setEditingUsuario] = useState<number | null>(null)
   const [newUsuario, setNewUsuario] = useState({ usuario: "", rol: "" })
   const [showNewUsuarioForm, setShowNewUsuarioForm] = useState(false)
@@ -139,15 +148,6 @@ export default function Mantenimiento() {
       .then((data) => setCarreras(data.map(mapCarreraFromApi)))
       .catch((err) => console.error("Error cargando carreras:", err));
   }, []);
-
-  // Mapper para usuarios del backend -> frontend
-  const mapUsuarioFromApi = (u: any) => ({
-    id: u.id,
-    usuario: u.nombre_usuario,
-    email: u.correo,
-    rol: u.rol,
-    activo: u.activo,
-  });
 
   // Cargar usuarios desde backend
   useEffect(() => {
