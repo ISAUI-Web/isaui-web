@@ -27,20 +27,7 @@ import carrusel3 from "../assets/carrusel3.jpg"
 import carrusel4 from "../assets/carrusel4.jpg"
 import carrusel5 from "../assets/carrusel5.jpg"
 import { useNavigate } from "react-router-dom"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogClose,
-} from "../components/ui/dialog"
-
-import { Button } from "../components/ui/button"
-import { Label } from "../components/ui/label"
-import { Input } from "../components/ui/input"
+import ChangePasswordDialog from '../components/ChangePasswordDialog';
 
 const carouselImages = [
   carrusel1,
@@ -80,6 +67,7 @@ export default function AdminMain() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [activeSection, setActiveSection] = useState("inicio")
+  const [dialogOpen, setDialogOpen] = useState(false)
   const navigate = useNavigate()
   
   const toggleMenu = () => {
@@ -188,48 +176,26 @@ const handleMenuItemClick = (itemId: string) => {
             if (item.id === 'cambio-contrasena') {
               return (
                 <div key={item.id}>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <button
-                        className={`w-full flex items-center px-6 py-4 text-white hover:bg-[#31546D] transition-colors ${
-                          activeSection === item.id ? "bg-[#31546D]" : ""
-                        }`}
-                        onClick={() => { setIsMenuOpen(false); }}
-                      >
-                        <IconComponent className="w-5 h-5 mr-4" />
-                        <span className="text-sm font-medium tracking-wide">{item.label}</span>
-                      </button>
-                    </DialogTrigger>
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      setDialogOpen(true);
+                    }}
+                    className={`w-full flex items-center px-6 py-4 text-white hover:bg-[#31546D] transition-colors ${
+                      activeSection === item.id ? 'bg-[#31546D]' : ''
+                    }`}
+                  >
+                    <IconComponent className="w-5 h-5 mr-4" />
+                    <span className="text-sm font-medium tracking-wide">{item.label}</span>
+                  </button>
 
-                    <form onSubmit={(e) => { e.preventDefault(); alert('Contraseña cambiada (simulado)'); }}>
-                      <DialogContent className="sm:max-w-[425px]">
-                        <DialogHeader>
-                          <DialogTitle>Cambio de contraseña</DialogTitle>
-                          <DialogDescription>
-                            Ingresa la nueva contraseña.
-                          </DialogDescription>
-                        </DialogHeader>
-
-                        <div className="grid gap-4">
-                          <div className="grid gap-3">
-                            <Label htmlFor="new-password">Nueva contraseña</Label>
-                            <Input id="new-password" name="newPassword" type="password" />
-                          </div>
-                          <div className="grid gap-3">
-                            <Label htmlFor="confirm-password">Confirmar nueva contraseña</Label>
-                            <Input id="confirm-password" name="confirmPassword" type="password" />
-                          </div>
-                        </div>
-
-                        <DialogFooter>
-                          <DialogClose asChild>
-                            <Button variant="outline">Cancelar</Button>
-                          </DialogClose>
-                          <Button type="submit">Cambiar</Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </form>
-                  </Dialog>
+                  <ChangePasswordDialog
+                    open={dialogOpen}
+                    onOpenChange={(open) => {
+                      setDialogOpen(open);
+                      if (!open) setActiveSection('');
+                    }}
+                  />
                 </div>
               );
             }

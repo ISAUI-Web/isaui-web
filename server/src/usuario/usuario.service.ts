@@ -6,7 +6,7 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
-import { ChangePasswordDto } from './dto/update-contraseña.dto';
+import { ChangePasswordDto } from './dto/update-contrasena.dto';
 
 @Injectable()
 export class UsuarioService implements OnModuleInit {
@@ -43,14 +43,14 @@ export class UsuarioService implements OnModuleInit {
   }
 
   // 🔑 LOGIN
-  async validarUsuario(nombre_usuario: string, contraseña: string) {
+  async validarUsuario(nombre_usuario: string, contrasena: string) {
     const usuario = await this.usuarioRepo.findOne({
       where: { nombre_usuario },
     });
     if (!usuario)
       throw new UnauthorizedException('Usuario o contraseña incorrectos');
 
-    const esValida = await bcrypt.compare(contraseña, usuario.contraseña_hash);
+    const esValida = await bcrypt.compare(contrasena, usuario.contraseña_hash);
     if (!esValida)
       throw new UnauthorizedException('Usuario o contraseña incorrectos');
 
@@ -94,9 +94,9 @@ export class UsuarioService implements OnModuleInit {
     usuario.rol = data.rol;
 
     // Contraseña por defecto "1234" hasheada
-    const contraseñaPorDefecto = "1234";
+    const contrasenaPorDefecto = "1234";
     const salt = await bcrypt.genSalt(10);
-    usuario.contraseña_hash = await bcrypt.hash(contraseñaPorDefecto, salt);
+    usuario.contraseña_hash = await bcrypt.hash(contrasenaPorDefecto, salt);
 
     return this.usuarioRepo.save(usuario);
   }
@@ -131,9 +131,9 @@ export class UsuarioService implements OnModuleInit {
     }
 
     // Reiniciar a "1234"
-    const contraseñaPorDefecto = "1234";
+    const contrasenaPorDefecto = "1234";
     const salt = await bcrypt.genSalt(10);
-    usuario.contraseña_hash = await bcrypt.hash(contraseñaPorDefecto, salt);
+    usuario.contraseña_hash = await bcrypt.hash(contrasenaPorDefecto, salt);
 
     return this.usuarioRepo.save(usuario);
   }
@@ -146,32 +146,52 @@ export class UsuarioService implements OnModuleInit {
   return this.usuarioRepo.save(usuario); // guarda en DB y devuelve el usuario actualizado
 }
 
-  async cambiarContraseña(usuarioId: number, dto: ChangePasswordDto) {
-  const { contraseña_actual, nueva_contraseña, confirmar_nueva_contraseña } = dto;
+  async cambiarContrasena(usuarioId: number, dto: ChangePasswordDto) {
+  console.log('🚀 LLEGÓ AL SERVICE - cambiarContrasena');
+  console.log('usuarioId:', usuarioId);
+  console.log('DTO recibido:', dto);
 
-  // Validar coincidencia
-  if (nueva_contraseña !== confirmar_nueva_contraseña) {
+  const { contrasena_actual, nueva_contrasena, confirmar_nueva_contrasena } = dto;
+
+  console.log('contrasena_actual:', contrasena_actual);
+  console.log('nueva_contrasena:', nueva_contrasena);
+  console.log('confirmar_nueva_contrasena:', confirmar_nueva_contrasena);
+
+  if (nueva_contrasena !== confirmar_nueva_contrasena) {
+    console.log('❌ Las contraseñas no coinciden');
     throw new Error('Las nuevas contraseñas no coinciden');
   }
 
-  // Buscar usuario
+  console.log('🔍 Buscando usuario con ID:', usuarioId);
   const usuario = await this.usuarioRepo.findOne({ where: { id: usuarioId } });
+  
   if (!usuario) {
+    console.log('❌ Usuario no encontrado');
     throw new NotFoundException('Usuario no encontrado');
   }
 
-  // Verificar contraseña actual
-  const esValida = await bcrypt.compare(contraseña_actual, usuario.contraseña_hash);
+  console.log('✅ Usuario encontrado:', usuario.id, usuario.nombre_usuario);
+
+  console.log('🔑 Comparando contraseña actual...');
+  const esValida = await bcrypt.compare(contrasena_actual, usuario.contraseña_hash);
+  
   if (!esValida) {
+    console.log('❌ Contraseña actual incorrecta');
     throw new Error('La contraseña actual es incorrecta');
   }
 
-  // Hashear nueva
-  const salt = await bcrypt.genSalt(10);
-  usuario.contraseña_hash = await bcrypt.hash(nueva_contraseña, salt);
+  console.log('✅ Contraseña actual correcta');
 
-  // Guardar
+  console.log('🔐 Hasheando nueva contraseña...');
+  const salt = await bcrypt.genSalt(10);
+  const nuevoHash = await bcrypt.hash(nueva_contrasena, salt);
+  console.log('Nuevo hash generado');
+
+  usuario.contraseña_hash = nuevoHash;
+  console.log('💾 Guardando en DB...');
+
   await this.usuarioRepo.save(usuario);
+  console.log('✅ Usuario guardado con nueva contraseña');
 
   return { mensaje: 'Contraseña actualizada exitosamente' };
 }
