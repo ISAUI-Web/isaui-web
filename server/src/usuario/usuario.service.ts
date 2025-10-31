@@ -6,6 +6,7 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
+import { ChangePasswordDto } from './dto/update-contraseña.dto';
 
 @Injectable()
 export class UsuarioService implements OnModuleInit {
@@ -143,6 +144,36 @@ export class UsuarioService implements OnModuleInit {
 
   usuario.activo = activo; // asigna directamente lo que viene
   return this.usuarioRepo.save(usuario); // guarda en DB y devuelve el usuario actualizado
+}
+
+  async cambiarContraseña(usuarioId: number, dto: ChangePasswordDto) {
+  const { contraseña_actual, nueva_contraseña, confirmar_nueva_contraseña } = dto;
+
+  // Validar coincidencia
+  if (nueva_contraseña !== confirmar_nueva_contraseña) {
+    throw new Error('Las nuevas contraseñas no coinciden');
+  }
+
+  // Buscar usuario
+  const usuario = await this.usuarioRepo.findOne({ where: { id: usuarioId } });
+  if (!usuario) {
+    throw new NotFoundException('Usuario no encontrado');
+  }
+
+  // Verificar contraseña actual
+  const esValida = await bcrypt.compare(contraseña_actual, usuario.contraseña_hash);
+  if (!esValida) {
+    throw new Error('La contraseña actual es incorrecta');
+  }
+
+  // Hashear nueva
+  const salt = await bcrypt.genSalt(10);
+  usuario.contraseña_hash = await bcrypt.hash(nueva_contraseña, salt);
+
+  // Guardar
+  await this.usuarioRepo.save(usuario);
+
+  return { mensaje: 'Contraseña actualizada exitosamente' };
 }
 
   async remove(id: number): Promise<void> {

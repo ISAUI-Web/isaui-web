@@ -193,9 +193,9 @@ export class EstudianteService {
     // --- FIN DE LA SOLUCIÓN ---
 
     // Si se subieron archivos, los procesamos
-    if (files && Object.keys(files).length > 0) {
-      await this.documentoService.guardarDocumentos(aspirante, files);
-    }
+    // if (files && Object.keys(files).length > 0) {
+    //   await this.documentoService.guardarDocumentos(aspirante, files);
+    // }
 
     // Devolvemos el estudiante actualizado, recargando las relaciones para obtener las nuevas URLs
     return this.findByAspiranteId(aspirante.id);
