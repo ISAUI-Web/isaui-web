@@ -4,6 +4,9 @@ import { LoginUsuarioDto } from './dto/login-usuario.dto';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { Usuario } from './usuario.entity';
+import { Req, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { ChangePasswordDto } from './dto/update-contrasena.dto';
 
 @Controller('usuario')
 export class UsuarioController {
@@ -14,10 +17,19 @@ export class UsuarioController {
   async login(@Body() loginDto: LoginUsuarioDto) {
     return this.usuarioService.validarUsuario(
       loginDto.nombre_usuario,
-      loginDto.contraseña,
+      loginDto.contrasena,
     );
   }
-  
+
+  @Patch('me/cambiar-contrasena')
+  @UseGuards(AuthGuard('jwt'))
+  async cambiarContrasena(
+    @Req() req: any,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    const usuarioId = req.user.sub; // ¡OJO! Es `sub`, no `id`
+    return this.usuarioService.cambiarContrasena(usuarioId, dto);
+  }
   
   // 📌 CRUD
   @Get()

@@ -5,6 +5,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AuthModule } from './auth/auth.module';
 
 // Importar aquí los módulos cuando vayas creando (por ahora no hay ninguno)
 // import { CarreraModule } from './carrera/carrera.module';
@@ -71,6 +72,7 @@ import { ConstanciaModule } from './constancia/constancia.module';
     RequisitoModule,
     ConstanciaModule,
     CloudinaryModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
