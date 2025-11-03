@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import {CustomDialog} from "../components/ui/customDialog"
 import { Card } from "../components/ui/card"
 import { Input } from "../components/ui/input"
 import { Button } from "../components/ui/button"
@@ -91,6 +92,16 @@ export default function AdminMatriculacion() {
   const [profesores, setProfesores] = useState<Profesor[]>([]);
   const [loadingProfesores, setLoadingProfesores] = useState(true);
   const [errorProfesores, setErrorProfesores] = useState<string | null>(null);
+const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
+  const [dialogProps, setDialogProps] = useState<{
+    title?: string
+    description?: string
+    variant?: "info" | "error" | "success" | "confirm"
+    onConfirm?: (() => void) | undefined
+    onCancel?: (() => void) | undefined
+    confirmText?: string
+    cancelText?: string
+  }>({})
 
   // State for Tabs
   const [activeTab, setActiveTab] = useState<"alumnos" | "profesores">("alumnos");
@@ -166,8 +177,14 @@ export default function AdminMatriculacion() {
   const handleLogout = () => {
     localStorage.removeItem("adminRemember")
     localStorage.removeItem("adminUser")
-    alert("¡Sesión cerrada exitosamente!")
-    navigate("/login")
+        setDialogProps({
+      title: "Sesión cerrada",
+      description: "Has cerrado sesión exitosamente.",
+      variant: "success",
+      confirmText: "Entendido",
+      onConfirm: () => navigate("/login")
+    })
+    setIsLogoutDialogOpen(true)
   }
 
   const [expandedSubmenu, setExpandedSubmenu] = useState<string | null>(null);
@@ -213,7 +230,26 @@ const handleMenuItemClick = (itemId: string) => {
   }
 
   const handleDeleteEstudiante = async (id: number, nombre: string, apellido: string) => {
-     if (!confirm(`¿Está seguro de que desea desactivar el legajo de ${nombre} ${apellido}?`)) return;
+  const confirmed = await new Promise<boolean>((resolve) => {
+    setDialogProps({
+      title: "Confirmar desactivación",
+      description: `¿Está seguro de que desea desactivar el legajo de ${nombre} ${apellido}?`,
+      variant: "confirm",
+      confirmText: "Sí, desactivar",
+      cancelText: "Cancelar",
+      onConfirm: () => {
+        resolve(true);
+        setIsLogoutDialogOpen(false);
+      },
+      onCancel: () => {
+        resolve(false);
+        setIsLogoutDialogOpen(false);
+      },
+    });
+    setIsLogoutDialogOpen(true);
+  });
+
+  if (!confirmed) return;
 
   try {
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/estudiante/${id}`, {
@@ -226,7 +262,13 @@ const handleMenuItemClick = (itemId: string) => {
 
      setEstudiantes(prev => prev.filter(e => e.id !== id));
 
-    alert("Legajo desactivado correctamente");
+    setDialogProps({
+      title: "Legajo desactivado",
+      description: "El legajo del aspirante se ha desactivado correctamente.",
+      variant: "success",
+      confirmText: "Entendido",
+    });
+    setIsLogoutDialogOpen(true);
   } catch (error) {
     console.error("Error:", error);
     alert("Error al desactivar el legajo del estudiante");
@@ -234,7 +276,26 @@ const handleMenuItemClick = (itemId: string) => {
   }
   
   const handleDeleteDocente = async (id: number, nombre: string, apellido: string) => {
-  if (!confirm(`¿Está seguro de que desea desactivar el legajo de ${nombre} ${apellido}?`)) return;
+  const confirmed = await new Promise<boolean>((resolve) => {
+    setDialogProps({
+      title: "Confirmar desactivación",
+      description: `¿Está seguro de que desea desactivar el legajo de ${nombre} ${apellido}?`,
+      variant: "confirm",
+      cancelText: "Cancelar",
+      confirmText: "Sí, desactivar",
+      onConfirm: () => {
+        resolve(true);
+        setIsLogoutDialogOpen(false);
+      },
+      onCancel: () => {
+        resolve(false);
+        setIsLogoutDialogOpen(false);
+      },
+    });
+    setIsLogoutDialogOpen(true);
+  });
+
+  if (!confirmed) return;
 
   try {
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/docente/${id}`, {
@@ -248,7 +309,13 @@ const handleMenuItemClick = (itemId: string) => {
     // Actualizamos el estado para removerlo del listado en el frontend
     setProfesores(prev => prev.filter(d => d.id !== id));
 
-    alert("Legajo desactivado correctamente");
+    setDialogProps({
+      title: "Legajo desactivado",
+      description: "El legajo del aspirante se ha desactivado correctamente.",
+      variant: "success",
+      confirmText: "Entendido",
+    });
+    setIsLogoutDialogOpen(true);
   } catch (error) {
     console.error("Error:", error);
     alert("Error al desactivar el legajo del docente");
@@ -547,6 +614,16 @@ const handleMenuItemClick = (itemId: string) => {
   </Tabs>
 </Card>
     </main>
+    <CustomDialog
+    open={isLogoutDialogOpen}
+    onClose={() => setIsLogoutDialogOpen(false)}
+    title={dialogProps.title ?? ""}
+    description={dialogProps.description ?? ""}
+    confirmLabel={dialogProps.confirmText ?? "Entendido"}
+    cancelLabel={dialogProps.cancelText}
+    onConfirm={dialogProps.onConfirm}
+    showCancel={!!dialogProps.onCancel}
+/>
   </div>
   )
 }

@@ -1,15 +1,16 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
-import { Button, buttonVariants } from "../components/ui/button"
+import {CustomDialog} from "../components/ui/customDialog"
+import { Card } from "../components/ui/card"
+import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
-import { ArrowLeft, User, Save, Edit, Eye, X, Camera, Upload, BookOpen, Trash2, Building2, Clock, Calendar, FileText } from "lucide-react"
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import jsPDF from "jspdf";
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
-const abs = (u?: string | null) => (u ? (u.startsWith('http') || u.startsWith('blob:') ? u : `${API_BASE}/${u.startsWith('/') ? u.substring(1) : u}`) : '');
+import { ArrowLeft, User, Save, Edit, Eye, X, Camera, Upload, BookOpen, Trash2 } from "lucide-react"
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
+
+const API_BASE = 'http://localhost:3000';
+const abs = (u?: string | null) => (u ? (u.startsWith('http') ? u : `${API_BASE}${u}`) : '');
 
 // Datos de ejemplo del aspirante
 
@@ -29,7 +30,6 @@ export default function DetalleLegajoProfesor() {
 
   const [activeTab, setActiveTab] = useState("datos")
   const [isEditing, setIsEditing] = useState(false)
-  const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState<any>({
     nombre: '',
     apellido: '',
@@ -45,6 +45,9 @@ export default function DetalleLegajoProfesor() {
     fecha_nacimiento: '',
     ciudad_nacimiento: '',
     provincia_nacimiento: '',
+    carrera: '',
+    estado_preinscripcion: '',
+    estado_matriculacion: '',
     completo_nivel_medio: '',
     anio_ingreso_medio: '',
     anio_egreso_medio: '',
@@ -65,103 +68,57 @@ export default function DetalleLegajoProfesor() {
       dniDorsoUrl: '',
       titulo_secundarioUrl: '',
       titulo_terciarioUrl: '',
-      examen_psicofisicoUrl: '',
-      regimen_de_compatibilidadUrl: '',
+      psicofisicoUrl: '',
     },
   });
+  const [currentStep, setCurrentStep] = useState(1)
+  const totalSteps = 3
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const dniFrenteInputRef = useRef<HTMLInputElement>(null)
+  const dniDorsoInputRef = useRef<HTMLInputElement>(null)
+  const [isUploadingImage, setIsUploadingImage] = useState<"dniFrente" | "dniDorso" | null>(null)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
+  const [dialogProps, setDialogProps] = useState<{
+    title?: string
+    description?: string
+    variant?: "info" | "error" | "success" | "confirm"
+    onConfirm?: (() => void) | undefined
+    onCancel?: (() => void) | undefined
+    confirmText?: string
+    cancelText?: string
+  }>({})
   
-  // Estados para almacenar los archivos (File objects)
+  // Estado para manejar los archivos seleccionados para subir
   const [dniFrenteFile, setDniFrenteFile] = useState<File | null>(null);
   const [dniDorsoFile, setDniDorsoFile] = useState<File | null>(null);
-  const [tituloSecundarioFile, setTituloSecundarioFile] = useState<File | null>(null);
-  const [tituloTerciarioFile, setTituloTerciarioFile] = useState<File | null>(null);
-  const [examenPsicofisicoFile, setExamenPsicofisicoFile] = useState<File | null>(null);
-  const [regimenCompatibilidadFile, setRegimenCompatibilidadFile] = useState<File | null>(null);
-  
-  // Estados para cursos
+
+  // Estado para cursos - datos de ejemplo hardcodeados para que tus compañeros los conecten al backend
   const [cursos, setCursos] = useState<Array<{
-    id: number | string; // Puede ser número (de la BD) o string (nuevo)
+    id: string;
     nombre: string;
     certificadoUrl: string;
     certificadoFile: File | null;
-  }>>([]);
-  
-  const dniFrenteInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
-  const dniDorsoInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
-  const tituloSecundarioInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
-  const tituloTerciarioInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
-  const examenPsicofisicoInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
-  const regimenCompatibilidadInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
-
-  // Mapeo de setters para los archivos
-  const fileSetters: Record<string, React.Dispatch<React.SetStateAction<File | null>>> = {
-    dniFrente: setDniFrenteFile,
-    dniDorso: setDniDorsoFile,
-    titulo_secundario: setTituloSecundarioFile,
-    titulo_terciario: setTituloTerciarioFile,
-    examen_psicofisico: setExamenPsicofisicoFile,
-    regimen_de_compatibilidad: setRegimenCompatibilidadFile,
-  };
-
-  // Generalizado para todos los tipos de documentos
-  const fileInputRefs: Record<string, React.RefObject<HTMLInputElement>> = {
-    dniFrente: dniFrenteInputRef,
-    dniDorso: dniDorsoInputRef,
-    titulo_secundario: tituloSecundarioInputRef,
-    titulo_terciario: tituloTerciarioInputRef,
-    examen_psicofisico: examenPsicofisicoInputRef,
-    regimen_de_compatibilidad: regimenCompatibilidadInputRef,
-  };
-
-  useEffect(() => {
-    const fetchDocente = async () => {
-      if (!id) return;
-      setIsLoading(true);
-      try {
-        const response = await fetch(`${API_BASE}/docente/${id}`);
-        if (!response.ok) {
-          throw new Error('No se pudo cargar el legajo del profesor.');
-        }
-        const data = await response.json();
-
-        // Transformar los datos booleanos a strings para la UI
-        const transformedData = {
-          ...data,
-          completo_nivel_medio: data.completo_nivel_medio ? 'Sí' : 'No',
-          // El backend guarda 'true'/'false' como strings. Los convertimos a 'Sí'/'No'.
-          completo_nivel_superior: data.completo_nivel_superior === 'true' ? 'Sí'
-            : data.completo_nivel_superior === 'false' ? 'No'
-            : data.completo_nivel_superior, // Mantiene 'En curso' si es el caso
-          trabajo: data.trabajo === 'true' ? 'Sí' : 'No',
-          personas_cargo: data.personas_cargo === 'true' ? 'Sí' : 'No',
-        };
-
-        // Mapear los datos del backend al estado del formulario
-        setFormData({ ...transformedData, documentos: data.documentos || {} });
-
-        // Mapear los cursos del backend al estado de cursos del frontend
-        if (data.cursos) {
-          const cursosMapeados = data.cursos.map((curso: any) => ({
-            id: curso.id,
-            nombre: curso.nombre,
-            certificadoUrl: curso.certificado_url || '', // La URL completa ya viene de Cloudinary
-            certificadoFile: null, // No tenemos el archivo al cargar
-          }));
-          setCursos(cursosMapeados);
-        }
-
-      } catch (error) {
-        console.error(error);
-        alert('Error al cargar los datos del profesor.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchDocente();
-  }, [id]);
+  }>>([
+    {
+      id: '1',
+      nombre: 'Matemáticas Avanzadas',
+      certificadoUrl: '',
+      certificadoFile: null,
+    },
+    {
+      id: '2',
+      nombre: 'Física Cuántica',
+      certificadoUrl: '',
+      certificadoFile: null,
+    },
+    {
+      id: '3',
+      nombre: 'Programación en Python',
+      certificadoUrl: '',
+      certificadoFile: null,
+    }
+  ]);
 
   //  VALIDACIÓN UNIFICADA
   // Esta función centraliza toda la lógica de validación, eliminando la duplicación
@@ -280,288 +237,31 @@ export default function DetalleLegajoProfesor() {
       navigate("/legajo");
     }
   
-  const handleSave = async () => {
-    // Validar todas las pestañas antes de enviar
-    const isStep1Valid = validate(formData, 1);
-    const isStep2Valid = validate(formData, 2);
-    const isStep3Valid = validate(formData, 3);
-
-    if (!isStep1Valid || !isStep2Valid || !isStep3Valid) {
-      alert("Por favor, completa todos los campos obligatorios en todas las pestañas antes de guardar.");
+  const handleSave = () => {
+    const step =
+      activeTab === "datos" ? 1 :
+      activeTab === "estudios" ? 2 :
+      activeTab === "laboral" ? 3 :
+      activeTab === "documentacion" ? 4 : 1;
+    if (!validate(formData, step)) {
+      setDialogProps({
+      title: "Errores de validación",
+      description: "Por favor, complete todos los campos requeridos.",
+      variant: "error",
+      confirmText: "Entendido",
+    })
+    setIsLogoutDialogOpen(true)
       return;
     }
-
-    const payload = new FormData();
-
-    // Agregar datos del formulario al payload
-    Object.keys(formData).forEach(key => {
-      if (key !== 'documentos' && key !== 'cursos' && key !== 'id' && key !== 'activo' && formData[key] !== null && formData[key] !== '') {
-        let value = formData[key];
-        if (['completo_nivel_medio', 'completo_nivel_superior', 'trabajo', 'personas_cargo'].includes(key)) {
-            value = value === 'Sí' ? 'true' : (value === 'No' ? 'false' : value);
-        }
-        payload.append(key, value);
-      }
-    });
-
-    // Adjuntar archivos de documentos
-    if (dniFrenteFile) payload.append('dniFrente', dniFrenteFile);
-    if (dniDorsoFile) payload.append('dniDorso', dniDorsoFile);
-    if (tituloSecundarioFile) payload.append('titulo_secundario', tituloSecundarioFile);
-    if (tituloTerciarioFile) payload.append('titulo_terciario', tituloTerciarioFile);
-    if (examenPsicofisicoFile) payload.append('examen_psicofisico', examenPsicofisicoFile);
-    if (regimenCompatibilidadFile) payload.append('regimen_de_compatibilidad', regimenCompatibilidadFile);
-
-    // Adjuntar cursos y sus certificados
-    cursos.forEach((curso, index) => {
-      // Enviamos todos los cursos, nuevos y existentes
-      payload.append('cursos[]', JSON.stringify({ id: curso.id, nombre: curso.nombre }));
-      if (curso.certificadoFile) {
-        payload.append(`cursos[${index}][certificadoFile]`, curso.certificadoFile);
-      }
-    });
-
-    try {
-      const response = await fetch(`${API_BASE}/docente/${id}/update`, {
-        method: 'PATCH',
-        body: payload,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        const errorMessage = Array.isArray(errorData.message) ? errorData.message.join(', ') : errorData.message;
-        throw new Error(errorMessage || 'Error al actualizar el legajo del profesor.');
-      }
-
-      alert('Legajo del profesor actualizado con éxito.');
-      setIsEditing(false);
-      // Opcional: Recargar los datos para mostrar la información actualizada
-      // fetchDocente(); 
-    } catch (error: any) {
-      console.error('Error en la actualización del legajo:', error);
-      alert(`Hubo un problema al actualizar el legajo: ${error.message}`);
-    }
+    setIsEditing(false);
+    setDialogProps({
+      title: "Cambios guardados",
+      description: "Cambios guardados con éxito.",
+      variant: "success",
+      confirmText: "Entendido",
+    })
+    setIsLogoutDialogOpen(true)
   };
-  
-  const handleGeneratePDF = async () => {
-    try {
-      const pdf = new jsPDF()
-
-      const getImageBase64 = async (url: string): Promise<string | null> => {
-        try {
-          const response = await fetch(url)
-          const blob = await response.blob()
-          return new Promise((resolve, reject) => {
-            const reader = new FileReader()
-            reader.onloadend = () => resolve(reader.result as string)
-            reader.onerror = reject
-            reader.readAsDataURL(blob)
-          })
-        } catch (error) {
-          console.error("[v0] Error loading image:", url, error)
-          return null
-        }
-      }
-
-      let yPosition = 20 
-
-      const printDate = new Date().toLocaleDateString("es-AR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      })
-      pdf.setFontSize(9)
-      pdf.setFont("helvetica", "normal")
-      pdf.setTextColor(100, 100, 100)
-      pdf.text(`Fecha de impresión: ${printDate}`, 200, yPosition, { align: "right" })
-      pdf.setTextColor(0, 0, 0)
-      yPosition += 10
-
-      pdf.setFontSize(18)
-      pdf.setFont("helvetica", "bold")
-      pdf.text(`Legajo del Profesor`, 105, yPosition, { align: "center" })
-      yPosition += 8
-
-      pdf.setFontSize(14)
-      pdf.text(`${formData.nombre} ${formData.apellido}`, 105, yPosition, { align: "center" })
-      yPosition += 12
-
-      const leftX = 20
-      const lineHeight = 6
-
-      pdf.setFontSize(12)
-      pdf.setFont("helvetica", "bold")
-      pdf.text("DATOS PERSONALES", leftX, yPosition)
-      yPosition += lineHeight + 2
-
-      pdf.setFontSize(10)
-      pdf.setFont("helvetica", "normal")
-
-      const personalData = [
-        `Nombre: ${formData.nombre || "N/A"}`,
-        `Apellido: ${formData.apellido || "N/A"}`,
-        `Sexo: ${formData.sexo || "N/A"}`,
-        `DNI: ${formData.dni || "N/A"}`,
-        `CUIL/CUIT: ${formData.cuil || "N/A"}`,
-        `Domicilio: ${formData.domicilio || "N/A"}`,
-        `Localidad: ${formData.localidad || "N/A"}`,
-        `Barrio: ${formData.barrio || "N/A"}`,
-        `Código Postal: ${formData.codigo_postal || "N/A"}`,
-        `Teléfono: ${formData.telefono || "N/A"}`,
-        `Email: ${formData.email || "N/A"}`,
-        `Fecha de Nacimiento: ${formData.fecha_nacimiento || "N/A"}`,
-        `Ciudad de Nacimiento: ${formData.ciudad_nacimiento || "N/A"}`,
-        `Provincia: ${formData.provincia_nacimiento || "N/A"}`,
-      ]
-
-      personalData.forEach((line) => {
-        pdf.text(line, leftX, yPosition)
-        yPosition += lineHeight
-      })
-
-      yPosition += 5
-
-      pdf.setFontSize(12)
-      pdf.setFont("helvetica", "bold")
-      pdf.text("ESTUDIOS", leftX, yPosition)
-      yPosition += lineHeight + 2
-
-      pdf.setFontSize(10)
-      pdf.setFont("helvetica", "normal")
-
-      const educationData = [`Nivel Medio: ${formData.completo_nivel_medio || "N/A"}`]
-
-      if (formData.completo_nivel_medio === "Sí") {
-        educationData.push(
-          `Año Ingreso: ${formData.anio_ingreso_medio || "N/A"}`,
-          `Año Egreso: ${formData.anio_egreso_medio || "N/A"}`,
-          `Provincia: ${formData.provincia_medio || "N/A"}`,
-          `Título: ${formData.titulo_medio || "N/A"}`,
-        )
-      }
-
-      educationData.push(`Nivel Superior: ${formData.completo_nivel_superior || "N/A"}`)
-
-      if (formData.completo_nivel_superior === "Sí" || formData.completo_nivel_superior === "En curso") {
-        educationData.push(
-          `Carrera: ${formData.carrera_superior || "N/A"}`,
-          `Institución: ${formData.institucion_superior || "N/A"}`,
-          `Provincia: ${formData.provincia_superior || "N/A"}`,
-          `Año Ingreso: ${formData.anio_ingreso_superior || "N/A"}`,
-        )
-        if (formData.completo_nivel_superior === "Sí") {
-          educationData.push(`Año Egreso: ${formData.anio_egreso_superior || "N/A"}`)
-        }
-      }
-
-      educationData.forEach((line) => {
-        pdf.text(line, leftX, yPosition)
-        yPosition += lineHeight
-      })
-
-      yPosition += 5
-
-      pdf.setFontSize(12)
-      pdf.setFont("helvetica", "bold")
-      pdf.text("SITUACIÓN LABORAL", leftX, yPosition)
-      yPosition += lineHeight + 2
-
-      pdf.setFontSize(10)
-      pdf.setFont("helvetica", "normal")
-
-      const workData = [`Trabaja: ${formData.trabajo || "N/A"}`]
-
-      if (formData.trabajo === "Sí") {
-        workData.push(
-          `Horas Diarias: ${formData.horas_diarias || "N/A"}`,
-          `Descripción: ${formData.descripcion_trabajo || "N/A"}`,
-        )
-      }
-
-      workData.push(`Personas a Cargo: ${formData.personas_cargo || "N/A"}`)
-
-      workData.forEach((line) => {
-        pdf.text(line, leftX, yPosition)
-        yPosition += lineHeight
-      })
-
-      const documents = [
-        { url: formData.documentos?.dniFrenteUrl, title: "DNI - Frente" },
-        { url: formData.documentos?.dniDorsoUrl, title: "DNI - Dorso" },
-        { url: formData.documentos?.titulo_secundarioUrl, title: "Título Nivel Secundario" },
-        { url: formData.documentos?.titulo_terciarioUrl, title: "Título Nivel Terciario/Superior" },
-        { url: formData.documentos?.examen_psicofisicoUrl, title: "Examen Psicofísico" },
-        { url: formData.documentos?.regimen_de_compatibilidadUrl, title: "Régimen de Compatibilidad" },
-      ].filter((doc) => doc.url)
-
-      cursos.forEach((curso) => {
-        if (curso.certificadoUrl) {
-          documents.push({
-            url: curso.certificadoUrl,
-            title: `Curso: ${curso.nombre}`,
-          })
-        }
-      })
-
-      if (documents.length > 0) {
-        pdf.addPage()
-        yPosition = 20
-
-        pdf.setFontSize(12)
-        pdf.setFont("helvetica", "bold")
-        pdf.text("DOCUMENTACIÓN Y CURSOS", 20, yPosition)
-        yPosition += 10
-
-        for (let i = 0; i < documents.length; i += 2) {
-          const doc1 = documents[i]
-          const doc2 = documents[i + 1]
-
-          if (i > 0) {
-            pdf.addPage()
-            yPosition = 20
-          }
-
-          const fullUrl1 = abs(doc1.url)
-          const base64_1 = await getImageBase64(fullUrl1)
-
-          if (base64_1) {
-            pdf.setFontSize(11)
-            pdf.setFont("helvetica", "bold")
-            pdf.text(doc1.title, 20, yPosition)
-            yPosition += 7
-
-            const imgWidth = 170
-            const imgHeight = 110
-            pdf.addImage(base64_1, "JPEG", 20, yPosition, imgWidth, imgHeight)
-            yPosition += imgHeight + 15
-          }
-
-          if (doc2) {
-            const fullUrl2 = abs(doc2.url)
-            const base64_2 = await getImageBase64(fullUrl2)
-
-            if (base64_2) {
-              pdf.setFontSize(11)
-              pdf.setFont("helvetica", "bold")
-              pdf.text(doc2.title, 20, yPosition)
-              yPosition += 7
-
-              const imgWidth = 170
-              const imgHeight = 110
-              pdf.addImage(base64_2, "JPEG", 20, yPosition, imgWidth, imgHeight)
-            }
-          }
-        }
-      }
-
-      pdf.save(`Legajo_Profesor_${formData.apellido}_${formData.nombre}_${formData.dni}.pdf`)
-
-      console.log("[v0] PDF Generado correctamente")
-    } catch (error: any) {
-      console.error("[v0] Error generando PDF:", error)
-      alert(`Hubo un error al generar el PDF: ${error.message}`)
-    }
-  }
 
   const handleEdit = () => {
     setIsEditing(true)
@@ -571,22 +271,24 @@ export default function DetalleLegajoProfesor() {
     if (imageUrl) {
       setSelectedImage(imageUrl)
     }
-  };
+  }
 
   const handleFileInputChange = (
     event: React.ChangeEvent<HTMLInputElement>,
-    documentType: string,
+    documentType: "dniFrente" | "dniDorso",
   ) => {
     const file = event.target.files?.[0]
     if (file) {
-      // Guardar el objeto File en su estado
-      const setter = fileSetters[documentType];
-      if (setter) setter(file);
-
+      // Guardamos el archivo en el estado correspondiente
+      if (documentType === 'dniFrente') {
+        setDniFrenteFile(file);
+      } else {
+        setDniDorsoFile(file);
+      }
       // Mostramos una vista previa local de la imagen seleccionada
       const previewUrl = URL.createObjectURL(file);
-      const urlKey = `${documentType}Url`;
-      const nameKey = `${documentType}Nombre`;
+      const urlKey = documentType === 'dniFrente' ? 'dniFrenteUrl' : 'dniDorsoUrl';
+      const nameKey = documentType === 'dniFrente' ? 'dniFrenteNombre' : 'dniDorsoNombre';
 
       setFormData((prev: any) => ({
         ...prev,
@@ -595,7 +297,13 @@ export default function DetalleLegajoProfesor() {
     }
   }
 
-  const triggerFileInput = (documentType: string) => fileInputRefs[documentType]?.current?.click();
+  const triggerFileInput = (documentType: "dniFrente" | "dniDorso") => {
+    if (documentType === "dniFrente") {
+      dniFrenteInputRef.current?.click()
+    } else {
+      dniDorsoInputRef.current?.click()
+    }
+  }
 
   const handleInputChange = (field: string, value: string) => {
     // Calcula el nuevo estado antes de setearlo
@@ -643,17 +351,6 @@ export default function DetalleLegajoProfesor() {
 
   const fromAspirantes = location.state?.from === "/aspirantes";
 const fromMatriculacion = location.state?.from === "/matriculacion";
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#1F6680] flex items-center justify-center">
-        <div className="text-white text-center">
-          <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-xl">Cargando datos del legajo...</p>
-        </div>
-      </div>
-    );
-  }
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -846,6 +543,48 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                 <div className="text-blue-600 font-medium">{formData.provincia_nacimiento}</div>
               )}
               {errors.provincia_nacimiento && <div className="text-red-500 text-xs mt-1">{errors.provincia_nacimiento}</div>}
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-700 mb-1 block">CARRERA</Label>
+              {isEditing ? (
+                <Input
+                  value={formData.carrera || ""}
+                  readOnly
+                  className="w-full bg-gray-100 cursor-not-allowed"
+                />
+              ) : (
+                <div className="text-blue-600 font-medium">{formData.carrera}</div>
+              )}
+              {errors.carrera && <div className="text-red-500 text-xs mt-1">{errors.carrera}</div>}
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-700 mb-1 block">ESTADO DE PREINSCRIPCIÓN</Label>
+              {isEditing ? (
+                <select
+                  value={formData.estado_preinscripcion || "pendiente"}
+                  onChange={(e) => handleInputChange("estado_preinscripcion", e.target.value)}
+                  className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
+                >
+                  <option value="pendiente">Pendiente</option>
+                  <option value="en espera">En Espera</option>
+                  <option value="confirmado">Confirmado</option>
+                  <option value="rechazado">Rechazado</option>
+                </select>
+              ) : (
+                <div className="text-blue-600 font-medium capitalize">{formData.estado_preinscripcion}</div>
+              )}
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-700 mb-1 block">ESTADO DE MATRICULACIÓN</Label>
+              {isEditing ? (
+                <Input
+                  value={formData.estado_matriculacion || ""}
+                  onChange={(e) => handleInputChange("estado_matriculacion", e.target.value)}
+                  className="w-full"
+                />
+              ) : (
+                <div className="text-blue-600 font-medium">{formData.estado_matriculacion}</div>
+              )}
             </div>
 
           </div>
@@ -1084,95 +823,313 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
           <div className="text-gray-500 text-center py-8 col-span-2">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Documentos del Profesor</h3>
             {/* Inputs ocultos para subir archivos */}
-            <input ref={dniFrenteInputRef} type="file" accept="image/*" onChange={e => handleFileInputChange(e, "dniFrente")} className="hidden" />
-            <input ref={dniDorsoInputRef} type="file" accept="image/*" onChange={e => handleFileInputChange(e, "dniDorso")} className="hidden" />
-            <input ref={tituloSecundarioInputRef} type="file" accept="image/*,application/pdf" onChange={e => handleFileInputChange(e, "titulo_secundario")} className="hidden" />
-            <input ref={tituloTerciarioInputRef} type="file" accept="image/*,application/pdf" onChange={e => handleFileInputChange(e, "titulo_terciario")} className="hidden" />
-            <input ref={examenPsicofisicoInputRef} type="file" accept="image/*,application/pdf" onChange={e => handleFileInputChange(e, "examen_psicofisico")} className="hidden" />
-            <input ref={regimenCompatibilidadInputRef} type="file" accept="image/*,application/pdf" onChange={e => handleFileInputChange(e, "regimen_de_compatibilidad")} className="hidden" />
+            <input
+              ref={dniFrenteInputRef}
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleFileInputChange(e, "dniFrente")}
+              className="hidden"
+            />
+            <input
+              ref={dniDorsoInputRef}
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleFileInputChange(e, "dniDorso")}
+              className="hidden"
+            />
             <div className={`grid grid-cols-1 md:grid-cols-2 gap-6`}>
-              {Object.keys(fileInputRefs).map((docType) => {
-                const docUrl = formData.documentos?.[`${docType}Url`];
-                const docFile = 
-                  docType === 'dniFrente' ? dniFrenteFile :
-                  docType === 'dniDorso' ? dniDorsoFile :
-                  docType === 'titulo_secundario' ? tituloSecundarioFile :
-                  docType === 'titulo_terciario' ? tituloTerciarioFile :
-                  docType === 'regimen_de_compatibilidad' ? regimenCompatibilidadFile :
-                  examenPsicofisicoFile;
-
-
-                const docTitle = 
-                  docType === 'dniFrente' ? 'DNI - Frente' :
-                  docType === 'dniDorso' ? 'DNI - Dorso' :
-                  docType === 'titulo_secundario' ? 'Título Nivel Secundario' :
-                  docType === 'titulo_terciario' ? 'Título Nivel Terciario/Superior' :
-                  docType === 'regimen_de_compatibilidad' ? 'Régimen de Compatibilidad' :
-                  'Examen Psicofísico';
-
-                return (
-                  <div key={docType} className="space-y-3">
-                    <h4 className="text-md font-medium text-gray-700">{docTitle}</h4>
-                    <div className="relative group">
-                      {docUrl ? (
-                        <>
-                          <img
-                            src={abs(docUrl)} // Usar abs para construir la URL
-                            alt={docTitle}
-                            className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                            onClick={() => !isEditing && docUrl && handleViewImage(abs(docUrl))}
-                          />
-                          {/* Overlay para modo vista */}
-                          {!isEditing && (
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
-                              <Button
-                                variant="outline"
-                                onClick={() => handleViewImage(abs(docUrl))}
-                                className="bg-white/90 hover:bg-white text-gray-800 p-2 rounded-full"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        // Placeholder si no hay imagen
-                        <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
-                          <div className="text-center text-gray-500">
-                            <Camera className="w-8 h-8 mx-auto mb-2" />
-                            <p className="text-sm">No hay imagen disponible</p>
-                          </div>
-                        </div>
-                      )}
+              {/* DNI Frente */}
+              <div className="space-y-3">
+                <h4 className="text-md font-medium text-gray-700">DNI - Frente</h4>
+                <div className="relative group">
+                  {formData.documentos?.dniFrenteUrl ? (
+                    <img
+                      src={abs(formData.documentos.dniFrenteUrl) || '/placeholder.svg'}
+                      alt="DNI Frente"
+                      className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                      onClick={() => !isEditing && formData.documentos?.dniFrenteUrl && handleViewImage(abs(formData.documentos.dniFrenteUrl))}
+                    />
+                  ) : (
+                    <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                      <div className="text-center text-gray-500">
+                        <Camera className="w-8 h-8 mx-auto mb-2" />
+                        <p className="text-sm">No hay imagen disponible</p>
+                      </div>
                     </div>
+                  )}
 
-                    {docFile && (
-                      <div className="text-sm text-gray-600 truncate mt-1" title={docFile.name}>
-                        {docFile.name}
+                  {/* Mostrar nombre del archivo si existe */}
+                  {formData.documentos?.dniFrenteUrl && (
+                    <p className="text-sm text-gray-700 truncate mt-1">
+                      {formData.documentos.dniFrenteUrl.split('/').pop()}
+                    </p>
+                  )}
+
+                  {/* Overlay para modo edición */}
+                  {isEditing && (
+                    <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center">
+                      <Button
+                        onClick={() => triggerFileInput("dniFrente")}
+                        disabled={isUploadingImage === "dniFrente"}
+                        className="bg-white/90 hover:bg-white text-gray-800 px-4 py-2 rounded-lg flex items-center gap-2"
+                      >
+                        {isUploadingImage === "dniFrente" ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
+                            Subiendo...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4" />
+                            {formData.documentos?.dniFrenteUrl ? "Cambiar imagen" : "Subir imagen"}
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Overlay para modo vista */}
+                  {!isEditing && formData.documentos?.dniFrenteUrl && (
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <Button
+                        onClick={() => handleViewImage(abs(formData.documentos.dniFrenteUrl))}
+                        className="bg-white/90 hover:bg-white text-gray-800 p-2 rounded-full"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  {isEditing ? (
+                    <Button
+                      onClick={() => triggerFileInput("dniFrente")}
+                      disabled={isUploadingImage === "dniFrente"}
+                      className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
+                    >
+                      <Camera className="w-4 h-4 mr-2" />
+                      {isUploadingImage === "dniFrente"
+                        ? "Subiendo..."
+                        : formData.documentos?.dniFrenteUrl
+                          ? "Cambiar"
+                          : "Subir"}
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => window.open(abs(formData.documentos.dniFrenteUrl), "_blank")}
+                      variant="outline"
+                      className="flex-1 text-sm"
+                      disabled={!formData.documentos?.dniFrenteUrl}
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Ver
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* DNI Dorso */}
+              <div className="space-y-3">
+                <h4 className="text-md font-medium text-gray-700">DNI - Dorso</h4>
+                <div className="relative group">
+                  {formData.documentos?.dniDorsoUrl ? (
+                    <img
+                      src={abs(formData.documentos.dniDorsoUrl) || '/placeholder.svg'}
+                      alt="DNI Dorso"
+                      className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                      onClick={() => !isEditing && formData.documentos?.dniDorsoUrl && handleViewImage(abs(formData.documentos.dniDorsoUrl))}
+                    />
+                  ) : (
+                    <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                      <div className="text-center text-gray-500">
+                        <Camera className="w-8 h-8 mx-auto mb-2" />
+                        <p className="text-sm">No hay imagen disponible</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {formData.documentos?.dniDorsoUrl && (
+                    <p className="text-sm text-gray-700 truncate">
+                      {formData.documentos.dniDorsoUrl.split('/').pop()}
+                    </p>
+                  )}
+
+                  {/* Overlay para modo edición */}
+                  {isEditing && (
+                    <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center">
+                      <Button
+                        onClick={() => triggerFileInput("dniDorso")}
+                        disabled={isUploadingImage === "dniDorso"}
+                        className="bg-white/90 hover:bg-white text-gray-800 px-4 py-2 rounded-lg flex items-center gap-2"
+                      >
+                        {isUploadingImage === "dniDorso" ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
+                            Subiendo...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4" />
+                            {formData.documentos?.dniDorsoUrl ? "Cambiar imagen" : "Subir imagen"}
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Overlay para modo vista */}
+                  {!isEditing && formData.documentos?.dniDorsoUrl && (
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <Button
+                        onClick={() => handleViewImage(abs(formData.documentos.dniDorsoUrl))}
+                        className="bg-white/90 hover:bg-white text-gray-800 p-2 rounded-full"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  {isEditing ? (
+                    <Button
+                      onClick={() => triggerFileInput("dniDorso")}
+                      disabled={isUploadingImage === "dniDorso"}
+                      className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
+                    >
+                      <Camera className="w-4 h-4 mr-2" />
+                      {isUploadingImage === "dniDorso"
+                        ? "Subiendo..."
+                        : formData.documentos?.dniDorsoUrl
+                          ? "Cambiar"
+                          : "Subir"}
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => window.open(abs(formData.documentos.dniDorsoUrl), "_blank")}
+                      variant="outline"
+                      className="flex-1 text-sm"
+                      disabled={!formData.documentos?.dniDorsoUrl}
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Ver
+                    </Button>
+
+                  )}
+                </div>
+              </div>
+                {/* Título nivel secundario */}
+            <div className="space-y-3">
+              <h4 className="text-md font-medium text-gray-700">Título nivel secundario</h4>
+                  <div className="relative group">
+                    {formData.documentos?.titulo_secundarioUrl ? (
+                      <img
+                        src={abs(formData.documentos.titulo_secundarioUrl)}
+                        alt="Título nivel secundario"
+                        className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                        onClick={() => handleViewImage(abs(formData.documentos.titulo_secundarioUrl))}
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                        <div className="text-center text-gray-500">
+                          <Camera className="w-8 h-8 mx-auto mb-2" />
+                          <p className="text-sm">No hay imagen disponible</p>
+                        </div>
                       </div>
                     )}
-
-                    <div className="flex gap-2">
-                      {!isEditing ? (
-                        <Button
-                          onClick={() => docUrl && window.open(abs(docUrl), "_blank")}
-                          variant="outline"
-                          className="flex-1 text-sm"
-                          disabled={!docUrl}
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          Ver
-                        </Button>
-                      ) : (
-                        <Button onClick={() => triggerFileInput(docType)} className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white">
-                          <Upload className="w-4 h-4 mr-2" />
-                          {docUrl ? "Cambiar" : "Subir"}
-                        </Button>
-                      )}
-                    </div>
                   </div>
-                );
-              })}
+                  {formData.documentos?.titulo_secundarioUrl && (
+                    <p className="text-sm text-gray-700 truncate mt-1">
+                      {formData.documentos.titulo_secundarioUrl.split('/').pop()}
+                    </p>
+                  )}
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => window.open(abs(formData.documentos.titulo_secundarioUrl), "_blank")}
+                      variant="outline"
+                      className="flex-1 text-sm"
+                      disabled={!formData.documentos?.titulo_secundarioUrl}
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Ver
+                    </Button>
+                  </div>
+            </div>
+                {/* titulo nivel terciario */}
+                <div className="space-y-3">
+              <h4 className="text-md font-medium text-gray-700">Título nivel terciario</h4>
+                  <div className="relative group">
+                    {formData.documentos?.titulo_terciarioUrl ? (
+                      <img
+                        src={abs(formData.documentos.titulo_terciarioUrl)}
+                        alt="Título nivel terciario"
+                        className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                        onClick={() => handleViewImage(abs(formData.documentos.titulo_terciarioUrl))}
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                        <div className="text-center text-gray-500">
+                          <Camera className="w-8 h-8 mx-auto mb-2" />
+                          <p className="text-sm">No hay imagen disponible</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {formData.documentos?.titulo_terciarioUrl && (
+                    <p className="text-sm text-gray-700 truncate mt-1">
+                      {formData.documentos.titulo_terciarioUrl.split('/').pop()}
+                    </p>
+                  )}
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => window.open(abs(formData.documentos.titulo_terciarioUrl), "_blank")}
+                      variant="outline"
+                      className="flex-1 text-sm"
+                      disabled={!formData.documentos?.titulo_terciarioUrl}
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Ver
+                    </Button>
+                  </div>
+            </div>
+                {/* examen psicofisico */}
+                <div className="space-y-3">
+              <h4 className="text-md font-medium text-gray-700">Examen psicofísico</h4>
+                  <div className="relative group">
+                    {formData.documentos?.examen_psicofisicoUrl ? (
+                      <img
+                        src={abs(formData.documentos.examen_psicofisicoUrl)}
+                        alt="Examen psicofísico"
+                        className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                        onClick={() => handleViewImage(abs(formData.documentos.examen_psicofisicoUrl))}
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                        <div className="text-center text-gray-500">
+                          <Camera className="w-8 h-8 mx-auto mb-2" />
+                          <p className="text-sm">No hay imagen disponible</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {formData.documentos?.examen_psicofisicoUrl && (
+                    <p className="text-sm text-gray-700 truncate mt-1">
+                      {formData.documentos.examen_psicofisicoUrl.split('/').pop()}
+                    </p>
+                  )}
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => window.open(abs(formData.documentos.examen_psicofisicoUrl), "_blank")}
+                      variant="outline"
+                      className="flex-1 text-sm"
+                      disabled={!formData.documentos?.examen_psicofisicoUrl}
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Ver
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           );
@@ -1207,10 +1164,10 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                   <div className="relative group">
                     {curso.certificadoUrl ? (
                       <img
-                        src={abs(curso.certificadoUrl)}
+                        src={curso.certificadoUrl}
                         alt={curso.nombre}
                         className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                        onClick={() => !isEditing && handleViewImage(abs(curso.certificadoUrl))}
+                        onClick={() => !isEditing && handleViewImage(curso.certificadoUrl)}
                       />
                     ) : (
                       <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
@@ -1223,7 +1180,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
 
                     {/* Overlay para modo edición */}
                     {isEditing && (
-                      <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center">
                         <Button
                           onClick={() => {
                             const input = document.createElement('input');
@@ -1254,8 +1211,8 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                     {/* Overlay para modo vista */}
                     {!isEditing && curso.certificadoUrl && (
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
-                        <Button variant="outline"
-                          onClick={() => handleViewImage(abs(curso.certificadoUrl))}
+                        <Button
+                          onClick={() => handleViewImage(curso.certificadoUrl)}
                           className="bg-white/90 hover:bg-white text-gray-800 p-2 rounded-full"
                         >
                           <Eye className="w-4 h-4" />
@@ -1311,7 +1268,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       </>
                     ) : (
                       <Button
-                        onClick={() => curso.certificadoUrl && window.open(abs(curso.certificadoUrl), "_blank")}
+                        onClick={() => curso.certificadoUrl && window.open(curso.certificadoUrl, "_blank")}
                         variant="outline"
                         className="flex-1 text-sm"
                         disabled={!curso.certificadoUrl}
@@ -1432,19 +1389,22 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                      <Edit className="w-4 h-4" />
                      EDITAR
                    </Button>
-		   <Button
-                    onClick={handleGeneratePDF}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg flex items-center gap-2"
-                  >
-                    <FileText className="w-4 h-4" />
-                    GENERAR PDF
-                  </Button>
                  </>
                 )}
             </div>
           </div>
         </Card>
       </div>
+            <CustomDialog
+    open={isLogoutDialogOpen}
+    onClose={() => setIsLogoutDialogOpen(false)}
+    title={dialogProps.title ?? ""}
+    description={dialogProps.description ?? ""}
+    confirmLabel={dialogProps.confirmText ?? "Entendido"}
+    cancelLabel={dialogProps.cancelText}
+    onConfirm={dialogProps.onConfirm}
+    showCancel={!!dialogProps.onCancel}
+/>
     </div>
   )
 }

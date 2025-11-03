@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import {CustomDialog} from "../components/ui/customDialog"
 import { Card } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
@@ -38,6 +39,16 @@ export default function DetalleAspirante() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isUploadingImage, setIsUploadingImage] = useState<string | null>(null)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
+  const [dialogProps, setDialogProps] = useState<{
+    title?: string
+    description?: string
+    variant?: "info" | "error" | "success" | "confirm"
+    onConfirm?: (() => void) | undefined
+    onCancel?: (() => void) | undefined
+    confirmText?: string
+    cancelText?: string
+  }>({})
   
   // Estado para manejar los archivos seleccionados para subir
   const [dniFrenteFile, setDniFrenteFile] = useState<File | null>(null);
@@ -254,7 +265,13 @@ export default function DetalleAspirante() {
     activeTab === "documentacion" ? 4 : 1;
   // Usamos la nueva función de validación unificada, pasándole el estado actual del formulario
   if (!validate(formData, step)) {
-    alert("Por favor, corrige los errores antes de guardar.");
+    setDialogProps({
+      title: "Errores de validación",
+      description: "Por favor, complete todos los campos requeridos.",
+      variant: "error",
+      confirmText: "Entendido",
+    })
+    setIsLogoutDialogOpen(true)
     return;
   }
 
@@ -329,7 +346,13 @@ export default function DetalleAspirante() {
       }
     });
     setIsEditing(false);
-    alert('Cambios guardados con éxito');
+    setDialogProps({
+      title: "Cambios guardados",
+      description: "Cambios guardados con éxito.",
+      variant: "success",
+      confirmText: "Entendido",
+    })
+    setIsLogoutDialogOpen(true)
   } catch (error: any) {
     console.error('Error guardando aspirante:', error);
     alert(`Hubo un error al guardar los cambios: ${error.message}`);
@@ -1650,6 +1673,16 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
           </div>
         </Card>
       </div>
+      <CustomDialog
+    open={isLogoutDialogOpen}
+    onClose={() => setIsLogoutDialogOpen(false)}
+    title={dialogProps.title ?? ""}
+    description={dialogProps.description ?? ""}
+    confirmLabel={dialogProps.confirmText ?? "Entendido"}
+    cancelLabel={dialogProps.cancelText}
+    onConfirm={dialogProps.onConfirm}
+    showCancel={!!dialogProps.onCancel}
+/>
     </div>
   )
 }

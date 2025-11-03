@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Card } from "../components/ui/card"
+import {CustomDialog} from "../components/ui/customDialog"
 import {
   Menu,
   X,
@@ -69,6 +70,16 @@ export default function AdminMain() {
   const [activeSection, setActiveSection] = useState("inicio")
   const [dialogOpen, setDialogOpen] = useState(false)
   const navigate = useNavigate()
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
+  const [dialogProps, setDialogProps] = useState<{
+    title?: string
+    description?: string
+    variant?: "info" | "error" | "success" | "confirm"
+    onConfirm?: (() => void) | undefined
+    onCancel?: (() => void) | undefined
+    confirmText?: string
+    cancelText?: string
+  }>({})
   
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
@@ -77,8 +88,14 @@ export default function AdminMain() {
   const handleLogout = () => {
     localStorage.removeItem("adminRemember")
     localStorage.removeItem("adminUser")
-    alert("¡Sesión cerrada exitosamente!")
-    navigate("/login")
+    setDialogProps({
+      title: "Sesión cerrada",
+      description: "Has cerrado sesión exitosamente.",
+      variant: "success",
+      confirmText: "Entendido",
+      onConfirm: () => navigate("/login")
+    })
+    setIsLogoutDialogOpen(true)
   }
 
   const nextImage = () => {
@@ -298,6 +315,16 @@ const handleMenuItemClick = (itemId: string) => {
           </Card>
         </div>
       </main>
+      <CustomDialog
+    open={isLogoutDialogOpen}
+    onClose={() => setIsLogoutDialogOpen(false)}
+    title={dialogProps.title ?? ""}
+    description={dialogProps.description ?? ""}
+    confirmLabel={dialogProps.confirmText ?? "Entendido"}
+    cancelLabel={dialogProps.cancelText}
+    onConfirm={dialogProps.onConfirm}
+    showCancel={!!dialogProps.onCancel}
+/>
     </div>
   )
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import {CustomDialog} from "../components/ui/customDialog"
 import { Card } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
@@ -29,6 +30,16 @@ export default function CrearLegajoAlumno() {
   const [carreras, setCarreras] = useState<Array<{ id: number, nombre: string }>>([]);
   const [loadingCarreras, setLoadingCarreras] = useState(false);
   const [errorCarreras, setErrorCarreras] = useState<string | null>(null);
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
+  const [dialogProps, setDialogProps] = useState<{
+    title?: string
+    description?: string
+    variant?: "info" | "error" | "success" | "confirm"
+    onConfirm?: (() => void) | undefined
+    onCancel?: (() => void) | undefined
+    confirmText?: string
+    cancelText?: string
+  }>({})
 
   // Generar años para el selector de ciclo lectivo
   const currentYear = new Date().getFullYear();
@@ -266,7 +277,13 @@ export default function CrearLegajoAlumno() {
     const isStep3Valid = validate(formData, 3);
 
     if (!isStep1Valid || !isStep2Valid || !isStep3Valid) {
-      alert("Por favor, completa todos los campos obligatorios en todas las pestañas antes de crear el legajo.");
+      setDialogProps({
+      title: "Errores de validación",
+      description: "Por favor, complete todos los campos requeridos.",
+      variant: "error",
+      confirmText: "Entendido",
+    })
+    setIsLogoutDialogOpen(true)
       return;
     }
 
@@ -326,13 +343,25 @@ export default function CrearLegajoAlumno() {
       }
 
       const result = await response.json();
-      alert(`Legajo del alumno ${result.estudiante.nombre} ${result.estudiante.apellido} creado con éxito.`);
-      navigate('/legajo');
-    } catch (error: any) {
-      console.error('Error en la creación del legajo:', error);
-      alert(`Hubo un problema al crear el legajo: ${error.message}`);
-    }
-  };
+      setDialogProps({
+      title: "Legajo creado",
+      description: `El legajo del alumno ${result.estudiante.nombre} ${result.estudiante.apellido} se ha creado correctamente.`,
+      variant: "success",
+      confirmText: "Entendido",
+      onConfirm: () => {navigate('/legajo');}
+    });
+    setIsLogoutDialogOpen(true);
+  } catch (error: any) {
+    console.error('Error en la creación del legajo:', error);
+    setDialogProps({
+      title: "Error al crear legajo",
+      description: `Hubo un problema al crear el legajo: ${error.message}`,
+      variant: "error",
+      confirmText: "Entendido",
+    });
+    setIsLogoutDialogOpen(true);
+  }
+};
 
 
 
@@ -1296,6 +1325,16 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
           </div>
         </Card>
       </div>
+            <CustomDialog
+    open={isLogoutDialogOpen}
+    onClose={() => setIsLogoutDialogOpen(false)}
+    title={dialogProps.title ?? ""}
+    description={dialogProps.description ?? ""}
+    confirmLabel={dialogProps.confirmText ?? "Entendido"}
+    cancelLabel={dialogProps.cancelText}
+    onConfirm={dialogProps.onConfirm}
+    showCancel={!!dialogProps.onCancel}
+/>
     </div>
   )
 }

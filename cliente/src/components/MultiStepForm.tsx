@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { ChevronLeft, ChevronRight, Upload, User, GraduationCap, FileText, ArrowLeft } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
+import {CustomDialog} from "../components/ui/customDialog"
 
 interface FormData {
    // Datos personales
@@ -256,6 +257,16 @@ export default function MultiStepForm() {
 
 const [carreras, setCarreras] = useState<Carrera[]>([]);
 const [carrerasOptions, setCarrerasOptions] = useState<{ value: string; label: string }[]>([]);
+const [dialogOpen, setDialogOpen] = useState(false)
+const [dialogProps, setDialogProps] = useState<{
+  title?: string
+  description?: string
+  variant?: "info"|"error"|"success"|"confirm"
+  onConfirm?: (() => void) | undefined
+  onCancel?: (() => void) | undefined
+  confirmText?: string
+  cancelText?: string
+}>({})
 
 useEffect(() => {
   const fetchCarreras = async () => {
@@ -450,7 +461,13 @@ useEffect(() => {
     if (validateStep(currentStep)) {
       setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
     } else {
-      alert("Debe completar todos los datos antes de avanzar");
+      setDialogProps({
+      title: "Datos incompletos",
+      description: "Debes completar todos los campos requeridos antes de avanzar al siguiente paso.",
+      variant: "error",
+      confirmText: "Entendido",
+    })
+    setDialogOpen(true)
     }
   }
 
@@ -515,9 +532,14 @@ useEffect(() => {
       console.error('Error del servidor:', errorData); // Loguear el error completo para depuración.
       return;
     }
-
-    alert('¡Formulario enviado con éxito! Revisa tu correo electrónico para ver la constancia de preinscripción.');
-    navigate('/'); // Redirigir al usuario a la página principal después del envío exitoso.
+    setDialogProps({
+      title: "Formulario correcto",
+      description: "¡Formulario enviado con éxito! Revisa tu correo electrónico para ver la constancia de preinscripción.",
+      variant: "success",
+      confirmText: "Entendido",
+      onConfirm: () => navigate("/"),
+    })
+    setDialogOpen(true)
   } catch (error) {
     console.error(error);
     alert('Error inesperado al conectar con el servidor.');
@@ -1060,6 +1082,16 @@ useEffect(() => {
                 Enviar Formulario
               </button>
             )}
+<CustomDialog
+    open={dialogOpen}
+    onClose={() => setDialogOpen(false)}
+    title={dialogProps.title ?? ""}
+    description={dialogProps.description ?? ""}
+    confirmLabel={dialogProps.confirmText ?? "Entendido"}
+    cancelLabel={dialogProps.cancelText}
+    onConfirm={dialogProps.onConfirm}
+    showCancel={!!dialogProps.onCancel}
+/>
           </div>
         </div>
       </div>
