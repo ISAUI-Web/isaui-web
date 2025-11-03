@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Upload, FileText, ArrowLeft } from "lucide-react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
+import {CustomDialog} from "../components/ui/customDialog"
 
 interface FormData {
   cus: File | null
@@ -32,6 +33,16 @@ export default function FormMatriculacion() {
   const location = useLocation()
   const { nombre, apellido } = location.state || {}
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
+  const [dialogProps, setDialogProps] = useState<{
+    title?: string
+    description?: string
+    variant?: "info" | "error" | "success" | "confirm"
+    onConfirm?: (() => void) | undefined
+    onCancel?: (() => void) | undefined
+    confirmText?: string
+    cancelText?: string
+  }>({})
 
   const handleFileChange = (field: keyof FormData, file: File | null) => {
     setFormData((prev) => ({ ...prev, [field]: file }))
@@ -59,7 +70,13 @@ export default function FormMatriculacion() {
 
   const handleSubmit = async () => {
     if (!validate()) {
-      alert("Debe completar todos los campos obligatorios (*) antes de enviar.");
+      setDialogProps({
+      title: "Datos incompletos",
+      description: "Debes completar todos los campos requeridos antes de enviar.",
+      variant: "error",
+      confirmText: "Entendido",
+    })
+    setIsLogoutDialogOpen(true)
       return;
     }
 
@@ -91,9 +108,15 @@ export default function FormMatriculacion() {
       }
 
       // El backend ahora se encarga de formalizar la matrícula automáticamente.
-      alert("¡Documentos de matriculación enviados con éxito! Recibirás la constancia por correo.");
-      navigate("/");
-    } catch (err) {
+      setDialogProps({
+      title: "Documentos enviados",
+      description: "Los documentos han sido enviados correctamente.",
+      variant: "success",
+      confirmText: "Entendido",
+      onConfirm: () => navigate("/"),
+    })
+    setIsLogoutDialogOpen(true)
+  } catch (err) {
       console.error(err)
       alert("Hubo un problema al enviar el formulario.")
     } finally {
@@ -213,6 +236,16 @@ export default function FormMatriculacion() {
           </div>
         </div>
       </div>
+      <CustomDialog
+    open={isLogoutDialogOpen}
+    onClose={() => setIsLogoutDialogOpen(false)}
+    title={dialogProps.title ?? ""}
+    description={dialogProps.description ?? ""}
+    confirmLabel={dialogProps.confirmText ?? "Entendido"}
+    cancelLabel={dialogProps.cancelText}
+    onConfirm={dialogProps.onConfirm}
+    showCancel={!!dialogProps.onCancel}
+/>
     </div>
   )
 }
@@ -250,6 +283,7 @@ function FileUpload({
         </label>
       </div>
       {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
+      
     </div>
   )
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import {CustomDialog} from "../components/ui/customDialog"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Button, buttonVariants } from "../components/ui/button"
 import { Input } from "../components/ui/input"
@@ -8,7 +9,7 @@ import { Label } from "../components/ui/label"
 import { ArrowLeft, User, Save, Camera, Upload, Eye, BookOpen, Building2, Clock, Calendar, Trash2 } from "lucide-react"
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
+const API_BASE = 'http://localhost:3000';
 const abs = (u?: string | null) => {
   if (!u) return '';
   return u.startsWith('http') || u.startsWith('blob:') ? u : `${API_BASE}${u}`;
@@ -26,6 +27,16 @@ export default function CrearLegajoProfesor() {
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
+  const [dialogProps, setDialogProps] = useState<{
+    title?: string
+    description?: string
+    variant?: "info" | "error" | "success" | "confirm"
+    onConfirm?: (() => void) | undefined
+    onCancel?: (() => void) | undefined
+    confirmText?: string
+    cancelText?: string
+  }>({})
 
   const [activeTab, setActiveTab] = useState("datos")
   const [formData, setFormData] = useState<any>({
@@ -783,7 +794,13 @@ export default function CrearLegajoProfesor() {
     const isStep3Valid = validate(formData, 3);
 
     if (!isStep1Valid || !isStep2Valid || !isStep3Valid) {
-      alert("Por favor, completa todos los campos obligatorios en todas las pestañas antes de crear el legajo.");
+      setDialogProps({
+      title: "Errores de validación",
+      description: "Por favor, complete todos los campos requeridos.",
+      variant: "error",
+      confirmText: "Entendido",
+    })
+    setIsLogoutDialogOpen(true)
       return;
     }
 
@@ -809,22 +826,9 @@ export default function CrearLegajoProfesor() {
     if (tituloSecundarioFile) payload.append('titulo_secundario', tituloSecundarioFile);
     if (tituloTerciarioFile) payload.append('titulo_terciario', tituloTerciarioFile);
     if (examenPsicofisicoFile) payload.append('examen_psicofisico', examenPsicofisicoFile);
-    if (regimenCompatibilidadFile) payload.append('regimen_de_compatibilidad', regimenCompatibilidadFile);
-
-    // Adjuntar cursos y sus certificados
-    cursos.forEach((curso, index) => {
-      if (curso.nombre) {
-        // Serializamos el objeto del curso (sin el archivo) a un string JSON.
-        payload.append('cursos[]', JSON.stringify({ nombre: curso.nombre }));
-        if (curso.certificadoFile) {
-          // Adjuntamos el archivo con una clave que coincida con el índice.
-          payload.append(`cursos[${index}][certificadoFile]`, curso.certificadoFile);
-        }
-      }
-    });
 
     try {
-      const response = await fetch(`${API_BASE}/docente/crear-docente-completo`, {
+      const response = await fetch(`${API_BASE}/docente`, {
         method: 'POST',
         body: payload,
       });
@@ -835,8 +839,14 @@ export default function CrearLegajoProfesor() {
         throw new Error(errorMessage || 'Error al crear el legajo del profesor.');
       }
 
-      alert('Legajo del profesor creado con éxito.');
-      navigate('/legajo'); // O a la lista de profesores
+      setDialogProps({
+      title: "Legajo creado",
+      description: `El legajo del profesor se ha creado correctamente.`,
+      variant: "success",
+      confirmText: "Entendido",
+      onConfirm: () => {navigate('/legajo');}
+    });
+    setIsLogoutDialogOpen(true);
     } catch (error: any) {
       console.error('Error en la creación del legajo:', error);
       alert(`Hubo un problema al crear el legajo: ${error.message}`);
@@ -908,6 +918,16 @@ export default function CrearLegajoProfesor() {
           </div>
         </Card>
       </div>
+            <CustomDialog
+    open={isLogoutDialogOpen}
+    onClose={() => setIsLogoutDialogOpen(false)}
+    title={dialogProps.title ?? ""}
+    description={dialogProps.description ?? ""}
+    confirmLabel={dialogProps.confirmText ?? "Entendido"}
+    cancelLabel={dialogProps.cancelText}
+    onConfirm={dialogProps.onConfirm}
+    showCancel={!!dialogProps.onCancel}
+/>
     </div>
   )
 }

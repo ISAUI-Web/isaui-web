@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card } from "../components/ui/card"
 import { Progress } from "../components/ui/progress"
+import {CustomDialog} from "../components/ui/customDialog"
 import {
   Menu,
   X,
@@ -63,6 +64,16 @@ export default function Cupos() {
   const [cupos, setCupos] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const navigate = useNavigate()
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
+  const [dialogProps, setDialogProps] = useState<{
+    title?: string
+    description?: string
+    variant?: "info" | "error" | "success" | "confirm"
+    onConfirm?: (() => void) | undefined
+    onCancel?: (() => void) | undefined
+    confirmText?: string
+    cancelText?: string
+  }>({})
 
   // Cargar datos de cupos desde la API real
   useEffect(() => {
@@ -97,8 +108,14 @@ export default function Cupos() {
     const handleLogout = () => {
       localStorage.removeItem("adminRemember")
       localStorage.removeItem("adminUser")
-      alert("¡Sesión cerrada exitosamente!")
-      navigate("/login")
+      setDialogProps({
+      title: "Sesión cerrada",
+      description: "Has cerrado sesión exitosamente.",
+      variant: "success",
+      confirmText: "Entendido",
+      onConfirm: () => navigate("/login")
+    })
+    setIsLogoutDialogOpen(true)
     }
   
 
@@ -429,6 +446,16 @@ export default function Cupos() {
           </Card>
         </div>
       </main>
+      <CustomDialog
+    open={isLogoutDialogOpen}
+    onClose={() => setIsLogoutDialogOpen(false)}
+    title={dialogProps.title ?? ""}
+    description={dialogProps.description ?? ""}
+    confirmLabel={dialogProps.confirmText ?? "Entendido"}
+    cancelLabel={dialogProps.cancelText}
+    onConfirm={dialogProps.onConfirm}
+    showCancel={!!dialogProps.onCancel}
+/>
     </div>
   )
 }

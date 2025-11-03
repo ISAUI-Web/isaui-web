@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Card } from "../components/ui/card"
 import { Input } from "../components/ui/input"
 import { Button } from "../components/ui/button"
+import {CustomDialog} from "../components/ui/customDialog"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select"
 import {
   Menu,
@@ -79,6 +80,16 @@ export default function AdminMatriculacion() {
   const navigate = useNavigate();
   const [filterCarrera, setFilterCarrera] = useState("");
   const [filterEstado, setFilterEstado] = useState("");
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
+  const [dialogProps, setDialogProps] = useState<{
+    title?: string
+    description?: string
+    variant?: "info" | "error" | "success" | "confirm"
+    onConfirm?: (() => void) | undefined
+    onCancel?: (() => void) | undefined
+    confirmText?: string
+    cancelText?: string
+  }>({})
 
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_BASE_URL}/matricula`)
@@ -116,8 +127,14 @@ export default function AdminMatriculacion() {
   const handleLogout = () => {
     localStorage.removeItem("adminRemember")
     localStorage.removeItem("adminUser")
-    alert("¡Sesión cerrada exitosamente!")
-    navigate("/login")
+    setDialogProps({
+      title: "Sesión cerrada",
+      description: "Has cerrado sesión exitosamente.",
+      variant: "success",
+      confirmText: "Entendido",
+      onConfirm: () => navigate("/login")
+    })
+    setIsLogoutDialogOpen(true)
   }
 
   const [expandedSubmenu, setExpandedSubmenu] = useState<string | null>(null);
@@ -177,7 +194,13 @@ const handleEstado = async (aspiranteId: number, nuevoEstado: "en espera" | "con
     setMatriculas(prev =>
       prev.map(m => m.id === updatedMatricula.id ? { ...m, estado: updatedMatricula.estado } : m)
     );
-    alert("Estado actualizado exitosamente");
+    setDialogProps({
+      title: "Estado actualizado",
+      description: "El estado del aspirante se ha actualizado correctamente.",
+      variant: "success",
+      confirmText: "Entendido",
+    });
+    setIsLogoutDialogOpen(true);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : `No se pudo cambiar el estado`;
     console.error(errorMessage);
@@ -420,6 +443,16 @@ const handleEstado = async (aspiranteId: number, nuevoEstado: "en espera" | "con
           </Card>
         </div>
       </main>
+      <CustomDialog
+    open={isLogoutDialogOpen}
+    onClose={() => setIsLogoutDialogOpen(false)}
+    title={dialogProps.title ?? ""}
+    description={dialogProps.description ?? ""}
+    confirmLabel={dialogProps.confirmText ?? "Entendido"}
+    cancelLabel={dialogProps.cancelText}
+    onConfirm={dialogProps.onConfirm}
+    showCancel={!!dialogProps.onCancel}
+/>
     </div>
   )
 }
