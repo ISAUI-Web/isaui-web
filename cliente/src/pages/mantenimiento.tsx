@@ -795,7 +795,7 @@ export default function Mantenimiento() {
   allowedRoles={[RolUsuario.ADMIN_GENERAL]}
   roleRedirects={{
     [RolUsuario.GESTOR_ACADEMICO]: "/admin",
-    [RolUsuario.PROFESOR]: "asd"
+    [RolUsuario.PROFESOR]: "/admin"
   }}
 >
     <div className="min-h-screen bg-[#1F6680] from-teal-600 to-teal-800 relative">
