@@ -1,5 +1,7 @@
 "use client"
 
+import { ProtectedRoute } from "../components/protected-route"
+import { RolUsuario } from "../lib/types"
 import { useState, useEffect } from "react"
 import {CustomDialog} from "../components/ui/customDialog"
 import { Card } from "../components/ui/card"
@@ -233,6 +235,7 @@ const handleEstado = async (id: number, nuevoEstado: "en espera" | "confirmado" 
   if (error) return <p className="text-red-400">{error}</p>
 
   return (
+    <ProtectedRoute allowedRoles={[RolUsuario.ADMIN_GENERAL, RolUsuario.GESTOR_ACADEMICO]}>
    <div className="min-h-screen bg-[#1F6680] from-teal-600 to-teal-800 relative">
       {/* Header */}
       <header className="bg-slate-800 h-16 flex items-center px-4 relative z-50">
@@ -472,6 +475,6 @@ const handleEstado = async (id: number, nuevoEstado: "en espera" | "confirmado" 
     showCancel={!!dialogProps.onCancel}
 />
     </div>
-  
+  </ProtectedRoute>
   )
 }
