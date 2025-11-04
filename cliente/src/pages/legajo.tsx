@@ -1,4 +1,5 @@
 "use client"
+import { logout } from "../lib/auth"
 import { ProtectedRoute } from "../components/protected-route"
 import { RolUsuario } from "../lib/types"
 import { getUserRole, getUser } from "../lib/auth"
@@ -191,17 +192,17 @@ const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
   }
 
   const handleLogout = () => {
-    localStorage.removeItem("adminRemember")
-    localStorage.removeItem("adminUser")
-        setDialogProps({
-      title: "Sesión cerrada",
-      description: "Has cerrado sesión exitosamente.",
-      variant: "success",
-      confirmText: "Entendido",
-      onConfirm: () => navigate("/login")
-    })
-    setIsLogoutDialogOpen(true)
-  }
+      localStorage.removeItem("adminRemember")
+      localStorage.removeItem("adminUser")
+      setDialogProps({
+        title: "Sesión cerrada",
+        description: "Has cerrado sesión exitosamente.",
+        variant: "success",
+        confirmText: "Entendido",
+        onConfirm: () => logout()
+      })
+      setIsLogoutDialogOpen(true)
+    }
 
   const [expandedSubmenu, setExpandedSubmenu] = useState<string | null>(null);
 

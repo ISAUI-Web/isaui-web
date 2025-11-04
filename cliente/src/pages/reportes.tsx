@@ -1,7 +1,7 @@
 "use client"
 import { ProtectedRoute } from "../components/protected-route"
 import { RolUsuario } from "../lib/types"
-import { getUserRole } from "../lib/auth"
+import { getUserRole, logout } from "../lib/auth"
 import { useState, useEffect } from "react"
 import {CustomDialog} from "../components/ui/customDialog"
 import { Card } from "../components/ui/card"
@@ -140,17 +140,17 @@ export default function Reportes() {
     }
   
     const handleLogout = () => {
-      localStorage.removeItem("adminRemember")
-      localStorage.removeItem("adminUser")
-      setDialogProps({
-      title: "Sesión cerrada",
-      description: "Has cerrado sesión exitosamente.",
-      variant: "success",
-      confirmText: "Entendido",
-      onConfirm: () => navigate("/login")
-    })
-    setIsLogoutDialogOpen(true)
-    }
+        localStorage.removeItem("adminRemember")
+        localStorage.removeItem("adminUser")
+        setDialogProps({
+          title: "Sesión cerrada",
+          description: "Has cerrado sesión exitosamente.",
+          variant: "success",
+          confirmText: "Entendido",
+          onConfirm: () => logout()
+        })
+        setIsLogoutDialogOpen(true)
+      }
   
 
   const handleMenuItemClick = (itemId: string) => {

@@ -72,7 +72,27 @@ export function getUser(): Usuario | null {
 
 // Verificar si el usuario está autenticado
 export function isAuthenticated(): boolean {
-  return getAuthData() !== null
+  const authData = getAuthData()
+  if (!authData) return false
+
+  try {
+    // Intentar decodificar el JWT para verificar que sea válido
+    const parts = authData.token.split(".")
+    if (parts.length !== 3) return false
+
+    // Decodificar el payload (sin verificar firma, solo check de estructura)
+    const payload = JSON.parse(atob(parts[1]))
+
+    // Verificar que el token no esté expirado
+    if (payload.exp) {
+      const now = Date.now() / 1000
+      if (now > payload.exp) return false
+    }
+
+    return true
+  } catch {
+    return false
+  }
 }
 
 // Obtener el rol del usuario actual

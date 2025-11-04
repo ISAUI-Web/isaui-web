@@ -1,4 +1,5 @@
 "use client"
+import { logout } from "../lib/auth"
 import { getUserRole } from "../lib/auth"
 import { ProtectedRoute } from "../components/protected-route"
 import { RolUsuario } from "../lib/types"
@@ -108,17 +109,17 @@ export default function Cupos() {
     }
   
     const handleLogout = () => {
-      localStorage.removeItem("adminRemember")
-      localStorage.removeItem("adminUser")
-      setDialogProps({
-      title: "Sesión cerrada",
-      description: "Has cerrado sesión exitosamente.",
-      variant: "success",
-      confirmText: "Entendido",
-      onConfirm: () => navigate("/login")
-    })
-    setIsLogoutDialogOpen(true)
-    }
+        localStorage.removeItem("adminRemember")
+        localStorage.removeItem("adminUser")
+        setDialogProps({
+          title: "Sesión cerrada",
+          description: "Has cerrado sesión exitosamente.",
+          variant: "success",
+          confirmText: "Entendido",
+          onConfirm: () => logout()
+        })
+        setIsLogoutDialogOpen(true)
+      }
   
 
   const handleMenuItemClick = (itemId: string) => {
@@ -183,7 +184,10 @@ export default function Cupos() {
   }
 
   return (
-    <ProtectedRoute allowedRoles={[RolUsuario.ADMIN_GENERAL, RolUsuario.GESTOR_ACADEMICO]}>
+    <ProtectedRoute allowedRoles={[RolUsuario.ADMIN_GENERAL, RolUsuario.GESTOR_ACADEMICO]}
+  roleRedirects={{
+    [RolUsuario.PROFESOR]: "/admin"
+  }}>
     <div className="min-h-screen bg-[#1F6680] from-teal-600 to-teal-800 relative">
       {/* Header */}
       <header className="bg-slate-800 h-16 flex items-center px-4 relative z-50">

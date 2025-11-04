@@ -89,28 +89,17 @@ export default function AdminMain() {
   }
 
   const handleLogout = () => {
-  // Limpieza previa opcional
-  localStorage.removeItem("adminRemember")
-  localStorage.removeItem("adminUser")
-
-  setDialogProps({
-    title: "Sesión cerrada",
-    description: "Has cerrado sesión exitosamente.",
-    variant: "success",
-    confirmText: "Entendido",
-    onConfirm: async () => {
-      try {
-        await logout() // 🔹 Ejecuta tu método de cierre de sesión cuando el usuario confirma
-      } catch (error) {
-        console.error("Error al cerrar sesión:", error)
-      } finally {
-        navigate("/login")
-      }
-    }
-  })
-
-  setIsLogoutDialogOpen(true)
-}
+    localStorage.removeItem("adminRemember")
+    localStorage.removeItem("adminUser")
+    setDialogProps({
+      title: "Sesión cerrada",
+      description: "Has cerrado sesión exitosamente.",
+      variant: "success",
+      confirmText: "Entendido",
+      onConfirm: () => logout()
+    })
+    setIsLogoutDialogOpen(true)
+  }
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % carouselImages.length)
