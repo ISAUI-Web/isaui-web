@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   Controller,
   Get,
   Post,
@@ -68,6 +69,22 @@ export class AspiranteController {
     });
 
     res.end(pdfBuffer);
+  }
+
+  @Get('verificar-preinscripcion')
+  async verificarPreinscripcion(
+    @Query('dni') dni: string,
+    @Query('carreraId', ParseIntPipe) carreraId: number,
+  ) {
+    try {
+      await this.aspiranteService.verificarPreinscripcion(dni, carreraId);
+      return { disponible: true };
+    } catch (error) {
+      if (error instanceof ConflictException) {
+        throw new ConflictException(error.message);
+      }
+      throw new InternalServerErrorException('Error al verificar la preinscripción.');
+    }
   }
   
   @Post()

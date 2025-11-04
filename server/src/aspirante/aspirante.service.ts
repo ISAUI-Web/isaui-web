@@ -1,5 +1,6 @@
 import {
   Injectable,
+  ConflictException,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
@@ -37,6 +38,21 @@ export class AspiranteService {
     private readonly estudianteRepository: Repository<Estudiante>,
   ) {}
 
+  async verificarPreinscripcion(dni: string, carreraId: number): Promise<void> {
+    const preinscripcionExistente = await this.preinscripcionRepository.findOne({
+      where: {
+        aspirante: { dni: dni },
+        carrera: { id: carreraId },
+      },
+    });
+
+    if (preinscripcionExistente) {
+      throw new ConflictException(
+        'Ya existe una preinscripción para el DNI ingresado en la carrera seleccionada.',
+      );
+    }
+  }
+
   async create(
     createAspiranteDto: CreateAspiranteDto,
     files: { [fieldname: string]: Express.Multer.File[] } = {},
@@ -45,6 +61,13 @@ export class AspiranteService {
     const manager = queryRunner
       ? queryRunner.manager
       : this.aspiranteRepository.manager;
+
+    try {
+      await this.verificarPreinscripcion(createAspiranteDto.dni, Number(createAspiranteDto.carrera_id));
+    } catch (error) {
+      // Re-lanzamos como BadRequest para mantener consistencia con otras validaciones de creación.
+      throw new BadRequestException(error.message);
+    }
 
     const carrera = await manager.findOneBy(Carrera, { id: Number(createAspiranteDto.carrera_id) });
     if (!carrera) throw new BadRequestException(`La carrera con ID ${createAspiranteDto.carrera_id} no es válida.`);
@@ -381,33 +404,54 @@ export class AspiranteService {
           const tableTop = doc.y;
           const apellidoX = 50;
           const nombreX = 180;
-          const dniX = 310;
-          const carreraColX = 400;
-
-          doc.font('Helvetica-Bold').fontSize(10);
-          doc.text('Apellido', apellidoX, tableTop);
-          doc.text('Nombre', nombreX, tableTop);
-          doc.text('DNI', dniX, tableTop);
-          doc.text('Carrera', carreraColX, tableTop);
-          doc.moveDown(0.5);
-          const lineY = doc.y;
-          doc
-            .moveTo(apellidoX, lineY)
-            .lineTo(doc.page.width - 50, lineY)
-            .stroke();
-          doc.moveDown(0.5);
+          const dniX = 300;
+          const estadoX = 420;
 
           doc.font('Helvetica').fontSize(10);
 
+          const drawTableRow = (aspirante, estado, y) => {
+            doc.text(aspirante.apellido, apellidoX, y, { width: 120 });
+            doc.text(aspirante.nombre, nombreX, y, { width: 120 });
+            doc.text(aspirante.dni, dniX, y, { width: 80 });
+            doc.text(estado, estadoX, y, { width: 100 });
+          };
+
+          const drawTableHeader = (yPosition) => {
+            doc.font('Helvetica-Bold').fontSize(10);
+            doc.text('Apellido', apellidoX, yPosition);
+            doc.text('Nombre', nombreX, yPosition);
+            doc.text('DNI', dniX, yPosition);
+            doc.text('Estado', estadoX, yPosition);
+            doc.moveDown(1);
+            const lineY = doc.y;
+            doc.moveTo(apellidoX, lineY).lineTo(doc.page.width - 50, lineY).stroke();
+            doc.moveDown(0.5);
+            doc.font('Helvetica').fontSize(10);
+          };
+
+          const rowHeight = 25;
+          const headerHeight = 40;
+          let headerDrawnForCurrentGroup = false;
+
           preinscripcionesDeCarrera.forEach((pre) => {
             const aspirante = pre.aspirante;
-            const rowY = doc.y;
-            if (rowY > doc.page.height - 50) doc.addPage();
-            doc.text(aspirante.apellido, apellidoX, rowY, { width: 120 });
-            doc.text(aspirante.nombre, nombreX, rowY, { width: 120 });
-            doc.text(aspirante.dni, dniX, rowY, { width: 80 });
-            doc.text(pre.carrera.nombre, carreraColX, rowY, { width: 150 });
-            doc.moveDown(1.5);
+            const requiredSpace = headerDrawnForCurrentGroup ? rowHeight : rowHeight + headerHeight;
+            if (doc.y + requiredSpace > doc.page.height - doc.page.margins.bottom) {
+              doc.addPage();
+              doc.y = doc.page.margins.top; // Reset Y position on new page
+            }
+            if (!headerDrawnForCurrentGroup) {
+              drawTableHeader(doc.y);
+              headerDrawnForCurrentGroup = true;
+            }
+
+            const yPos = doc.y;
+
+            const lineY = yPos + rowHeight - 5; // Un poco antes del final de la fila
+            doc.moveTo(apellidoX, lineY).lineTo(doc.page.width - 50, lineY).strokeColor('#cccccc').stroke().strokeColor('#000000'); // Restaurar color a negro
+
+            drawTableRow(aspirante, pre.estado, doc.y);
+            doc.y += rowHeight;
           });
           doc.moveDown(2);
         });
@@ -557,34 +601,54 @@ export class AspiranteService {
           const tableTop = doc.y;
           const apellidoX = 50,
             nombreX = 180,
-            dniX = 310,
-            carreraColX = 400;
-
-          doc.font('Helvetica-Bold').fontSize(10);
-          doc
-            .text('Apellido', apellidoX, tableTop)
-            .text('Nombre', nombreX, tableTop)
-            .text('DNI', dniX, tableTop)
-            .text('Carrera', carreraColX, tableTop);
-          doc.moveDown(0.5);
-          const lineY = doc.y;
-          doc
-            .moveTo(apellidoX, lineY)
-            .lineTo(doc.page.width - 50, lineY)
-            .stroke();
-          doc.moveDown(0.5);
+            dniX = 300,
+            estadoX = 420;
 
           doc.font('Helvetica').fontSize(10);
+
+          const drawTableRow = (aspirante, estado, y) => {
+            doc.text(aspirante.apellido, apellidoX, y, { width: 120 });
+            doc.text(aspirante.nombre, nombreX, y, { width: 120 });
+            doc.text(aspirante.dni, dniX, y, { width: 80 });
+            doc.text(estado, estadoX, y, { width: 100 });
+          };
+
+          const drawTableHeader = (yPosition) => {
+            doc.font('Helvetica-Bold').fontSize(10);
+            doc.text('Apellido', apellidoX, yPosition);
+            doc.text('Nombre', nombreX, yPosition);
+            doc.text('DNI', dniX, yPosition);
+            doc.text('Estado', estadoX, yPosition);
+            doc.moveDown(1);
+            const lineY = doc.y;
+            doc.moveTo(apellidoX, lineY).lineTo(doc.page.width - 50, lineY).stroke();
+            doc.moveDown(0.5);
+            doc.font('Helvetica').fontSize(10);
+          };
+
+          const rowHeight = 25;
+          const headerHeight = 40;
+          let headerDrawnForCurrentGroup = false;
+
           matriculacionesDeCarrera.forEach((mat) => {
             const aspirante = mat.aspirante;
-            const rowY = doc.y;
-            if (rowY > doc.page.height - 50) doc.addPage();
-            doc
-              .text(aspirante.apellido, apellidoX, rowY, { width: 120 })
-              .text(aspirante.nombre, nombreX, rowY, { width: 120 })
-              .text(aspirante.dni, dniX, rowY, { width: 80 })
-              .text(mat.carrera.nombre, carreraColX, rowY, { width: 150 });
-            doc.moveDown(1.5);
+            const requiredSpace = headerDrawnForCurrentGroup ? rowHeight : rowHeight + headerHeight;
+            if (doc.y + requiredSpace > doc.page.height - doc.page.margins.bottom) {
+              doc.addPage();
+              doc.y = doc.page.margins.top; // Reset Y position on new page
+            }
+            if (!headerDrawnForCurrentGroup) {
+              drawTableHeader(doc.y);
+              headerDrawnForCurrentGroup = true;
+            }
+
+            const yPos = doc.y;
+
+            const lineY = yPos + rowHeight - 5; // Un poco antes del final de la fila
+            doc.moveTo(apellidoX, lineY).lineTo(doc.page.width - 50, lineY).strokeColor('#cccccc').stroke().strokeColor('#000000'); // Restaurar color a negro
+
+            drawTableRow(aspirante, mat.estado, doc.y);
+            doc.y += rowHeight;
           });
           doc.moveDown(2);
         });

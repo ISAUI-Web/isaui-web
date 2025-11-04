@@ -158,12 +158,18 @@ export class CarreraService implements OnApplicationBootstrap {
       doc.moveDown(2);
 
       // Content
-      carreras.forEach((carrera) => {
-        const cuposOcupados = carrera.cupo_maximo - carrera.cupo_actual;
+      const pageBottom = doc.page.height - doc.page.margins.bottom;
+      const sectionHeight = 80; // Altura estimada para cada sección de carrera
 
+      carreras.forEach((carrera) => {
+        // Si la sección no cabe, agregar una nueva página
+        if (doc.y + sectionHeight > pageBottom) {
+          doc.addPage();
+        }
+
+        const cuposOcupados = carrera.cupo_maximo - carrera.cupo_actual;
         doc.fontSize(16).text(carrera.nombre, { underline: true });
         doc.moveDown(0.5);
-
         doc.fontSize(12).text(`Cupos Totales (Máximo): ${carrera.cupo_maximo}`);
         doc.fontSize(12).text(`Cupos Disponibles: ${carrera.cupo_actual}`);
         doc.fontSize(12).text(`Cupos Ocupados: ${cuposOcupados}`);

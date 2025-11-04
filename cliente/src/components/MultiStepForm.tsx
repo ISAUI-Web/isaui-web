@@ -357,12 +357,16 @@ useEffect(() => {
      if (!formData.nombre) {
     newErrors.nombre = "El nombre es requerido"
       } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.nombre)) {
-        newErrors.nombre = "El nombre solo puede contener letras"
+        newErrors.nombre = "El nombre solo puede contener letras y espacios."
+      } else if (formData.nombre.length > 50) {
+        newErrors.nombre = "El nombre no puede tener más de 50 caracteres."
       }
       if (!formData.apellido) {
         newErrors.apellido = "El apellido es requerido"
       } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.apellido)) {
-        newErrors.apellido = "El apellido solo puede contener letras"
+        newErrors.apellido = "El apellido solo puede contener letras y espacios."
+      } else if (formData.apellido.length > 50) {
+        newErrors.apellido = "El apellido no puede tener más de 50 caracteres."
       }
       if (!formData.dni) newErrors.dni = "El DNI es requerido"
       else if (!/^\d{8}$/.test(formData.dni)) {
@@ -386,10 +390,10 @@ useEffect(() => {
         newErrors.codigo_postal = "El código postal debe ser un número"
       }
       if (!formData.telefono) newErrors.telefono = "El teléfono es requerido"
-      else if (!/^\d{10,15}$/.test(formData.telefono)) {
-        newErrors.telefono = "El teléfono debe tener entre 10 y 15 digitos"
-      } else if (isNaN(Number(formData.telefono))) {
-        newErrors.telefono = "El teléfono debe ser un número"
+      else if (!/^\d+$/.test(formData.telefono)) {
+        newErrors.telefono = "El teléfono solo debe contener números, sin signos (+, -) ni espacios."
+      } else if (formData.telefono.length < 10 || formData.telefono.length > 15) {
+        newErrors.telefono = "El teléfono debe tener entre 10 y 15 dígitos."
       }
       if (!formData.email) {
         newErrors.email = "El email es requerido"
@@ -402,8 +406,27 @@ useEffect(() => {
       else {
         const today = new Date()
         const birthDate = new Date(formData.fecha_nacimiento)
+        // Asegurarse de que la hora no afecte el cálculo
+        today.setHours(0, 0, 0, 0);
+
         if (birthDate >= today) {
           newErrors.fecha_nacimiento = "La fecha de nacimiento no puede ser hoy o en el futuro"
+        } else {
+          const birthYear = birthDate.getFullYear();
+          const minYear = today.getFullYear() - 100;
+
+          if (birthYear < minYear) {
+            newErrors.fecha_nacimiento = `El año de nacimiento no puede ser anterior a ${minYear}.`;
+          } else {
+            let age = today.getFullYear() - birthYear;
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+              age--;
+            }
+            if (age < 16) {
+              newErrors.fecha_nacimiento = "Debes tener al menos 16 años para inscribirte.";
+            }
+          }
         }
       }
       if (!formData.ciudad_nacimiento) newErrors.ciudad_nacimiento = "La ciudad de nacimiento es requerida"
@@ -419,26 +442,40 @@ useEffect(() => {
         if (!formData.anio_ingreso_medio) newErrors.anio_ingreso_medio = "El año de ingreso es requerido"
         else if (isNaN(Number(formData.anio_ingreso_medio))) newErrors.anio_ingreso_medio = "El año de ingreso debe ser un número"
         else if (Number(formData.anio_ingreso_medio) < 1900) newErrors.anio_ingreso_medio = "El año de ingreso debe ser mayor a 1900";
-        if (!formData.anio_egreso_medio) newErrors.anio_egreso_medio = "El año de egreso es requerido"
-        else if (isNaN(Number(formData.anio_egreso_medio))) newErrors.anio_egreso_medio = "El año de egreso debe ser un número"
-        else if (Number(formData.anio_egreso_medio) < 1900) newErrors.anio_egreso_medio = "El año de egreso debe ser mayor a 1900"
+        if (!formData.anio_egreso_medio) {
+          newErrors.anio_egreso_medio = "El año de egreso es requerido";
+        } else if (isNaN(Number(formData.anio_egreso_medio))) {
+          newErrors.anio_egreso_medio = "El año de egreso debe ser un número";
+        } else if (Number(formData.anio_egreso_medio) < Number(formData.anio_ingreso_medio)) {
+          newErrors.anio_egreso_medio = "El año de egreso no puede ser anterior al de ingreso.";
+        }
         if (!formData.provincia_medio) newErrors.provincia_medio = "La provincia es requerida"
-        if (!formData.titulo_medio) newErrors.titulo_medio = "El título es requerido"
+        if (!formData.titulo_medio) {
+          newErrors.titulo_medio = "El título es requerido";
+        } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.titulo_medio)) {
+          newErrors.titulo_medio = "El título solo puede contener letras y espacios.";
+        }
       }
 
       if (!formData.completo_nivel_superior) newErrors.completo_nivel_superior = "Debe indicar si completó el nivel superior"
-      if (formData.completo_nivel_superior === "COMPLETO") {
-        if (!formData.carrera_superior) newErrors.carrera_superior = "La carrera es requerida"
-        if (!formData.institucion_superior) newErrors.institucion_superior = "La institución es requerida"
-        if (!formData.provincia_superior) newErrors.provincia_superior = "La provincia es requerida"
-        if (!formData.anio_ingreso_superior) newErrors.anio_ingreso_superior = "El año de ingreso es requerido"
-        if (!formData.anio_egreso_superior) newErrors.anio_egreso_superior = "El año de egreso es requerido"
+      if (formData.completo_nivel_superior === "COMPLETO" || formData.completo_nivel_superior === "EN_CURSO") {
+        if (!formData.carrera_superior) {
+          newErrors.carrera_superior = "La carrera es requerida";
+        } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.carrera_superior)) {
+          newErrors.carrera_superior = "La carrera solo puede contener letras y espacios.";
+        }
+        if (!formData.institucion_superior) newErrors.institucion_superior = "La institución es requerida";
+        if (!formData.provincia_superior) newErrors.provincia_superior = "La provincia es requerida";
+        if (!formData.anio_ingreso_superior) newErrors.anio_ingreso_superior = "El año de ingreso es requerido";
       }
-      if (formData.completo_nivel_superior === "EN_CURSO") {
-        if (!formData.carrera_superior) newErrors.carrera_superior = "La carrera es requerida"
-        if (!formData.institucion_superior) newErrors.institucion_superior = "La institución es requerida"
-        if (!formData.provincia_superior) newErrors.provincia_superior = "La provincia es requerida"
-        if (!formData.anio_ingreso_superior) newErrors.anio_ingreso_superior = "El año de ingreso es requerido"
+      if (formData.completo_nivel_superior === "COMPLETO") {
+        if (!formData.anio_egreso_superior) {
+          newErrors.anio_egreso_superior = "El año de egreso es requerido";
+        } else if (isNaN(Number(formData.anio_egreso_superior))) {
+          newErrors.anio_egreso_superior = "El año de egreso debe ser un número";
+        } else if (Number(formData.anio_egreso_superior) < Number(formData.anio_ingreso_superior)) {
+          newErrors.anio_egreso_superior = "El año de egreso no puede ser anterior al de ingreso.";
+        }
       }
       if (!formData.trabajo) newErrors.trabajo = "Debe indicar si trabajo actualmente"
       if (formData.trabajo === "SI") {
@@ -479,6 +516,29 @@ useEffect(() => {
   if (!validateStep(currentStep)) return;
 
   try {
+    // --- INICIO DE LA VALIDACIÓN FRONTEND ---
+    // Verificar si ya existe una preinscripción antes de enviar todo el formulario.
+    const verificationResponse = await fetch(
+      `${import.meta.env.VITE_API_BASE_URL}/aspirante/verificar-preinscripcion?dni=${formData.dni}&carreraId=${formData.carrera}`
+    );
+
+    if (!verificationResponse.ok) {
+      if (verificationResponse.status === 409) { // 409 Conflict
+        const errorData = await verificationResponse.json();
+        setDialogProps({
+          title: "Preinscripción Duplicada",
+          description: errorData.message || "Ya estás preinscripto en esta carrera.",
+          variant: "error",
+          confirmText: "Entendido",
+        });
+        setDialogOpen(true);
+        return; // Detener el envío del formulario
+      }
+      // Manejar otros errores de red o servidor si es necesario
+      throw new Error('Error al verificar la preinscripción.');
+    }
+    // --- FIN DE LA VALIDACIÓN FRONTEND ---
+
     const formPayload = new FormData();
 
     // 1: Mapear los datos del formulario al formato que espera el DTO del backend.
