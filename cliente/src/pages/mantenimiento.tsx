@@ -136,7 +136,7 @@ export default function Mantenimiento() {
   const [showNewUsuarioForm, setShowNewUsuarioForm] = useState(false)
 
   useEffect(() => {
-    fetch(API_BASE_URL_CARRERA)
+    fetch(`${API_BASE_URL_CARRERA}?includeInactive=true`)
       .then((res) => res.json())
       .then((data) => setCarreras(data.map(mapCarreraFromApi)))
       .catch((err) => console.error("Error cargando carreras:", err));

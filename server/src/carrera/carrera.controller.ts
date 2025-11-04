@@ -41,8 +41,11 @@ export class CarreraController {
   }
 
   @Get()
-  async findAll(): Promise<Carrera[]> {
-    return this.carreraService.findAll();
+  async findAll(
+    @Query('includeInactive') includeInactive?: string,
+  ): Promise<Carrera[]> {
+    const shouldIncludeInactive = includeInactive === 'true';
+    return this.carreraService.findAll(shouldIncludeInactive);
   }
 
   @Get(':id')

@@ -585,10 +585,16 @@ useEffect(() => {
       // Si 'message' es un array (común en errores de validación), lo unimos.
       // Si es un string, lo usamos directamente.
       const errorData = await aspiranteResponse.json();
-      const serverMessage = Array.isArray(errorData.message) 
-        ? errorData.message.join('\n') 
+      const serverMessage = Array.isArray(errorData.message)
+        ? errorData.message.join('\n')
         : errorData.message || 'Error desconocido del servidor.';
-      alert(`Error del servidor:\n${serverMessage}`);
+      setDialogProps({
+        title: "Error al enviar",
+        description: serverMessage,
+        variant: "error",
+        confirmText: "Entendido",
+      });
+      setDialogOpen(true);
       console.error('Error del servidor:', errorData); // Loguear el error completo para depuración.
       return;
     }
@@ -601,8 +607,14 @@ useEffect(() => {
     })
     setDialogOpen(true)
   } catch (error) {
-    console.error(error);
-    alert('Error inesperado al conectar con el servidor.');
+    console.error("Error inesperado:", error);
+    setDialogProps({
+      title: "Error de Conexión",
+      description: "No se pudo conectar con el servidor. Por favor, inténtalo de nuevo más tarde.",
+      variant: "error",
+      confirmText: "Entendido",
+    });
+    setDialogOpen(true);
   }
 };
 

@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   OnApplicationBootstrap,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Carrera } from './carrera.entity';
@@ -63,8 +64,12 @@ export class CarreraService implements OnApplicationBootstrap {
     }
   }
 
-  async findAll(): Promise<Carrera[]> {
-    return this.carreraRepository.find();
+  async findAll(includeInactive = false): Promise<Carrera[]> {
+    const whereClause: any = {};
+    if (!includeInactive) {
+      whereClause.activo = true;
+    }
+    return this.carreraRepository.find({ where: whereClause });
   }
 
   async findOne(id: number): Promise<Carrera | null> {
@@ -100,6 +105,24 @@ export class CarreraService implements OnApplicationBootstrap {
           `Ya existe otra carrera con el nombre "${data.nombre}"`,
         );
       }
+    }
+
+    // Lógica para ajustar el cupo actual si el cupo máximo cambia
+    if (
+      data.cupo_maximo !== undefined &&
+      data.cupo_maximo !== carrera.cupo_maximo
+    ) {
+      const cuposOcupados = carrera.cupo_maximo - carrera.cupo_actual;
+      const nuevoCupoMaximo = Number(data.cupo_maximo);
+
+      if (nuevoCupoMaximo < cuposOcupados) {
+        throw new BadRequestException(
+          `El nuevo cupo máximo (${nuevoCupoMaximo}) no puede ser menor que la cantidad de cupos ya ocupados (${cuposOcupados}).`,
+        );
+      }
+
+      // Recalcular el cupo actual basado en el nuevo máximo
+      data.cupo_actual = nuevoCupoMaximo - cuposOcupados;
     }
 
     Object.assign(carrera, data);

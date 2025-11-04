@@ -103,10 +103,8 @@ export class MatriculaService {
     });
 
     const savedMatricula = await manager.save(nuevaMatricula);
-    console.log('Matricula creada', nuevaMatricula);
     // --- GENERAR Y ENVIAR PDF ---
     try {
-      console.log('Intento de enviar PDF');
       const data = {
         nombre: aspirante.nombre,
         apellido: aspirante.apellido,
@@ -127,9 +125,11 @@ export class MatriculaService {
         aspirante.email,
       );
     } catch (error) {
-      console.error('Error enviando constancia PDF:', error);
+      // Es importante registrar este error de forma visible.
+      // No lanzamos una excepción para no revertir la creación de la matrícula,
+      // pero sí dejamos constancia del fallo en el envío del email.
+      console.error('FALLO EN EL ENVÍO DE CONSTANCIA DE MATRICULACIÓN:', error);
     }
-    console.log('Fin');
     return savedMatricula;
   }
 
@@ -169,33 +169,15 @@ export class MatriculaService {
       const estadoAnterior = matricula.estado;
       const carrera = matricula.carrera;
 
-      // Ajustar cupo si cambia el estado
       if (estadoAnterior !== nuevoEstado) {
-        // Confirmar matrícula → ocupar un cupo
+        // Si se confirma la matrícula, se crea el registro de estudiante.
+        // La lógica de cupos ya no se maneja aquí.
         if (nuevoEstado === 'confirmado' && estadoAnterior !== 'confirmado') {
-          if (carrera.cupo_actual <= 0) {
-            throw new Error(
-              `No hay más cupos disponibles para ${carrera.nombre}`,
-            );
-          }
-          carrera.cupo_actual -= 1;
-          await manager.save(carrera);
-
-          // Crear el registro de estudiante
           await this.estudianteService.crearEstudianteDesdeAspirante(
             matricula.aspirante,
             cicloLectivo,
             queryRunner,
           );
-        }
-
-        // Rechazar matrícula previamente confirmada → liberar un cupo
-        if (estadoAnterior === 'confirmado' && nuevoEstado !== 'confirmado') {
-          carrera.cupo_actual += 1; // SUMAR al liberar
-          if (carrera.cupo_actual > carrera.cupo_maximo) {
-            carrera.cupo_actual = carrera.cupo_maximo;
-          }
-          await manager.save(carrera);
         }
 
         // Actualizar estado de la matrícula

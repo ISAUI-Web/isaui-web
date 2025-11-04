@@ -87,6 +87,28 @@ export class AspiranteService {
 
     await manager.save(preinscripcion);
 
+    // --- INICIO: LÓGICA DE CONSTANCIA DE PREINSCRIPCIÓN ---
+    // Se mueve la lógica de envío de constancia aquí, que es el flujo principal.
+    try {
+      const data = {
+        nombre: aspiranteGuardado.nombre,
+        apellido: aspiranteGuardado.apellido,
+        dni: aspiranteGuardado.dni,
+        email: aspiranteGuardado.email,
+        numeroRegistro: aspiranteGuardado.id.toString(),
+        fechaPreinscripcion: preinscripcion.fecha_preinscripcion
+          .toISOString()
+          .split('T')[0],
+      };
+      const pdf = await this.constanciaService.generarPDF(data);
+      await this.constanciaService.enviarEmailConPDF(pdf, aspiranteGuardado.email);
+    } catch (error) {
+      // Si el email falla, no revertimos la transacción, pero sí lo registramos.
+      console.error('Error al enviar la constancia de preinscripción por email:', error);
+      // Opcional: Podrías usar un logger más robusto aquí.
+    }
+    // --- FIN: LÓGICA DE CONSTANCIA DE PREINSCRIPCIÓN ---
+
     // El método de documentos también debe aceptar el queryRunner
     // Corregimos el nombre del método y pasamos el objeto aspirante completo
     await this.documentoService.guardarDocumentosAspirante(
@@ -147,7 +169,7 @@ export class AspiranteService {
     // Se carga la relación con preinscripciones para asegurar que leemos el estado correcto.
     const aspirante = await this.aspiranteRepository.findOne({
       where: { id },
-      relations: ['preinscripciones', 'matriculas'],
+      relations: ['preinscripciones', 'preinscripciones.carrera', 'matriculas'],
     });
 
     if (!aspirante) {
@@ -190,6 +212,42 @@ export class AspiranteService {
       estado_preinscripcion &&
       estado_preinscripcion !== estadoPreinscripcionAnterior
     ) {
+      // --- LÓGICA DE CUPOS MOVIDA AQUÍ ---
+      const preinscripcion = aspirante.preinscripciones?.[0];
+      if (preinscripcion) {
+        const carrera = await this.carreraRepository.findOneBy({
+          id: preinscripcion.carrera.id,
+        });
+
+        if (carrera) {
+          // Confirmar preinscripción → ocupar un cupo
+          if (
+            estado_preinscripcion === 'confirmado' &&
+            estadoPreinscripcionAnterior !== 'confirmado'
+          ) {
+            if (carrera.cupo_actual <= 0) {
+              throw new BadRequestException(
+                `No hay más cupos disponibles para ${carrera.nombre}`,
+              );
+            }
+            carrera.cupo_actual -= 1;
+            await this.carreraRepository.save(carrera);
+          }
+
+          // Cambiar de 'confirmado' a otro estado → liberar un cupo
+          if (
+            estadoPreinscripcionAnterior === 'confirmado' &&
+            estado_preinscripcion !== 'confirmado'
+          ) {
+            carrera.cupo_actual += 1;
+            if (carrera.cupo_actual > carrera.cupo_maximo) {
+              carrera.cupo_actual = carrera.cupo_maximo;
+            }
+            await this.carreraRepository.save(carrera);
+          }
+        }
+      }
+
       await this.preinscripcionService.updateEstadoForAspirante(
         id,
         estado_preinscripcion,

@@ -209,7 +209,13 @@ const handleEstado = async (id: number, nuevoEstado: "en espera" | "confirmado" 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : `No se pudo cambiar el estado a ${nuevoEstado}`;
     console.error(errorMessage);
-    alert(errorMessage);
+    setDialogProps({
+      title: "Error al Actualizar el Estado",
+      description: errorMessage,
+      variant: "error",
+      confirmText: "Entendido",
+    });
+    setIsLogoutDialogOpen(true);
   }
 };
   // const handleConfirmar = (id: number) => {

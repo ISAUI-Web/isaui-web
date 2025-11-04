@@ -83,9 +83,10 @@ export default function Cupos() {
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/carrera`)
         if (!response.ok) throw new Error("Error al cargar los datos de cupos")
         const data = await response.json()
+        const carrerasActivas = data.filter((c: any) => c.activo);
         // Asegura que los campos sean números
         setCupos(
-          data.map((c: any) => ({
+          carrerasActivas.map((c: any) => ({
             ...c,
             cupoMaximo: Number(c.cupo_maximo) || 0,
             cupoActual: Number(c.cupo_actual) || 0,
