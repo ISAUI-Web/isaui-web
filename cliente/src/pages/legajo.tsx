@@ -1,6 +1,6 @@
 "use client"
 import { ProtectedRoute } from "../components/protected-route"
-import { getUserRole } from "../lib/auth"
+import { getUserRole, getUser } from "../lib/auth"
 import { RolUsuario } from "../lib/types"
 import { useState, useEffect } from "react"
 import { Card } from "../components/ui/card"
@@ -91,8 +91,11 @@ export default function AdminMatriculacion() {
   const [loadingProfesores, setLoadingProfesores] = useState(true);
   const [errorProfesores, setErrorProfesores] = useState<string | null>(null);
 
-  // State for Tabs
-  const [activeTab, setActiveTab] = useState<"alumnos" | "profesores">("alumnos");
+  const currentUser = getUser()
+  const userRole = getUserRole()
+  const isProfesor = userRole === RolUsuario.PROFESOR
+
+  const [activeTab, setActiveTab] = useState<"alumnos" | "profesores">(isProfesor ? "profesores" : "alumnos")
 
 
   // Handler for viewing legajo
@@ -124,21 +127,32 @@ export default function AdminMatriculacion() {
     }, []);
 
     useEffect(() => {
-  fetch("http://localhost:3000/docente")
-    .then(res => {
-      if (!res.ok) throw new Error("Error al traer los profesores");
-      return res.json();
-    })
-    .then(data => {
-      setProfesores(data);
-      setLoadingProfesores(false);
-    })
-    .catch(err => {
-      console.error(err);
-      setErrorProfesores("No se pudo cargar la lista de profesores");
-      setLoadingProfesores(false);
-    });
-}, []);
+        fetch("http://localhost:3000/docente")
+          .then((res) => {
+            if (!res.ok) throw new Error("Error al traer los profesores")
+            return res.json()
+          })
+          .then((data) => {
+            if (isProfesor && currentUser) {
+              // Match by DNI or email to find the professor's record
+              const miLegajo = data.filter(
+                (p: Profesor) =>
+                  p.dni === currentUser.nombre_usuario ||
+                  // If nombre_usuario is email, we might need additional matching logic
+                  p.id === currentUser.id,
+              )
+              setProfesores(miLegajo)
+            } else {
+              setProfesores(data)
+            }
+            setLoadingProfesores(false)
+          })
+          .catch((err) => {
+            console.error(err)
+            setErrorProfesores("No se pudo cargar la lista de profesores")
+            setLoadingProfesores(false)
+          })
+      }, [isProfesor, currentUser])
 
   const carrerasUnicas = Array.from(new Set(estudiantes.map(e => e.carrera)));
 
@@ -289,11 +303,17 @@ const handleMenuItemClick = (itemId: string) => {
             <X className="w-6 h-6" />
           </button>
 
-          <img src={logo} alt="Logo" className="mx-auto h-20" />
-          <div className="mt-3">
-            <p className="text-white text-sm font-medium">ADMINISTRADOR</p>
+          <img src={logo || "/placeholder.svg"} alt="Logo" className="mx-auto h-20" />
+            <div className="mt-3">
+              <p className="text-white text-sm font-medium">
+                {userRole === RolUsuario.ADMIN_GENERAL
+                  ? "ADMINISTRADOR"
+                  : userRole === RolUsuario.GESTOR_ACADEMICO
+                    ? "GESTOR ACADÉMICO"
+                    : "PROFESOR"}
+              </p>
+            </div>
           </div>
-        </div>
 
         {/* Menu Items */}
         <div className="flex-1">
@@ -386,7 +406,7 @@ const handleMenuItemClick = (itemId: string) => {
                 className="w-full pl-4 pr-12 py-3 rounded-full bg-white border-2 focus:ring-2 focus:ring-blue-500 text-gray-600 text-xl font-sans"
               />
             </div>
-  {/* Filtro por Carrera */}
+  {activeTab === "alumnos" && !isProfesor && (
   <select
     value={filterCarrera}
     onChange={(e) => setFilterCarrera(e.target.value)}
@@ -397,6 +417,8 @@ const handleMenuItemClick = (itemId: string) => {
       <option key={c} value={c}>{c}</option>
     ))}
   </select>
+  )}
+  {(!isProfesor || (isProfesor && profesores.length === 0)) && (
   <div className="flex-1 flex justify-end">
     <Button
       className="bg-green-500 hover:bg-green-600 text-white flex items-center gap-2"
@@ -412,7 +434,9 @@ const handleMenuItemClick = (itemId: string) => {
       Agregar Legajo
     </Button>
   </div>
+  )}
 </div>
+{!isProfesor ? (
       <TabsList className="grid w-full grid-cols-2 max-w-md">
         <TabsTrigger value="alumnos" className="flex items-center gap-2">
           <GraduationCap className="w-4 h-4" />
@@ -423,7 +447,16 @@ const handleMenuItemClick = (itemId: string) => {
           Profesores ({profesoresFiltrados.length}) 
         </TabsTrigger>
       </TabsList>
+    ) : (
+            <div className="text-center py-2">
+            <h3 className="text-lg font-semibold text-gray-700 flex items-center justify-center gap-2">
+                <BookOpen className="w-5 h-5" />
+                Mi Legajo
+            </h3>
+            </div>
+        )}
     </div>
+    {!isProfesor && (
     <TabsContent value="alumnos" className="p-6">
       <div className="overflow-x-auto">
         <table className="w-full">
@@ -479,11 +512,23 @@ const handleMenuItemClick = (itemId: string) => {
         </table>
       </div>
     </TabsContent>
+    )}
     <TabsContent value="profesores" className="p-6">
   {loadingProfesores ? (
     <p className="text-gray-700">Cargando profesores...</p>
   ) : errorProfesores ? (
     <p className="text-red-500">{errorProfesores}</p>
+    ) : profesoresFiltrados.length === 0 && isProfesor ? (
+                      <div className="text-center py-8">
+                        <p className="text-gray-600 mb-4">Aún no tienes un legajo creado.</p>
+                        <Button
+                          onClick={() => navigate("/crearProfesor")}
+                          className="bg-green-500 hover:bg-green-600 text-white flex items-center gap-2 mx-auto"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Crear Mi Legajo
+                        </Button>
+                      </div>
   ) : (
     <div className="overflow-x-auto">
       <table className="w-full">
@@ -512,6 +557,7 @@ const handleMenuItemClick = (itemId: string) => {
                     <Eye className="w-4 h-4" />
                     Ver legajo
                   </Button>
+                  {!isProfesor && (
                   <Button
                     onClick={() =>
                        handleDeleteDocente(profesor.id, profesor.nombre, profesor.apellido)
@@ -521,6 +567,7 @@ const handleMenuItemClick = (itemId: string) => {
                     <Trash2 className="w-4 h-4" />
                     Eliminar
                   </Button>
+                  )}
                 </div>
               </td>
             </tr>
