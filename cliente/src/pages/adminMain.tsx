@@ -91,11 +91,7 @@ export default function AdminMain() {
   const handleLogout = () => {
     localStorage.removeItem("adminRemember")
     localStorage.removeItem("adminUser")
-<<<<<<< HEAD
-    alert("¡Sesión cerrada exitosamente!")
     logout()
-    navigate("/login")
-=======
     setDialogProps({
       title: "Sesión cerrada",
       description: "Has cerrado sesión exitosamente.",
@@ -104,7 +100,6 @@ export default function AdminMain() {
       onConfirm: () => navigate("/login")
     })
     setIsLogoutDialogOpen(true)
->>>>>>> master
   }
 
   const nextImage = () => {

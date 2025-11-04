@@ -142,8 +142,7 @@ const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
     }, []);
 
     useEffect(() => {
-<<<<<<< HEAD
-        fetch("http://localhost:3000/docente")
+        fetch(`${import.meta.env.VITE_API_BASE_URL}/docente`)
           .then((res) => {
             if (!res.ok) throw new Error("Error al traer los profesores")
             return res.json()
@@ -169,24 +168,6 @@ const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
             setLoadingProfesores(false)
           })
       }, [isProfesor, currentUser])
-=======
-  // Usamos la variable de entorno para la URL base de la API
-  fetch(`${import.meta.env.VITE_API_BASE_URL}/docente`)
-    .then(res => {
-      if (!res.ok) throw new Error("Error al traer los profesores");
-      return res.json();
-    })
-    .then(data => {
-      setProfesores(data);
-      setLoadingProfesores(false);
-    })
-    .catch(err => {
-      console.error(err);
-      setErrorProfesores("No se pudo cargar la lista de profesores");
-      setLoadingProfesores(false);
-    });
-}, []);
->>>>>>> master
 
   const carrerasUnicas = Array.from(new Set(estudiantes.map(e => e.carrera)));
 

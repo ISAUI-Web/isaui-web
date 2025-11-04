@@ -480,10 +480,6 @@ const handleEstado = async (id: number, nuevoEstado: "en espera" | "confirmado" 
     showCancel={!!dialogProps.onCancel}
 />
     </div>
-<<<<<<< HEAD
     </ProtectedRoute>
-=======
-  
->>>>>>> master
   )
 }
