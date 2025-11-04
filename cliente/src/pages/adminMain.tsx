@@ -1,7 +1,8 @@
 "use client"
-
+import { getUserRole } from "../lib/auth"
 import { ProtectedRoute } from "../components/protected-route"
 import { RolUsuario } from "../lib/types"
+import { logout } from "../lib/auth"
 import { useState } from "react"
 import { Card } from "../components/ui/card"
 import {CustomDialog} from "../components/ui/customDialog"
@@ -88,17 +89,28 @@ export default function AdminMain() {
   }
 
   const handleLogout = () => {
-    localStorage.removeItem("adminRemember")
-    localStorage.removeItem("adminUser")
-    setDialogProps({
-      title: "Sesión cerrada",
-      description: "Has cerrado sesión exitosamente.",
-      variant: "success",
-      confirmText: "Entendido",
-      onConfirm: () => navigate("/login")
-    })
-    setIsLogoutDialogOpen(true)
-  }
+  // Limpieza previa opcional
+  localStorage.removeItem("adminRemember")
+  localStorage.removeItem("adminUser")
+
+  setDialogProps({
+    title: "Sesión cerrada",
+    description: "Has cerrado sesión exitosamente.",
+    variant: "success",
+    confirmText: "Entendido",
+    onConfirm: async () => {
+      try {
+        await logout() // 🔹 Ejecuta tu método de cierre de sesión cuando el usuario confirma
+      } catch (error) {
+        console.error("Error al cerrar sesión:", error)
+      } finally {
+        navigate("/login")
+      }
+    }
+  })
+
+  setIsLogoutDialogOpen(true)
+}
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % carouselImages.length)
@@ -191,6 +203,20 @@ const handleMenuItemClick = (itemId: string) => {
         {/* Menu Items */}
         <div className="flex-1">
           {menuItems.map((item) => {
+            const userRole = getUserRole();
+
+            if (item.id === "mantenimiento" && userRole !== RolUsuario.ADMIN_GENERAL) {
+              return null;
+            }
+            if (item.id === "reportes" && userRole == RolUsuario.PROFESOR) {
+              return null;
+            }
+            if (item.id === "cupos" && userRole == RolUsuario.PROFESOR) {
+              return null;
+            }
+            if (item.id === "aspirantes" && userRole == RolUsuario.PROFESOR) {
+              return null;
+            }
             const IconComponent = item.icon;
             // Special case: render password-change as a Dialog trigger
             if (item.id === 'cambio-contrasena') {

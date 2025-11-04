@@ -2,6 +2,7 @@
 
 import { ProtectedRoute } from "../components/protected-route"
 import { RolUsuario } from "../lib/types"
+import { getUserRole } from "../lib/auth"
 import { useState, useEffect } from "react"
 import {CustomDialog} from "../components/ui/customDialog"
 import { Card } from "../components/ui/card"
@@ -276,6 +277,11 @@ const handleEstado = async (id: number, nuevoEstado: "en espera" | "confirmado" 
         {/* Menu Items */}
         <div className="flex-1">
           {menuItems.map((item) => {
+            const userRole = getUserRole();
+
+            if (item.id === "mantenimiento" && userRole !== RolUsuario.ADMIN_GENERAL) {
+              return null;
+            }
             const IconComponent = item.icon;
             if (item.id === 'cambio-contrasena') {
               return (

@@ -86,6 +86,7 @@ export default function Login() {
     // Guardar SIEMPRE el token (para que funcione el cambio de contraseña)
     if (data.token) {
       localStorage.setItem('token', data.token);
+      console.log(JSON.parse(atob(data.token.split(".")[1])))
     }
 
     // Guardar usuario solo si "Recuérdame" (opcional, para persistencia)
