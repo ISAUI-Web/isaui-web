@@ -12,14 +12,14 @@ import { ArrowLeft, User } from "lucide-react"
 
 interface LoginForm {
   usuario: string
-  contraseña: string
+  contrasena: string
   recordarme: boolean
 }
 
 export default function LoginPage() {
   const [formData, setFormData] = useState<LoginForm>({
     usuario: "",
-    contraseña: "",
+    contrasena: "",
     recordarme: false,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -41,8 +41,8 @@ export default function LoginPage() {
       newErrors.usuario = "El usuario es requerido"
     }
 
-    if (!formData.contraseña.trim()) {
-      newErrors.contraseña = "La contraseña es requerida"
+    if (!formData.contrasena.trim()) {
+      newErrors.contrasena = "La contraseña es requerida"
     }
 
     setErrors(newErrors)
@@ -56,6 +56,7 @@ export default function LoginPage() {
 
     setIsLoading(true)
 
+<<<<<<< HEAD
     try {
       const response = await fetch('http://localhost:3000/usuario/login', {
         method: "POST",
@@ -67,6 +68,19 @@ export default function LoginPage() {
           contraseña: formData.contraseña,
         }),
       })
+=======
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/usuario/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        nombre_usuario: formData.usuario, 
+        contrasena: formData.contrasena,
+      }),
+    });
+>>>>>>> master
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -96,6 +110,32 @@ export default function LoginPage() {
       setErrors({ general: "Error de conexión con el servidor" })
       setIsLoading(false)
     }
+<<<<<<< HEAD
+=======
+
+    const data = await response.json();
+
+
+    // Guardar SIEMPRE el token (para que funcione el cambio de contraseña)
+    if (data.token) {
+      localStorage.setItem('token', data.token);
+    }
+
+    // Guardar usuario solo si "Recuérdame" (opcional, para persistencia)
+    if (formData.recordarme) {
+      localStorage.setItem('usuario', JSON.stringify(data.usuario));
+      // Opcional: guardar recordarme para pre-marcar el checkbox
+      localStorage.setItem('recordarme', 'true');
+    }
+
+    setIsLoading(false);
+    navigate('/admin'); // Redirigimos al panel admin
+
+  } catch (error) {
+    console.error(error);
+    setErrors({ general: 'Error de conexión con el servidor' });
+    setIsLoading(false);
+>>>>>>> master
   }
 
   const handleBack = () => {
@@ -161,20 +201,20 @@ export default function LoginPage() {
 
               {/* Campo Contraseña */}
               <div className="space-y-2">
-                <Label htmlFor="contraseña" className="text-white text-sm font-medium uppercase tracking-wide">
+                <Label htmlFor="contrasena" className="text-white text-sm font-medium uppercase tracking-wide">
                   CONTRASEÑA:
                 </Label>
                 <Input
-                  id="contraseña"
+                  id="contrasena"
                   type="password"
-                  value={formData.contraseña}
-                  onChange={(e) => handleInputChange("contraseña", e.target.value)}
+                  value={formData.contrasena}
+                  onChange={(e) => handleInputChange("contrasena", e.target.value)}
                   className={`w-full px-4 py-3 rounded-md bg-white text-gray-900 border-0 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-                    errors.contraseña ? "ring-2 ring-red-500" : ""
+                    errors.contrasena ? "ring-2 ring-red-500" : ""
                   }`}
                   placeholder=""
                 />
-                {errors.contraseña && <p className="text-red-400 text-sm">{errors.contraseña}</p>}
+                {errors.contrasena && <p className="text-red-400 text-sm">{errors.contrasena}</p>}
               </div>
 
               {/* Checkbox y botón */}

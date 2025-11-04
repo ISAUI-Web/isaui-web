@@ -4,6 +4,7 @@ import { RolUsuario } from "../lib/types"
 import { getUserRole } from "../lib/auth"
 import { useState } from "react"
 import { Card } from "../components/ui/card"
+import {CustomDialog} from "../components/ui/customDialog"
 import {
   Menu,
   X,
@@ -19,6 +20,7 @@ import {
   ChevronRight,
   ChevronDown,
   Settings,
+  RotateCcwKey
 } from "lucide-react"
 import { logout } from "../lib/auth"
 import logo from "../assets/logo.png"
@@ -29,6 +31,7 @@ import carrusel3 from "../assets/carrusel3.jpg"
 import carrusel4 from "../assets/carrusel4.jpg"
 import carrusel5 from "../assets/carrusel5.jpg"
 import { useNavigate } from "react-router-dom"
+import ChangePasswordDialog from '../components/ChangePasswordDialog';
 
 const carouselImages = [
   carrusel1,
@@ -61,13 +64,25 @@ const menuItems: MenuItem[] = [
   { icon: FolderOpen, label: "LEGAJO DIGITAL", id: "legajo" },
   { icon: FileText, label: "REPORTES", id: "reportes" },
   { icon: Settings, label: "MANTENIMIENTO", id: "mantenimiento" },
+  { icon: RotateCcwKey, label: "GESTIÓN DE CUENTA", id: "cambio-contrasena" }
 ]
 
 export default function AdminMain() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [activeSection, setActiveSection] = useState("inicio")
+  const [dialogOpen, setDialogOpen] = useState(false)
   const navigate = useNavigate()
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
+  const [dialogProps, setDialogProps] = useState<{
+    title?: string
+    description?: string
+    variant?: "info" | "error" | "success" | "confirm"
+    onConfirm?: (() => void) | undefined
+    onCancel?: (() => void) | undefined
+    confirmText?: string
+    cancelText?: string
+  }>({})
   
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
@@ -76,9 +91,20 @@ export default function AdminMain() {
   const handleLogout = () => {
     localStorage.removeItem("adminRemember")
     localStorage.removeItem("adminUser")
+<<<<<<< HEAD
     alert("¡Sesión cerrada exitosamente!")
     logout()
     navigate("/login")
+=======
+    setDialogProps({
+      title: "Sesión cerrada",
+      description: "Has cerrado sesión exitosamente.",
+      variant: "success",
+      confirmText: "Entendido",
+      onConfirm: () => navigate("/login")
+    })
+    setIsLogoutDialogOpen(true)
+>>>>>>> master
   }
 
   const nextImage = () => {
@@ -189,6 +215,34 @@ const handleMenuItemClick = (itemId: string) => {
               return null;
             }
             const IconComponent = item.icon;
+            // Special case: render password-change as a Dialog trigger
+            if (item.id === 'cambio-contrasena') {
+              return (
+                <div key={item.id}>
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      setDialogOpen(true);
+                    }}
+                    className={`w-full flex items-center px-6 py-4 text-white hover:bg-[#31546D] transition-colors ${
+                      activeSection === item.id ? 'bg-[#31546D]' : ''
+                    }`}
+                  >
+                    <IconComponent className="w-5 h-5 mr-4" />
+                    <span className="text-sm font-medium tracking-wide">{item.label}</span>
+                  </button>
+
+                  <ChangePasswordDialog
+                    open={dialogOpen}
+                    onOpenChange={(open) => {
+                      setDialogOpen(open);
+                      if (!open) setActiveSection('');
+                    }}
+                  />
+                </div>
+              );
+            }
+
             return (
               <div key={item.id}>
                 <button
@@ -226,7 +280,6 @@ const handleMenuItemClick = (itemId: string) => {
           })}
         </div>
 
-        {/* Logout Button */}
         <div className="p-4 flex-shrink-0">
           <button
             onClick={handleLogout}
@@ -288,6 +341,16 @@ const handleMenuItemClick = (itemId: string) => {
           </Card>
         </div>
       </main>
+      <CustomDialog
+    open={isLogoutDialogOpen}
+    onClose={() => setIsLogoutDialogOpen(false)}
+    title={dialogProps.title ?? ""}
+    description={dialogProps.description ?? ""}
+    confirmLabel={dialogProps.confirmText ?? "Entendido"}
+    cancelLabel={dialogProps.cancelText}
+    onConfirm={dialogProps.onConfirm}
+    showCancel={!!dialogProps.onCancel}
+/>
     </div>
     </ProtectedRoute>
   )

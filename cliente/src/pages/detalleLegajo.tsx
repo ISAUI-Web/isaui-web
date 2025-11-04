@@ -2,14 +2,16 @@
 import { ProtectedRoute } from "../components/protected-route"
 import { RolUsuario } from "../lib/types"
 import { useState, useEffect, useRef } from "react"
+import {CustomDialog} from "../components/ui/customDialog"
 import { Card } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
-import { ArrowLeft, User, Save, Edit, Eye, X, Camera, Upload } from "lucide-react"
+import { ArrowLeft, User, Save, Edit, Eye, X, Camera, Upload, FileText } from "lucide-react"
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import jsPDF from "jspdf"
 
-const API_BASE = 'http://localhost:3000';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 const abs = (u?: string | null) => {
   if (!u) return '';
   return u.startsWith('http') || u.startsWith('blob:') ? u : `${API_BASE}${u}`;
@@ -32,6 +34,7 @@ export default function DetalleLegajo() {
 
   const [activeTab, setActiveTab] = useState("datos")
   const [isEditing, setIsEditing] = useState(false)
+  const [estudianteId, setEstudianteId] = useState<number | null>(null); // <-- NUEVO ESTADO
   const [formData, setFormData] = useState<any>({
     nombre: '',
     apellido: '',
@@ -86,6 +89,16 @@ export default function DetalleLegajo() {
   const [grupoSanguineoFile, setGrupoSanguineoFile] = useState<File | null>(null);
   const [cudFile, setCudFile] = useState<File | null>(null);
   const [emmacFile, setEmmacFile] = useState<File | null>(null);
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
+  const [dialogProps, setDialogProps] = useState<{
+    title?: string
+    description?: string
+    variant?: "info" | "error" | "success" | "confirm"
+    onConfirm?: (() => void) | undefined
+    onCancel?: (() => void) | undefined
+    confirmText?: string
+    cancelText?: string
+  }>({})
 
   // Mapeo para manejar el estado de los archivos de forma genérica
   const fileStates: Record<string, React.Dispatch<React.SetStateAction<File | null>>> = {
@@ -215,8 +228,8 @@ export default function DetalleLegajo() {
   useEffect(() => {
   const fetchLegajo = async () => {
     setIsLoading(true);
-    try {
-      const response = await fetch(`http://localhost:3000/estudiante/by-aspirante/${id}`);
+    try { // CORRECCIÓN: Usar la variable de entorno para la URL de la API.
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/estudiante/by-aspirante/${id}`);
       if (!response.ok) throw new Error('Error al cargar el legajo del estudiante');
 
       const estudianteData = await response.json();
@@ -235,8 +248,10 @@ export default function DetalleLegajo() {
       // La solución es combinar los datos del estudiante y los datos del aspirante anidado.
       // Y lo más importante, construir el objeto `documentos` a partir del objeto `aspirante` anidado.
       setFormData({
-        ...estudianteData, // Copia los datos del estudiante (id, año_actual, etc.)
+        // Ya no propagamos estudianteData para evitar sobreescribir el ID
         ...estudianteData.aspirante, // Copia los datos del aspirante (nombre, dni, etc.)
+        ciclo_lectivo: estudianteData.ciclo_lectivo, // Copiamos campos específicos del estudiante
+        año_actual: estudianteData.año_actual,
         fecha_nacimiento: formattedDate,
         documentos: {
           // El error estaba aquí. No se estaba leyendo del objeto anidado.
@@ -244,6 +259,7 @@ export default function DetalleLegajo() {
           ...estudianteData.aspirante,
         },
       });
+      setEstudianteId(estudianteData.id); // Guardamos el ID del estudiante por separado
     } catch (error) {
       console.error("❌ Error:", error)
     } finally {
@@ -267,7 +283,13 @@ export default function DetalleLegajo() {
     activeTab === "documentacion" ? 4 : 1;
   // Usamos la nueva función de validación unificada, pasándole el estado actual del formulario
   if (!validate(formData, step)) {
-    alert("Por favor, corrige los errores antes de guardar.");
+    setDialogProps({
+      title: "Errores de validación",
+      description: "Por favor, complete todos los campos requeridos.",
+      variant: "error",
+      confirmText: "Entendido",
+    })
+    setIsLogoutDialogOpen(true)
     return;
   }
 
@@ -295,21 +317,17 @@ export default function DetalleLegajo() {
         value = String(value);
       }
 
-      // Mapeo de valores de selects a lo que espera el backend si es necesario
-      // (ej: 'Sí' -> 'true', 'No' -> 'false')
-      if (['completo_nivel_medio', 'completo_nivel_superior', 'trabajo', 'personas_cargo'].includes(key)) {
-        if (value === 'Sí') {
-          value = 'true';
-        } else if (value === 'No') {
-          value = 'false';
-        }
-        // Si es 'En curso', se mantiene como está
-      }
+      // Con los DTOs corregidos, ya no necesitamos convertir 'Sí' a 'true'.
+      // Simplemente enviamos el valor del select ('Sí', 'No', 'En curso').
 
       // Si el valor es una cadena vacía, no lo enviamos para que el backend
       // no intente validar un campo opcional vacío.
       if (value !== '') {
-        data.append(key, value);
+        data.append(key, value as string);
+      } else if (['horas_diarias', 'descripcion_trabajo'].includes(key)) {
+        // Si el valor es una cadena vacía y es un campo que debe limpiarse,
+        // lo enviamos explícitamente para que el backend lo ponga a NULL.
+        data.append(key, '');
       }
     }
   });
@@ -331,8 +349,12 @@ export default function DetalleLegajo() {
   if (emmacFile) data.append('emmac', emmacFile);
 
   try {
-    const res = await fetch(`http://localhost:3000/aspirante/${id}`, {
-      method: 'PUT',
+    // CORRECCIÓN: La ruta para actualizar un legajo de estudiante debe apuntar al controlador
+    // de 'estudiante', no al de 'aspirante'. El backend ya tiene un endpoint para esto.
+    // Usamos el ID del estudiante (formData.id) en lugar del ID del aspirante (id de la URL).
+    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/estudiante/${estudianteId}`, {
+      // El método correcto para una actualización parcial es PATCH, pero PUT también funciona aquí.
+      method: 'PUT', 
       // NO establecemos Content-Type, el navegador lo hará automáticamente para FormData
       body: data,
     });
@@ -351,17 +373,26 @@ export default function DetalleLegajo() {
       ? updatedLegajo.fecha_nacimiento.split('T')[0]
       : "";
 
+    // Reconstruimos el estado del formulario desde cero con la respuesta del backend
+    // para evitar inconsistencias y asegurar que los datos transformados se muestren.
     setFormData({
-      ...formData, // Mantiene el estado actual
-      ...updatedLegajo, // Sobrescribe con los datos actualizados del backend
+      ...updatedLegajo.aspirante, // Datos del aspirante desde la respuesta (ya transformados)
+      ciclo_lectivo: updatedLegajo.ciclo_lectivo,
+      año_actual: updatedLegajo.año_actual,
       fecha_nacimiento: formattedDate,
       documentos: {
-        ...formData.documentos, // Mantiene las URLs de documentos existentes
-        ...updatedLegajo, // Sobrescribe con las nuevas URLs si las hay
+        // Las URLs de los documentos ya vienen dentro de updatedLegajo.aspirante
+        ...updatedLegajo.aspirante,
       }
     });
     setIsEditing(false);
-    alert('Cambios guardados con éxito');
+    setDialogProps({
+      title: "Cambios guardados",
+      description: "Cambios guardados con éxito.",
+      variant: "success",
+      confirmText: "Entendido",
+    })
+    setIsLogoutDialogOpen(true)
   } catch (error: any) {
     console.error('Error guardando aspirante:', error);
     alert(`Hubo un error al guardar los cambios: ${error.message}`);
@@ -370,6 +401,223 @@ export default function DetalleLegajo() {
 
   const handleEdit = () => {
     setIsEditing(true)
+  }
+  
+  const handleGeneratePDF = async () => {
+    try {
+      const pdf = new jsPDF()
+
+      const getImageBase64 = async (url: string): Promise<string | null> => {
+        try {
+          const response = await fetch(url)
+          const blob = await response.blob()
+          return new Promise((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onloadend = () => resolve(reader.result as string)
+            reader.onerror = reject
+            reader.readAsDataURL(blob)
+          })
+        } catch (error) {
+          console.error("[v0] Error loading image:", url, error)
+          return null
+        }
+      }
+
+      let yPosition = 20 
+
+      const printDate = new Date().toLocaleDateString("es-AR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
+      pdf.setFontSize(9)
+      pdf.setFont("helvetica", "normal")
+      pdf.setTextColor(100, 100, 100)
+      pdf.text(`Fecha de impresión: ${printDate}`, 200, yPosition, { align: "right" })
+      pdf.setTextColor(0, 0, 0)
+      yPosition += 10
+
+      pdf.setFontSize(18)
+      pdf.setFont("helvetica", "bold")
+      pdf.text(`Legajo del Estudiante`, 105, yPosition, { align: "center" })
+      yPosition += 8
+
+      pdf.setFontSize(14)
+      pdf.text(`${formData.nombre} ${formData.apellido}`, 105, yPosition, { align: "center" })
+      yPosition += 12
+
+      const leftX = 20
+      const lineHeight = 6
+
+      pdf.setFontSize(12)
+      pdf.setFont("helvetica", "bold")
+      pdf.text("DATOS PERSONALES", leftX, yPosition)
+      yPosition += lineHeight + 2
+
+      pdf.setFontSize(10)
+      pdf.setFont("helvetica", "normal")
+
+      const personalData = [
+        `Nombre: ${formData.nombre || "N/A"}`,
+        `Apellido: ${formData.apellido || "N/A"}`,
+        `Sexo: ${formData.sexo || "N/A"}`,
+        `DNI: ${formData.dni || "N/A"}`,
+        `CUIL/CUIT: ${formData.cuil || "N/A"}`,
+        `Domicilio: ${formData.domicilio || "N/A"}`,
+        `Localidad: ${formData.localidad || "N/A"}`,
+        `Barrio: ${formData.barrio || "N/A"}`,
+        `Código Postal: ${formData.codigo_postal || "N/A"}`,
+        `Teléfono: ${formData.telefono || "N/A"}`,
+        `Email: ${formData.email || "N/A"}`,
+        `Fecha de Nacimiento: ${formData.fecha_nacimiento || "N/A"}`,
+        `Ciudad de Nacimiento: ${formData.ciudad_nacimiento || "N/A"}`,
+        `Provincia: ${formData.provincia_nacimiento || "N/A"}`,
+        `Carrera: ${formData.carrera || "N/A"}`,
+        `Ciclo Lectivo: ${formData.ciclo_lectivo || "N/A"}`,
+      ]
+
+      personalData.forEach((line) => {
+        pdf.text(line, leftX, yPosition)
+        yPosition += lineHeight
+      })
+
+      yPosition += 5
+
+      pdf.setFontSize(12)
+      pdf.setFont("helvetica", "bold")
+      pdf.text("ESTUDIOS", leftX, yPosition)
+      yPosition += lineHeight + 2
+
+      pdf.setFontSize(10)
+      pdf.setFont("helvetica", "normal")
+
+      const educationData = [`Nivel Medio: ${formData.completo_nivel_medio || "N/A"}`]
+
+      if (formData.completo_nivel_medio === "Sí") {
+        educationData.push(
+          `Año Ingreso: ${formData.anio_ingreso_medio || "N/A"}`,
+          `Año Egreso: ${formData.anio_egreso_medio || "N/A"}`,
+          `Provincia: ${formData.provincia_medio || "N/A"}`,
+          `Título: ${formData.titulo_medio || "N/A"}`,
+        )
+      }
+
+      educationData.push(`Nivel Superior: ${formData.completo_nivel_superior || "N/A"}`)
+
+      if (formData.completo_nivel_superior === "Sí" || formData.completo_nivel_superior === "En curso") {
+        educationData.push(
+          `Carrera: ${formData.carrera_superior || "N/A"}`,
+          `Institución: ${formData.institucion_superior || "N/A"}`,
+          `Provincia: ${formData.provincia_superior || "N/A"}`,
+          `Año Ingreso: ${formData.anio_ingreso_superior || "N/A"}`,
+        )
+        if (formData.completo_nivel_superior === "Sí") {
+          educationData.push(`Año Egreso: ${formData.anio_egreso_superior || "N/A"}`)
+        }
+      }
+
+      educationData.forEach((line) => {
+        pdf.text(line, leftX, yPosition)
+        yPosition += lineHeight
+      })
+
+      yPosition += 5
+
+      pdf.setFontSize(12)
+      pdf.setFont("helvetica", "bold")
+      pdf.text("SITUACIÓN LABORAL", leftX, yPosition)
+      yPosition += lineHeight + 2
+
+      pdf.setFontSize(10)
+      pdf.setFont("helvetica", "normal")
+
+      const workData = [`Trabaja: ${formData.trabajo || "N/A"}`]
+
+      if (formData.trabajo === "Sí") {
+        workData.push(
+          `Horas Diarias: ${formData.horas_diarias || "N/A"}`,
+          `Descripción: ${formData.descripcion_trabajo || "N/A"}`,
+        )
+      }
+
+      workData.push(`Personas a Cargo: ${formData.personas_cargo || "N/A"}`)
+
+      workData.forEach((line) => {
+        pdf.text(line, leftX, yPosition)
+        yPosition += lineHeight
+      })
+
+      const documents = [
+        { url: formData.documentos?.dniFrenteUrl, title: "DNI - Frente" },
+        { url: formData.documentos?.dniDorsoUrl, title: "DNI - Dorso" },
+        { url: formData.documentos?.cusUrl, title: "CUS" },
+        { url: formData.documentos?.foto_carnetUrl, title: "Foto Carnet 4x4" },
+        { url: formData.documentos?.isaUrl, title: "ISA" },
+        { url: formData.documentos?.partida_nacimientoUrl, title: "Partida de Nacimiento" },
+        { url: formData.documentos?.analiticoUrl, title: "Analítico Secundario" },
+        { url: formData.documentos?.grupo_sanguineoUrl, title: "Certificado de Grupo Sanguíneo" },
+        { url: formData.documentos?.cudUrl, title: "CUD" },
+        { url: formData.documentos?.emmacUrl, title: "EMMAC" },
+      ].filter((doc) => doc.url)
+
+      if (documents.length > 0) {
+        pdf.addPage()
+        yPosition = 20
+
+        pdf.setFontSize(12)
+        pdf.setFont("helvetica", "bold")
+        pdf.text("DOCUMENTACIÓN", 20, yPosition)
+        yPosition += 10
+
+        for (let i = 0; i < documents.length; i += 2) {
+          const doc1 = documents[i]
+          const doc2 = documents[i + 1]
+
+          if (i > 0) {
+            pdf.addPage()
+            yPosition = 20
+          }
+
+          const fullUrl1 = abs(doc1.url)
+          const base64_1 = await getImageBase64(fullUrl1)
+
+          if (base64_1) {
+            pdf.setFontSize(11)
+            pdf.setFont("helvetica", "bold")
+            pdf.text(doc1.title, 20, yPosition)
+            yPosition += 7
+
+            const imgWidth = 170
+            const imgHeight = 110
+            pdf.addImage(base64_1, "JPEG", 20, yPosition, imgWidth, imgHeight)
+            yPosition += imgHeight + 15
+          }
+
+          if (doc2) {
+            const fullUrl2 = abs(doc2.url)
+            const base64_2 = await getImageBase64(fullUrl2)
+
+            if (base64_2) {
+              pdf.setFontSize(11)
+              pdf.setFont("helvetica", "bold")
+              pdf.text(doc2.title, 20, yPosition)
+              yPosition += 7
+
+              const imgWidth = 170
+              const imgHeight = 110
+              pdf.addImage(base64_2, "JPEG", 20, yPosition, imgWidth, imgHeight)
+            }
+          }
+        }
+      }
+
+      pdf.save(`Legajo_${formData.apellido}_${formData.nombre}_${formData.dni}.pdf`)
+
+      console.log("[v0] PDF Generado correctamente.")
+    } catch (error: any) {
+      console.error("[v0] Error generando PDF:", error)
+      alert(`Hubo un error al generar el PDF: ${error.message}`)
+    }
   }
 
   const handleViewImage = (imageUrl: string | null) => {
@@ -437,7 +685,7 @@ export default function DetalleLegajo() {
     }
 
     if (field === "trabajo" && value === "No") {
-      newFormData.horas_diarias = "";
+      newFormData.horas_diarias = "0"; // Guardamos 0 como string para consistencia del input
       newFormData.descripcion_trabajo = "";
     }
 
@@ -899,7 +1147,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
               <Label className="text-sm font-medium text-gray-700 mb-1 block">¿TRABAJA ACTUALMENTE?</Label>
               {isEditing ? (
                 <select
-                  value={formData.trabajo}
+                  value={formData.trabajo || 'No'}
                   onChange={(e) => handleInputChange('trabajo', e.target.value)}
                   className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
                 >
@@ -907,7 +1155,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                   <option value="No">No</option>
                 </select>
               ) : (
-                  <div className="text-blue-600 font-medium">{formData.trabajo}</div>
+                  <div className="text-blue-600 font-medium">{formData.trabajo || 'No'}</div>
               )}
               {errors.trabajo && <div className="text-red-500 text-xs mt-1">{errors.trabajo}</div>}
             </div>
@@ -915,13 +1163,13 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
               <Label className="text-sm font-medium text-gray-700 mb-1 block">HORAS DIARIAS</Label>
               {isEditing ? (
                 <Input
-                  value={formData.horas_diarias || ""}
-                  onChange={(e) => handleInputChange("horas_diarias", e.target.value)}
+                  value={formData.horas_diarias === 0 ? "" : formData.horas_diarias || ""}
+                  onChange={(e) => handleInputChange("horas_diarias", e.target.value)}                  
                   className={`w-full ${formData.trabajo === "No" ? "bg-gray-100 cursor-not-allowed" : ""}`}
                   disabled={formData.trabajo === "No"}
                 />
               ) : (
-                <div className="text-blue-600 font-medium">{formData.horas_diarias}</div>
+                <div className="text-blue-600 font-medium">{formData.horas_diarias > 0 ? formData.horas_diarias : ''}</div>
               )}
               {errors.horas_diarias && <div className="text-red-500 text-xs mt-1">{errors.horas_diarias}</div>}
             </div>
@@ -943,7 +1191,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
               <Label className="text-sm font-medium text-gray-700 mb-1 block">PERSONAS A CARGO</Label>
               {isEditing ? (
                 <select
-                  value={formData.personas_cargo}
+                  value={formData.personas_cargo || 'No'}
                   onChange={(e) => handleInputChange('personas_cargo', e.target.value)}
                   className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
                 >
@@ -951,7 +1199,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                   <option value="No">No</option>
                 </select>
               ) : (
-                <div className="text-blue-600 font-medium">{formData.personas_cargo}</div>
+                <div className="text-blue-600 font-medium">{formData.personas_cargo || 'No'}</div>
               )}
               {errors.personas_cargo && <div className="text-red-500 text-xs mt-1">{errors.personas_cargo}</div>}
             </div>
@@ -1589,12 +1837,29 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                      <Edit className="w-4 h-4" />
                      EDITAR
                    </Button>
+		   <Button
+                    onClick={handleGeneratePDF}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg flex items-center gap-2"
+                  >
+                    <FileText className="w-4 h-4" />
+                    GENERAR PDF
+                  </Button>
                  </>
                 )}
             </div>
           </div>
         </Card>
       </div>
+      <CustomDialog
+    open={isLogoutDialogOpen}
+    onClose={() => setIsLogoutDialogOpen(false)}
+    title={dialogProps.title ?? ""}
+    description={dialogProps.description ?? ""}
+    confirmLabel={dialogProps.confirmText ?? "Entendido"}
+    cancelLabel={dialogProps.cancelText}
+    onConfirm={dialogProps.onConfirm}
+    showCancel={!!dialogProps.onCancel}
+/>
     </div>
     </ProtectedRoute>
   )

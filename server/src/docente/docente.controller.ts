@@ -10,7 +10,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
+import { memoryStorage } from 'multer';
 import { extname } from 'path';
 import { DocenteService } from './docente.service';
 import { CreateDocenteDto } from './dto/create-docente.dto';
@@ -45,20 +45,7 @@ export class DocenteController {
   @Post()
   @UseInterceptors(
     AnyFilesInterceptor({
-      storage: diskStorage({
-        destination: './uploads', // Carpeta donde se guardan los archivos
-        filename: (req, file, cb) => {
-          const uniqueSuffix =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname);
-          // Si es un archivo de curso, usamos un nombre genérico.
-          // Si no, usamos el fieldname como antes.
-          const prefix = file.fieldname.startsWith('cursos[')
-            ? 'curso-certificado'
-            : file.fieldname.replace(/\s/g, '_');
-          cb(null, `${prefix}-${uniqueSuffix}${ext}`);
-        },
-      }),
+      storage: memoryStorage(),
     }),
   )
   create(
@@ -69,18 +56,24 @@ export class DocenteController {
     return this.docenteService.create(createDocenteDto, files);
   }
 
+  @Post('crear-docente-completo')
+  @UseInterceptors(
+    AnyFilesInterceptor({
+      storage: memoryStorage(),
+    }),
+  )
+  createComplete(
+    @Body() createDocenteDto: CreateDocenteDto,
+    @UploadedFiles()
+    files: Array<Express.Multer.File>,
+  ) {
+    return this.docenteService.create(createDocenteDto, files);
+  }
+
   @Patch(':id/update')
   @UseInterceptors(
     AnyFilesInterceptor({
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, cb) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname);
-          const prefix = file.fieldname.startsWith('cursos[') ? 'curso-certificado' : file.fieldname.replace(/\s/g, '_');
-          cb(null, `${prefix}-${uniqueSuffix}${ext}`);
-        },
-      }),
+      storage: memoryStorage(),
     }),
   )
   update(@Param('id') id: string, @Body() updateDocenteDto: CreateDocenteDto, @UploadedFiles() files: Array<Express.Multer.File>) {

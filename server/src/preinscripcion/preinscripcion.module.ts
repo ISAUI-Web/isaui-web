@@ -3,8 +3,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Preinscripcion } from './preinscripcion.entity';
 import { PreinscripcionService } from './preinscripcion.service';
 import { PreinscripcionController } from './preinscripcion.controller';
-import { Aspirante } from 'src/aspirante/aspirante.entity';
-import { ConstanciaService } from 'src/constancia/constancia.service';
+import { Aspirante } from '../aspirante/aspirante.entity';
+import { ConstanciaService } from '../constancia/constancia.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Preinscripcion, Aspirante])],

@@ -4,7 +4,7 @@ import { ProtectedRoute } from "../components/protected-route"
 import { RolUsuario } from "../lib/types"
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-
+import {CustomDialog} from "../components/ui/customDialog"
 import { Card } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
@@ -28,14 +28,17 @@ import {
   Trash2,
   UserPlus,
   GraduationCap,
+  RotateCcwKey,
 } from "lucide-react"
 import logo from "../assets/logo.png"
 import logo2 from "../assets/logo2.png"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
 
+import ChangePasswordDialog from '../components/ChangePasswordDialog';
+
 // URL base para API
-const API_BASE_URL_CARRERA = "http://localhost:3000/carrera";
-const API_BASE_URL_USUARIO = "http://localhost:3000/usuario";
+const API_BASE_URL_CARRERA = `${import.meta.env.VITE_API_BASE_URL}/carrera`;
+const API_BASE_URL_USUARIO = `${import.meta.env.VITE_API_BASE_URL}/usuario`;
 
 type Carrera = {
   id: number;
@@ -84,6 +87,7 @@ const menuItems = [
   { icon: FolderOpen, label: "LEGAJO DIGITAL", id: "legajo" },
   { icon: FileText, label: "REPORTES", id: "reportes" },
   { icon: Settings, label: "MANTENIMIENTO", id: "mantenimiento" },
+  { icon: RotateCcwKey, label: "GESTIÓN DE CUENTA", id: "cambio-contrasena" },
 ]
 
 const roles = [
@@ -105,8 +109,19 @@ export default function Mantenimiento() {
   const navigate = useNavigate()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [activeSection, setActiveSection] = useState("mantenimiento")
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("carreras")
   const [expandedSubmenu, setExpandedSubmenu] = useState<string | null>(null)
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
+  const [dialogProps, setDialogProps] = useState<{
+    title?: string
+    description?: string
+    variant?: "info" | "error" | "success" | "confirm"
+    onConfirm?: (() => void) | undefined
+    onCancel?: (() => void) | undefined
+    confirmText?: string
+    cancelText?: string
+  }>({})
 
   // Estados para carreras
   const [carreras, setCarreras] = useState<Carrera[]>([])
@@ -152,8 +167,14 @@ export default function Mantenimiento() {
   const handleLogout = () => {
     localStorage.removeItem("adminRemember")
     localStorage.removeItem("adminUser")
-    alert("¡Sesión cerrada exitosamente!")
-    navigate("/login")
+        setDialogProps({
+      title: "Sesión cerrada",
+      description: "Has cerrado sesión exitosamente.",
+      variant: "success",
+      confirmText: "Entendido",
+      onConfirm: () => navigate("/login")
+    })
+    setIsLogoutDialogOpen(true)
   }
 
   const handleMenuItemClick = (itemId: string) => {
@@ -201,15 +222,33 @@ export default function Mantenimiento() {
     const cupo = Number(newCarrera.cupoMaximo);
 
     if (!nombre) {
-      alert("El nombre es obligatorio");
+      setDialogProps({
+        title: "Error",
+        description: "El nombre es obligatorio",
+        variant: "error",
+        confirmText: "Entendido",
+      });
+      setIsLogoutDialogOpen(true);
       return;
     }
     if (nombre.length > NOMBRE_MAX) {
-      alert(`El nombre no puede superar ${NOMBRE_MAX} caracteres`);
+      setDialogProps({
+        title: "Error",
+        description: `El nombre no puede superar ${NOMBRE_MAX} caracteres`,
+        variant: "error",
+        confirmText: "Entendido",
+      });
+      setIsLogoutDialogOpen(true);
       return;
     }
     if (!Number.isFinite(cupo) || cupo < 0) {
-      alert("El cupo máximo debe ser 0 o mayor");
+      setDialogProps({
+        title: "Error",
+        description: "El cupo máximo debe ser 0 o mayor",
+        variant: "error",
+        confirmText: "Entendido",
+      });
+      setIsLogoutDialogOpen(true);
       return;
     }
 
@@ -218,7 +257,13 @@ export default function Mantenimiento() {
       (c) => normalizeName(c.nombre) === normalizeName(nombre)
     );
     if (existe) {
-      alert("Ya existe una carrera con ese nombre");
+      setDialogProps({
+        title: "Error",
+        description: "Ya existe una carrera con ese nombre",
+        variant: "error",
+        confirmText: "Entendido",
+      });
+      setIsLogoutDialogOpen(true);
       return;
     }
 
@@ -246,10 +291,22 @@ export default function Mantenimiento() {
       setCarreras([...carreras, creada]);
       setNewCarrera({ nombre: "", cupoMaximo: 0 });
       setShowNewCarreraForm(false);
-      alert("Carrera creada correctamente");
+      setDialogProps({
+        title: "Carrera creada",
+        description: "La carrera se ha creado correctamente.",
+        variant: "success",
+        confirmText: "Entendido",
+      });
+      setIsLogoutDialogOpen(true);
     } catch (error: any) {
       console.error(error);
-      alert(error?.message || "Error al crear carrera");
+      setDialogProps({
+        title: "Error",
+        description: error?.message || "Error al crear carrera",
+        variant: "error",
+        confirmText: "Entendido",
+      });
+      setIsLogoutDialogOpen(true);
     }
   }
 
@@ -259,17 +316,35 @@ export default function Mantenimiento() {
 
     // nombre obligatorio y longitud
     if (!nombre) {
-      alert("El nombre es obligatorio");
+      setDialogProps({
+        title: "Error",
+        description: "El nombre es obligatorio",
+        variant: "error",
+        confirmText: "Entendido",
+      });
+      setIsLogoutDialogOpen(true);
       return;
     }
     if (nombre.length > NOMBRE_MAX) {
-      alert(`El nombre no puede superar ${NOMBRE_MAX} caracteres`);
+      setDialogProps({
+        title: "Error",
+        description: `El nombre no puede superar ${NOMBRE_MAX} caracteres`,
+        variant: "error",
+        confirmText: "Entendido",
+      });
+      setIsLogoutDialogOpen(true);
       return;
     }
 
     // cupo no negativo
     if (!Number.isFinite(cupo) || cupo < 0) {
-      alert("El cupo máximo debe ser 0 o mayor");
+      setDialogProps({
+        title: "Error",
+        description: "El cupo máximo debe ser 0 o mayor",
+        variant: "error",
+        confirmText: "Entendido",
+      });
+      setIsLogoutDialogOpen(true);
       return;
     }
 
@@ -278,57 +353,67 @@ export default function Mantenimiento() {
       (c) => c.id !== id && normalizeName(c.nombre) === normalizeName(nombre)
     );
     if (existe) {
-      alert("Ya existe una carrera con ese nombre");
+      setDialogProps({
+        title: "Error",
+        description: "Ya existe una carrera con ese nombre",
+        variant: "error",
+        confirmText: "Entendido",
+      });
+      setIsLogoutDialogOpen(true);
       return;
     }
 
     try {
-      // Aquí conectarías con tu API de NestJS
-      const response = await fetch(`${API_BASE_URL_CARRERA}/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nombre: updatedData.nombre,
-          cupo_maximo: updatedData.cupoMaximo,
-          cupo_actual: updatedData.cupoActual,
-        }),
-      });
+  const response = await fetch(`${API_BASE_URL_CARRERA}/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      nombre: updatedData.nombre,
+      cupo_maximo: updatedData.cupoMaximo,
+      cupo_actual: updatedData.cupoActual,
+    }),
+  });
 
-      if (!response.ok) {
-        let msg = "Error al actualizar carrera";
-        try {
-          const err = await response.json();
-          msg = (Array.isArray(err.message) ? err.message[0] : err.message) || msg;
-        } catch {}
-        throw new Error(msg);
-      }
+  const data = await response.json(); // la leemos UNA vez
 
-      const actualizada = mapCarreraFromApi(await response.json());
-      setCarreras(carreras.map((c) => (c.id === id ? actualizada : c)));
-      setEditingCarrera(null);
-      alert("Carrera actualizada correctamente");
-    } catch (error: any) {
-      console.error(error);
-      alert(error?.message || "Error al actualizar carrera");
-    }
+  if (!response.ok) {
+    let msg = "Error al actualizar carrera";
+    msg = Array.isArray(data.message) ? data.message[0] : data.message || msg;
+    throw new Error(msg);
   }
 
-  // const handleDeleteCarrera = async (id: number) => {
-  //   if (!confirm("¿Está seguro de que desea eliminar esta carrera?")) return
+  const actualizadaFromApi = mapCarreraFromApi(data);
 
-  //   try {
-  //     // Aquí conectarías con tu API de NestJS
-  //     const response = await fetch(`${API_BASE_URL_CARRERA}/${id}`, { method: "DELETE" });
+  setCarreras(carreras.map((c) =>
+    c.id === id
+      ? { 
+          ...c, // conservamos campos que no se modificaron
+          nombre: actualizadaFromApi.nombre,
+          cupoMaximo: actualizadaFromApi.cupoMaximo,
+          cupoActual: actualizadaFromApi.cupoActual
+        }
+      : c
+  ));
 
-  //     if (!response.ok) throw new Error("Error al eliminar carrera")
-
-  //     setCarreras(carreras.filter((c) => c.id !== id))
-  //     alert("Carrera eliminada correctamente")
-  //   } catch (error) {
-  //     console.error("Error:", error)
-  //     alert("Error al eliminar carrera");
-  //   }
-  // }
+  setEditingCarrera(null);
+  setDialogProps({
+    title: "Carrera actualizada",
+    description: "La carrera se ha actualizado correctamente.",
+    variant: "success",
+    confirmText: "Entendido",
+  });
+  setIsLogoutDialogOpen(true);
+} catch (error: any) {
+  console.error(error);
+  setDialogProps({
+    title: "Error",
+    description: error?.message || "Error al actualizar carrera",
+    variant: "error",
+    confirmText: "Entendido",
+  });
+  setIsLogoutDialogOpen(true);
+}
+  }
 
   const handleToggleCarrera = async (id: number, activo: boolean) => {
   try {
@@ -343,18 +428,36 @@ export default function Mantenimiento() {
     const actualizada = mapCarreraFromApi(await response.json());
     setCarreras(carreras.map((c) => (c.id === id ? actualizada : c)));
 
-    alert(`Carrera ${!activo ? "activada" : "desactivada"} correctamente`);
+    setDialogProps({
+      title: "Éxito",
+      description: `Carrera ${!activo ? "activada" : "desactivada"} correctamente`,
+      variant: "success",
+      confirmText: "Entendido",
+    });
+    setIsLogoutDialogOpen(true);
   } catch (error) {
     console.error("Error:", error);
-    alert("Error al cambiar estado de la carrera");
+    setDialogProps({
+      title: "Error",
+      description: "Error al cambiar estado de la carrera",
+      variant: "error",
+      confirmText: "Entendido",
+    });
+    setIsLogoutDialogOpen(true);
   }
 };
 
   // Funciones para usuarios
   const handleCreateUsuario = async () => {
     if (!newUsuario.usuario.trim() || !newUsuario.rol) {
-      alert("Por favor complete todos los campos")
-      return
+      setDialogProps({
+        title: "Error",
+        description: "Por favor complete todos los campos",
+        variant: "error",
+        confirmText: "Entendido",
+      });
+      setIsLogoutDialogOpen(true);
+      return;
     }
 
     // Validación duplicados (case-insensitive para evitar "Admin" vs "admin")
@@ -363,7 +466,13 @@ export default function Mantenimiento() {
     );
 
     if (existe) {
-      alert("Ya existe un usuario con ese nombre");
+      setDialogProps({
+        title: "Error",
+        description: "Ya existe un usuario con ese nombre",
+        variant: "error",
+        confirmText: "Entendido",
+      });
+      setIsLogoutDialogOpen(true);
       return;
     }
 
@@ -386,7 +495,13 @@ export default function Mantenimiento() {
       setUsuarios([...usuarios, mapUsuarioFromApi(creado)]);
       setNewUsuario({ usuario: "", rol: "" });
       setShowNewUsuarioForm(false);
-      alert("Usuario creado correctamente (contraseña por defecto: 1234)");
+      setDialogProps({
+        title: "Éxito",
+        description: "Usuario creado correctamente (contraseña por defecto: 1234)",
+        variant: "success",
+        confirmText: "Entendido",
+      });
+      setIsLogoutDialogOpen(true);
     } catch (error) {
       console.error("Error:", error);
       // fallback local (si querés seguir con simulación)
@@ -408,7 +523,13 @@ export default function Mantenimiento() {
       );
 
       if (existe) {
-        alert("Ya existe un usuario con ese nombre");
+        setDialogProps({
+          title: "Error",
+          description: "Ya existe un usuario con ese nombre",
+          variant: "error",
+          confirmText: "Entendido",
+        });
+        setIsLogoutDialogOpen(true);
         return;
       }
     }
@@ -430,13 +551,25 @@ export default function Mantenimiento() {
       const actualizado = await response.json(); // backend user
       setUsuarios(usuarios.map((u) => (u.id === id ? mapUsuarioFromApi(actualizado) : u)));
       setEditingUsuario(null);
-      alert("Usuario actualizado correctamente");
+      setDialogProps({
+        title: "Éxito",
+        description: "Usuario actualizado correctamente",
+        variant: "success",
+        confirmText: "Entendido",
+      });
+      setIsLogoutDialogOpen(true);
     } catch (error) {
       console.error("Error:", error);
       // fallback local
       setUsuarios(usuarios.map((u) => (u.id === id ? { ...u, ...updatedData } : u)));
       setEditingUsuario(null);
-      alert("Usuario actualizado correctamente (simulado)");
+      setDialogProps({
+        title: "Éxito",
+        description: "Usuario actualizado correctamente (simulado)",
+        variant: "success",
+        confirmText: "Entendido",
+      });
+      setIsLogoutDialogOpen(true);
     }
   }
 
@@ -453,24 +586,88 @@ export default function Mantenimiento() {
     const actualizada = mapUsuarioFromApi(await response.json());
     setUsuarios(usuarios.map((u) => (u.id === id ? actualizada : u)));
 
-    alert(`Usuario ${!activo ? "activado" : "desactivado"} correctamente`);
+    setDialogProps({
+      title: "Éxito",
+      description: `Usuario ${!activo ? "activado" : "desactivado"} correctamente`,
+      variant: "success",
+      confirmText: "Entendido",
+    });
+    setIsLogoutDialogOpen(true);
   } catch (error) {
     console.error(error);
-    alert("Error al cambiar estado del usuario");
+    setDialogProps({
+      title: "Error",
+      description: "Error al cambiar estado del usuario",
+      variant: "error",
+      confirmText: "Entendido",
+    });
+    setIsLogoutDialogOpen(true);
   }
 };
 
   const handleResetPassword = async (id: number) => {
-    if (!confirm("¿Querés reiniciar la contraseña a '1234' para este usuario?")) return;
+    setDialogProps({
+      title: "Confirmar reinicio de contraseña",
+      description: "¿Está seguro que desea resetear la contraseña de este usuario?",
+      variant: "confirm",
+      confirmText: "Sí, resetear",
+      cancelText: "Cancelar",
+      onConfirm: async () => {
+        // Cerrar el dialogo de confirmación antes de ejecutar la petición
+        setIsLogoutDialogOpen(false);
+        try {
+          const response = await fetch(`${API_BASE_URL_USUARIO}/${id}/reset-password`, { method: "PUT" });
+          if (!response.ok) {
+            let msg = "Error al resetear contraseña";
+            try {
+              const err = await response.json();
+              msg = (Array.isArray(err.message) ? err.message[0] : err.message) || msg;
+            } catch {}
+            throw new Error(msg);
+          }
+          setDialogProps({
+            title: "Éxito",
+            description: "Contraseña reiniciada a '1234'",
+            variant: "success",
+            confirmText: "Entendido",
+          });
+          setIsLogoutDialogOpen(true);
+        } catch (error: any) {
+          console.error(error);
+          setDialogProps({
+            title: "Error",
+            description: error?.message || "Error al resetear contraseña",
+            variant: "error",
+            confirmText: "Entendido",
+          });
+          setIsLogoutDialogOpen(true);
+        }
+      },
+      onCancel: () => setIsLogoutDialogOpen(false),
+    });
+    setIsLogoutDialogOpen(true);
+    return;
 
     try {
       const response = await fetch(`${API_BASE_URL_USUARIO}/${id}/reset-password`, { method: "PUT" });
       if (!response.ok) throw new Error("Error al resetear contraseña");
 
-      alert("Contraseña reiniciada a '1234'");
+      setDialogProps({
+        title: "Éxito",
+        description: "Contraseña reiniciada a '1234'",
+        variant: "success",
+        confirmText: "Entendido",
+      });
+      setIsLogoutDialogOpen(true);
     } catch (error) {
       console.error("Error:", error);
-      alert("Error al resetear contraseña");
+      setDialogProps({
+        title: "Error",
+        description: "Error al resetear contraseña",
+        variant: "error",
+        confirmText: "Entendido",
+      });
+      setIsLogoutDialogOpen(true);
     }
   }
 
@@ -838,6 +1035,33 @@ export default function Mantenimiento() {
         <div className="flex-1">
           {menuItems.map((item) => {
             const IconComponent = item.icon
+            if (item.id === 'cambio-contrasena') {
+              return (
+                <div key={item.id}>
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      setDialogOpen(true);
+                    }}
+                    className={`w-full flex items-center px-6 py-4 text-white hover:bg-[#31546D] transition-colors ${
+                      activeSection === item.id ? 'bg-[#31546D]' : ''
+                    }`}
+                  >
+                    <IconComponent className="w-5 h-5 mr-4" />
+                    <span className="text-sm font-medium tracking-wide">{item.label}</span>
+                  </button>
+
+                  <ChangePasswordDialog
+                    open={dialogOpen}
+                    onOpenChange={(open) => {
+                      setDialogOpen(open);
+                      if (!open) setActiveSection('');
+                    }}
+                  />
+                </div>
+              );
+            }
+
             return (
               <div key={item.id}>
                 <button
@@ -927,6 +1151,16 @@ export default function Mantenimiento() {
           </Card>
         </div>
       </main>
+      <CustomDialog
+    open={isLogoutDialogOpen}
+    onClose={() => setIsLogoutDialogOpen(false)}
+    title={dialogProps.title ?? ""}
+    description={dialogProps.description ?? ""}
+    confirmLabel={dialogProps.confirmText ?? "Entendido"}
+    cancelLabel={dialogProps.cancelText}
+    onConfirm={dialogProps.onConfirm}
+    showCancel={!!dialogProps.onCancel}
+/>
     </div>
     </ProtectedRoute>
   )

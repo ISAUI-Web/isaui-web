@@ -13,7 +13,7 @@ import {
   Min,
   Max,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 const transformToBoolean = ({ value }: { value: any }): boolean | any => {
   if (typeof value === 'string') {
@@ -218,26 +218,35 @@ export class CreateAspiranteDto {
   @Max(new Date().getFullYear() + 1)
   anio_egreso_superior?: number;
 
-  @Transform(transformToBoolean)
-  @IsBoolean()
-  trabajo: boolean;
+  @Transform(transformToEstadoEstudio)
+  @IsString()
+  @IsIn(['Sí', 'No'], {
+    message: 'El estado de trabajo debe ser Sí o No',
+  })
+  trabajo: string;
 
-  @ValidateIf((o) => o.trabajo === true)
-  @Transform(({ value }) => (value === '' || value === null ? null : Number(value)))
+  // Con la nueva lógica del frontend, el valor siempre será un número (o un string numérico).
+  // Este transformador asegura que se guarde como tipo `number`.
+  @Transform(({ value }) => Number(value))
+  // Las siguientes validaciones SÓLO se ejecutan si trabajo es 'Sí'.
+  @ValidateIf((o) => o.trabajo === 'Sí')
   @IsNotEmpty({ message: 'Las horas diarias son requeridas si trabaja' })
-  @IsNumber()
+  @IsNumber({ allowNaN: false, allowInfinity: false }, { message: 'Las horas diarias deben ser un número válido' })
   @Min(1)
   @Max(24)
   horas_diarias?: number;
 
-  @ValidateIf((o) => o.trabajo === true)
+  @ValidateIf((o) => o.trabajo === 'Sí')
   @IsNotEmpty({ message: 'La descripción del trabajo es requerida si trabaja' })
   @IsString()
   descripcion_trabajo?: string;
 
-  @Transform(transformToBoolean)
-  @IsBoolean()
-  personas_cargo: boolean;
+  @Transform(transformToEstadoEstudio)
+  @IsString()
+  @IsIn(['Sí', 'No'], {
+    message: 'El estado de personas a cargo debe ser Sí o No',
+  })
+  personas_cargo: string;
 
   @Transform(({ value }) => Number(value))
   @IsNumber()
@@ -245,11 +254,11 @@ export class CreateAspiranteDto {
   carrera_id: number;
 
   @Transform(({ value }) => (value ? Number(value) : undefined))
+  @IsOptional() // <-- ¡SOLUCIÓN! Hacemos que el campo sea opcional.
   @IsNumber({}, { message: 'El ciclo lectivo debe ser un número' })
-  @IsNotEmpty({ message: 'El ciclo lectivo no puede estar vacío' })
   @Min(2000, { message: 'El ciclo lectivo parece ser un año inválido.' })
   @Max(new Date().getFullYear() + 5, {
     message: 'El ciclo lectivo es demasiado a futuro.',
   })
-  ciclo_lectivo: number;
+  ciclo_lectivo?: number; // También lo marcamos como opcional en el tipo.
 }

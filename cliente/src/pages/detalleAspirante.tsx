@@ -2,6 +2,7 @@
 import { ProtectedRoute } from "../components/protected-route"
 import { RolUsuario } from "../lib/types"
 import { useState, useEffect, useRef } from "react"
+import {CustomDialog} from "../components/ui/customDialog"
 import { Card } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
@@ -10,7 +11,7 @@ import { Textarea } from "../components/ui/textarea"
 import { ArrowLeft, User, Save, Edit, Eye, X, Camera, Upload } from "lucide-react"
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 
-const API_BASE = 'http://localhost:3000';
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 const abs = (u?: string | null) => {
   if (!u) return '';
   return u.startsWith('http') || u.startsWith('blob:') ? u : `${API_BASE}${u}`;
@@ -39,6 +40,16 @@ export default function DetalleAspirante() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isUploadingImage, setIsUploadingImage] = useState<string | null>(null)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
+  const [dialogProps, setDialogProps] = useState<{
+    title?: string
+    description?: string
+    variant?: "info" | "error" | "success" | "confirm"
+    onConfirm?: (() => void) | undefined
+    onCancel?: (() => void) | undefined
+    confirmText?: string
+    cancelText?: string
+  }>({})
   
   // Estado para manejar los archivos seleccionados para subir
   const [dniFrenteFile, setDniFrenteFile] = useState<File | null>(null);
@@ -180,7 +191,7 @@ export default function DetalleAspirante() {
   useEffect(() => {
   const fetchAspirante = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/aspirante/${id}`)
+      const response = await fetch(`${API_BASE}/aspirante/${id}`)
       if (!response.ok) throw new Error('Error al cargar el aspirante')
 
       const data = await response.json()
@@ -220,10 +231,10 @@ export default function DetalleAspirante() {
         provincia_superior: data.provincia_superior || "",
         anio_ingreso_superior: data.anio_ingreso_superior || "",
         anio_egreso_superior: data.anio_egreso_superior || "",
-        trabajo: data.trabajo === true || data.trabajo === 'Sí' ? 'Sí' : 'No',
+        trabajo: data.trabajo, // El valor ya viene como 'Sí' o 'No'
         horas_diarias: data.horas_diarias || "",
         descripcion_trabajo: data.descripcion_trabajo || "",
-        personas_cargo: data.personas_cargo === true || data.personas_cargo === 'Sí' ? 'Sí' : 'No',
+        personas_cargo: data.personas_cargo, // El valor ya viene como 'Sí' o 'No'
         documentos: {
           dniFrenteUrl: data.dniFrenteUrl || null,
           dniDorsoUrl: data.dniDorsoUrl || null,
@@ -255,7 +266,13 @@ export default function DetalleAspirante() {
     activeTab === "documentacion" ? 4 : 1;
   // Usamos la nueva función de validación unificada, pasándole el estado actual del formulario
   if (!validate(formData, step)) {
-    alert("Por favor, corrige los errores antes de guardar.");
+    setDialogProps({
+      title: "Errores de validación",
+      description: "Por favor, complete todos los campos requeridos.",
+      variant: "error",
+      confirmText: "Entendido",
+    })
+    setIsLogoutDialogOpen(true)
     return;
   }
 
@@ -268,8 +285,8 @@ export default function DetalleAspirante() {
     // 'id', 'carrera' no son editables.
     // 'documentos' es un objeto contenedor en el frontend.
     // Las claves de URL/nombre de documentos son enviadas por el backend para visualización,
-    // pero no deben ser reenviadas en el body del PUT, ya que el DTO del backend no las espera.
-    const excludedKeys = ['id', 'documentos', 'carrera', 'dniFrenteUrl', 'dniDorsoUrl', 'dniFrenteNombre', 'dniDorsoNombre'];
+    // pero no deben ser reenviadas en el body del PUT, ya que el DTO del backend no las espera. // <-- Corrección de la lista de exclusión
+    const excludedKeys = ['id', 'documentos', 'carrera', 'dniFrenteUrl', 'dniDorsoUrl', 'dniFrenteNombre', 'dniDorsoNombre', 'cusUrl', 'foto_carnetUrl', 'isaUrl', 'partida_nacimientoUrl', 'analiticoUrl', 'grupo_sanguineoUrl', 'cudUrl', 'emmacUrl'];
 
     if (!excludedKeys.includes(key) && formData[key] !== null) {
       // Aseguramos que los valores booleanos se envíen como strings 'true' o 'false',
@@ -296,7 +313,7 @@ export default function DetalleAspirante() {
   if (emmacFile) data.append('emmac', emmacFile);
 
   try {
-    const res = await fetch(`http://localhost:3000/aspirante/${id}`, {
+    const res = await fetch(`${API_BASE}/aspirante/${id}`, {
       method: 'PUT',
       // NO establecemos Content-Type, el navegador lo hará automáticamente para FormData
       body: data,
@@ -330,7 +347,13 @@ export default function DetalleAspirante() {
       }
     });
     setIsEditing(false);
-    alert('Cambios guardados con éxito');
+    setDialogProps({
+      title: "Cambios guardados",
+      description: "Cambios guardados con éxito.",
+      variant: "success",
+      confirmText: "Entendido",
+    })
+    setIsLogoutDialogOpen(true)
   } catch (error: any) {
     console.error('Error guardando aspirante:', error);
     alert(`Hubo un error al guardar los cambios: ${error.message}`);
@@ -414,7 +437,7 @@ export default function DetalleAspirante() {
     }
 
     if (field === "trabajo" && value === "No") {
-      newFormData.horas_diarias = "";
+      newFormData.horas_diarias = "0";
       newFormData.descripcion_trabajo = "";
     }
 
@@ -436,7 +459,14 @@ export default function DetalleAspirante() {
 const fromMatriculacion = location.state?.from === "/matriculacion";
 
   if (!formData) {
-    return <div className="text-white text-center mt-10">Cargando datos del aspirante...</div>
+    return (
+      <div className="min-h-screen bg-[#1F6680] flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-xl">Cargando datos del aspirante...</p>
+        </div>
+      </div>
+    );
   }
 
   const renderTabContent = () => {
@@ -847,7 +877,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
               <Label className="text-sm font-medium text-gray-700 mb-1 block">¿TRABAJA ACTUALMENTE?</Label>
               {isEditing ? (
                 <select
-                  value={formData.trabajo}
+                  value={formData.trabajo || 'No'}
                   onChange={(e) => handleInputChange('trabajo', e.target.value)}
                   className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
                 >
@@ -855,7 +885,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                   <option value="No">No</option>
                 </select>
               ) : (
-                  <div className="text-blue-600 font-medium">{formData.trabajo}</div>
+                  <div className="text-blue-600 font-medium">{formData.trabajo || 'No'}</div>
               )}
               {errors.trabajo && <div className="text-red-500 text-xs mt-1">{errors.trabajo}</div>}
             </div>
@@ -863,13 +893,13 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
               <Label className="text-sm font-medium text-gray-700 mb-1 block">HORAS DIARIAS</Label>
               {isEditing ? (
                 <Input
-                  value={formData.horas_diarias || ""}
+                  value={formData.horas_diarias > 0 ? formData.horas_diarias : ""}
                   onChange={(e) => handleInputChange("horas_diarias", e.target.value)}
                   className={`w-full ${formData.trabajo === "No" ? "bg-gray-100 cursor-not-allowed" : ""}`}
                   disabled={formData.trabajo === "No"}
                 />
               ) : (
-                <div className="text-blue-600 font-medium">{formData.horas_diarias}</div>
+                <div className="text-blue-600 font-medium">{formData.horas_diarias > 0 ? formData.horas_diarias : ''}</div>
               )}
               {errors.horas_diarias && <div className="text-red-500 text-xs mt-1">{errors.horas_diarias}</div>}
             </div>
@@ -891,7 +921,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
               <Label className="text-sm font-medium text-gray-700 mb-1 block">PERSONAS A CARGO</Label>
               {isEditing ? (
                 <select
-                  value={formData.personas_cargo}
+                  value={formData.personas_cargo || 'No'}
                   onChange={(e) => handleInputChange('personas_cargo', e.target.value)}
                   className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
                 >
@@ -899,7 +929,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                   <option value="No">No</option>
                 </select>
               ) : (
-                <div className="text-blue-600 font-medium">{formData.personas_cargo}</div>
+                <div className="text-blue-600 font-medium">{formData.personas_cargo || 'No'}</div>
               )}
               {errors.personas_cargo && <div className="text-red-500 text-xs mt-1">{errors.personas_cargo}</div>}
             </div>
@@ -1645,6 +1675,16 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
           </div>
         </Card>
       </div>
+      <CustomDialog
+    open={isLogoutDialogOpen}
+    onClose={() => setIsLogoutDialogOpen(false)}
+    title={dialogProps.title ?? ""}
+    description={dialogProps.description ?? ""}
+    confirmLabel={dialogProps.confirmText ?? "Entendido"}
+    cancelLabel={dialogProps.cancelText}
+    onConfirm={dialogProps.onConfirm}
+    showCancel={!!dialogProps.onCancel}
+/>
     </div>
     </ProtectedRoute>
   )

@@ -60,7 +60,6 @@ export class DetalleAspiranteDto {
   anio_egreso_superior: number;
 
   @Expose()
-  @Transform(transformBooleanToSiNo)
   trabajo: string;
 
   @Expose()
@@ -70,7 +69,6 @@ export class DetalleAspiranteDto {
   descripcion_trabajo: string;
 
   @Expose()
-  @Transform(transformBooleanToSiNo)
   personas_cargo: string;
 
   @Expose()

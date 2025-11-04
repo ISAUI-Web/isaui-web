@@ -15,6 +15,8 @@ import { Curso } from '../curso/curso.entity';
 import { Documento } from '../documento/documento.entity';
 import { CreateDocenteDto } from './dto/create-docente.dto';
 
+type CursoConArchivo = { certificadoFile?: Express.Multer.File[] };
+
 @Injectable()
 export class DocenteService {
   constructor(
@@ -127,13 +129,18 @@ export class DocenteService {
 
       // 2. Procesar y guardar documentos y cursos
       const documentosFiles: { [fieldname: string]: Express.Multer.File[] } = {};
-      const cursosFiles: { [fieldname: string]: Express.Multer.File } = {};
+      const archivosCursos: CursoConArchivo[] = [];
 
       // Separar los archivos de documentos de los de cursos
       if (files && files.length > 0) {
         files.forEach(file => {
           if (file.fieldname.startsWith('cursos[')) {
-            cursosFiles[file.fieldname] = file;
+            const match = file.fieldname.match(/cursos\[(\d+)\]/);
+            if (match) {
+              const index = parseInt(match[1], 10);
+              if (!archivosCursos[index]) archivosCursos[index] = {};
+              archivosCursos[index].certificadoFile = [file];
+            }
           } else {
             documentosFiles[file.fieldname] = [file];
           }
@@ -150,42 +157,22 @@ export class DocenteService {
       }
 
       // 4. Guardar los cursos y sus certificados
-      if (cursosData && cursosData.length > 0) {
-        for (let i = 0; i < cursosData.length; i++) {
-          let cursoInfo: { nombre: string };
-          try {
-            // Parseamos el string JSON que viene del frontend
-            cursoInfo = JSON.parse(cursosData[i]);
-          } catch (e) {
-            throw new BadRequestException(
-              'Formato de cursos inválido. Se esperaba un string JSON.',
-            );
-          }
-          // Validamos que el objeto parseado tenga la propiedad 'nombre'
-          if (
-            !cursoInfo ||
-            typeof cursoInfo.nombre !== 'string' ||
-            cursoInfo.nombre.trim() === ''
-          ) {
-            throw new BadRequestException(
-              `El curso en el índice ${i} debe tener un nombre válido.`,
-            );
-          }
-
-          const fileKey = `cursos[${i}][certificadoFile]`;
-          const certificadoFile = cursosFiles[fileKey];
-
-          const nuevoCurso = queryRunner.manager.create(Curso, {
-            nombre: cursoInfo.nombre,
-            // Usamos 'undefined' en lugar de 'null' para que TypeORM lo ignore si no hay archivo
-            // y se aplique el valor por defecto de la base de datos (que es null).
-            certificado_url: certificadoFile
-              ? certificadoFile.filename
-              : undefined,
-            docente: docenteGuardado,
-          });
-          await queryRunner.manager.save(nuevoCurso);
+      if (cursosData && Array.isArray(cursosData)) {
+        let parsedCursosData;
+        try {
+          parsedCursosData = cursosData.map(cursoStr => JSON.parse(cursoStr));
+        } catch (e) {
+          throw new BadRequestException(
+            'Formato de cursos inválido. Se esperaba un array de strings JSON.',
+          );
         }
+
+        await this.documentoService.guardarCertificadosCurso(
+          docenteGuardado,
+          parsedCursosData,
+          archivosCursos,
+          queryRunner,
+        );
       }
 
       await queryRunner.commitTransaction();
@@ -226,12 +213,17 @@ export class DocenteService {
 
       // 3. Procesar y guardar documentos
       const documentosFiles: { [fieldname: string]: Express.Multer.File[] } = {};
-      const cursosFiles: { [fieldname: string]: Express.Multer.File } = {};
+      const archivosCursos: CursoConArchivo[] = [];
 
       if (files && files.length > 0) {
         files.forEach(file => {
           if (file.fieldname.startsWith('cursos[')) {
-            cursosFiles[file.fieldname] = file;
+            const match = file.fieldname.match(/cursos\[(\d+)\]/);
+            if (match) {
+              const index = parseInt(match[1], 10);
+              if (!archivosCursos[index]) archivosCursos[index] = {};
+              archivosCursos[index].certificadoFile = [file];
+            }
           } else {
             documentosFiles[file.fieldname] = [file];
           }
@@ -243,43 +235,36 @@ export class DocenteService {
       }
 
       // 4. Sincronizar cursos
-      if (cursosData) {
-        const cursosFrontend = cursosData.map(c => JSON.parse(c));
+      if (cursosData && Array.isArray(cursosData)) {
+        let cursosFrontend;
+        try {
+          cursosFrontend = cursosData.map(cursoStr => JSON.parse(cursoStr));
+        } catch (e) {
+          throw new BadRequestException(
+            'Formato de cursos inválido. Se esperaba un array de strings JSON.',
+          );
+        }
+
         const idsCursosFrontend = cursosFrontend.map(c => c.id).filter(id => typeof id === 'number');
 
         // Eliminar cursos que ya no están en el frontend
         for (const cursoExistente of docente.cursos) {
           if (!idsCursosFrontend.includes(cursoExistente.id)) {
+            // Opcional: Borrar el archivo de Cloudinary antes de eliminar el curso
+            // if (cursoExistente.certificado_url) {
+            //   await this.documentoService.deleteFromCloudinary(cursoExistente.certificado_url);
+            // }
             await queryRunner.manager.remove(cursoExistente);
           }
         }
 
-        // Actualizar o crear cursos
-        for (let i = 0; i < cursosFrontend.length; i++) {
-          const cursoInfo = cursosFrontend[i];
-          const fileKey = `cursos[${i}][certificadoFile]`;
-          const certificadoFile = cursosFiles[fileKey];
-
-          if (typeof cursoInfo.id === 'number') {
-            // Actualizar curso existente
-            const cursoAActualizar = await queryRunner.manager.findOneBy(Curso, { id: cursoInfo.id });
-            if (cursoAActualizar) {
-              cursoAActualizar.nombre = cursoInfo.nombre;
-              if (certificadoFile) {
-                cursoAActualizar.certificado_url = certificadoFile.filename;
-              }
-              await queryRunner.manager.save(cursoAActualizar);
-            }
-          } else {
-            // Crear nuevo curso
-            const nuevoCurso = queryRunner.manager.create(Curso, {
-              nombre: cursoInfo.nombre,
-              certificado_url: certificadoFile ? certificadoFile.filename : undefined,
-              docente: docente,
-            });
-            await queryRunner.manager.save(nuevoCurso);
-          }
-        }
+        // Llamar al servicio para crear/actualizar cursos y subir certificados
+        await this.documentoService.guardarCertificadosCurso(
+          docente,
+          cursosFrontend,
+          archivosCursos,
+          queryRunner,
+        );
       }
 
       await queryRunner.commitTransaction();

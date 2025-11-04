@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { ChevronLeft, ChevronRight, Upload, User, GraduationCap, FileText, ArrowLeft } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
+import {CustomDialog} from "../components/ui/customDialog"
 
 interface FormData {
    // Datos personales
@@ -256,19 +257,36 @@ export default function MultiStepForm() {
 
 const [carreras, setCarreras] = useState<Carrera[]>([]);
 const [carrerasOptions, setCarrerasOptions] = useState<{ value: string; label: string }[]>([]);
+const [dialogOpen, setDialogOpen] = useState(false)
+const [dialogProps, setDialogProps] = useState<{
+  title?: string
+  description?: string
+  variant?: "info"|"error"|"success"|"confirm"
+  onConfirm?: (() => void) | undefined
+  onCancel?: (() => void) | undefined
+  confirmText?: string
+  cancelText?: string
+}>({})
 
 useEffect(() => {
   const fetchCarreras = async () => {
-    const res = await fetch("http://localhost:3000/carrera"); // tu endpoint
-    const data: Carrera[] = await res.json();
+    try {
+      // CORRECCIÓN: Usar la variable de entorno para la URL de la API.
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/carrera`);
+      if (!res.ok) throw new Error('No se pudo conectar al servidor para cargar las carreras.');
+      const data: Carrera[] = await res.json();
 
-    // solo activas
-    const activas = data.filter(c => c.activo);
+      // solo activas
+      const activas = data.filter(c => c.activo);
 
-    setCarreras(activas);
-    setCarrerasOptions(
-      activas.map(c => ({ value: c.id.toString(), label: c.nombre }))
-    );
+      setCarreras(activas);
+      setCarrerasOptions(
+        activas.map(c => ({ value: c.id.toString(), label: c.nombre }))
+      );
+    } catch (err) {
+      console.error("Error al cargar carreras:", err);
+      alert("Error al cargar carreras: No se pudo conectar con el servidor.");
+    }
   };
 
   fetchCarreras();
@@ -314,8 +332,8 @@ useEffect(() => {
       }
 
       if (field === "trabajo" && value === "NO") {
-        newData.horas_diarias = ""
-        newData.descripcion_trabajo = ""
+      newData.horas_diarias = "0"; // Guardamos 0 como string para consistencia del input
+      newData.descripcion_trabajo = "";
       }
 
       return newData
@@ -443,7 +461,13 @@ useEffect(() => {
     if (validateStep(currentStep)) {
       setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
     } else {
-      alert("Debe completar todos los datos antes de avanzar");
+      setDialogProps({
+      title: "Datos incompletos",
+      description: "Debes completar todos los campos requeridos antes de avanzar al siguiente paso.",
+      variant: "error",
+      confirmText: "Entendido",
+    })
+    setDialogOpen(true)
     }
   }
 
@@ -461,20 +485,21 @@ useEffect(() => {
     const backendData = {
       ...formData,
       carrera_id: formData.carrera,
-      // Se mapean los valores del frontend a los strings que el backend espera.
+      // Con la entidad actualizada, ahora enviamos los strings directamente.
       completo_nivel_medio: formData.completo_nivel_medio === 'SI' ? 'Sí' : 'No',
       completo_nivel_superior:
         formData.completo_nivel_superior === 'COMPLETO' ? 'Sí'
         : formData.completo_nivel_superior === 'EN_CURSO' ? 'En curso'
         : 'No',
-      trabajo: (formData.trabajo === 'SI').toString(), // Se mantiene como booleano
-      personas_cargo: (formData.personas_cargo === 'SI').toString(),
+      trabajo: formData.trabajo === 'SI' ? 'Sí' : 'No',
+      personas_cargo: formData.personas_cargo === 'SI' ? 'Sí' : 'No',
     };
 
     // 2: Poblar el FormData con los datos corregidos y listos para el backend.
     Object.entries(backendData).forEach(([key, value]) => {
       // Excluimos campos que se manejan por separado (archivos) o que no deben enviarse (lógica de UI).
-      if (key !== 'dniFrente' && key !== 'dniDorso' && key !== 'carrera' && key !== 'numeroRegistro' && value !== null && value !== undefined) {
+      if (key !== 'dniFrente' && key !== 'dniDorso' && key !== 'carrera' && key !== 'numeroRegistro' && key !== 'ciclo_lectivo' && value !== null && value !== undefined) {
+        // Ya no hay booleanos que convertir, todos los valores son strings.
         formPayload.append(key, value as string);
       }
     });
@@ -488,21 +513,33 @@ useEffect(() => {
 
     // 3: Hacer una llamada unica al backend.
     // El controlador de 'aspirante' ya se encarga de crear la preinscripción y enviar la constancia.
-    const aspiranteResponse = await fetch('http://localhost:3000/aspirante', {
+    // CORRECCIÓN: Usar la variable de entorno para la URL de la API.
+    const aspiranteResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/aspirante`, {
       method: 'POST',
       body: formPayload,
     });
 
     if (!aspiranteResponse.ok) {
-      const errorData = await aspiranteResponse.json(); // NestJS envía un objeto de error detallado.
-      const errorMessage = errorData.mensaje || 'Hubo un error al enviar el formulario. Por favor, revisa los datos ingresados.';
-      alert(errorMessage);
+      // **MEJORA EN EL MANEJO DE ERRORES**
+      // NestJS envía un objeto de error con una propiedad 'message'.
+      // Si 'message' es un array (común en errores de validación), lo unimos.
+      // Si es un string, lo usamos directamente.
+      const errorData = await aspiranteResponse.json();
+      const serverMessage = Array.isArray(errorData.message) 
+        ? errorData.message.join('\n') 
+        : errorData.message || 'Error desconocido del servidor.';
+      alert(`Error del servidor:\n${serverMessage}`);
       console.error('Error del servidor:', errorData); // Loguear el error completo para depuración.
       return;
     }
-
-    alert('¡Formulario enviado con éxito! Revisa tu correo electrónico para ver la constancia de preinscripción.');
-    navigate('/'); // Redirigir al usuario a la página principal después del envío exitoso.
+    setDialogProps({
+      title: "Formulario correcto",
+      description: "¡Formulario enviado con éxito! Revisa tu correo electrónico para ver la constancia de preinscripción.",
+      variant: "success",
+      confirmText: "Entendido",
+      onConfirm: () => navigate("/"),
+    })
+    setDialogOpen(true)
   } catch (error) {
     console.error(error);
     alert('Error inesperado al conectar con el servidor.');
@@ -1045,6 +1082,16 @@ useEffect(() => {
                 Enviar Formulario
               </button>
             )}
+<CustomDialog
+    open={dialogOpen}
+    onClose={() => setDialogOpen(false)}
+    title={dialogProps.title ?? ""}
+    description={dialogProps.description ?? ""}
+    confirmLabel={dialogProps.confirmText ?? "Entendido"}
+    cancelLabel={dialogProps.cancelText}
+    onConfirm={dialogProps.onConfirm}
+    showCancel={!!dialogProps.onCancel}
+/>
           </div>
         </div>
       </div>

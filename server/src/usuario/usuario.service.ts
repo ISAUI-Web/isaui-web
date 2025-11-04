@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Usuario, RolUsuario } from './usuario.entity';
@@ -6,24 +6,51 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
+import { ChangePasswordDto } from './dto/update-contrasena.dto';
 
 @Injectable()
-export class UsuarioService {
+export class UsuarioService implements OnModuleInit {
   constructor(
     @InjectRepository(Usuario)
     private usuarioRepo: Repository<Usuario>,
     private jwtService: JwtService,
   ) {}
 
+  /**
+   * Este método se ejecuta una vez que el módulo de usuario se ha inicializado.
+   * Es el lugar perfecto para crear el usuario administrador si no existe.
+   */
+  async onModuleInit() {
+    await this.seedAdminUser();
+  }
+
+  private async seedAdminUser() {
+    const adminExists = await this.usuarioRepo.findOne({ where: { rol: RolUsuario.ADMIN_GENERAL } });
+
+    if (!adminExists) {
+      console.log('Admin user not found, seeding...');
+      const adminUser = this.usuarioRepo.create({
+        nombre_usuario: process.env.ADMIN_USER || 'admin',
+        rol: RolUsuario.ADMIN_GENERAL,
+        activo: true,
+      });
+
+      const salt = await bcrypt.genSalt(10);
+      adminUser.contraseña_hash = await bcrypt.hash(process.env.ADMIN_PASS || 'admin123', salt);
+      await this.usuarioRepo.save(adminUser);
+      console.log('Admin user seeded successfully.');
+    }
+  }
+
   // 🔑 LOGIN
-  async validarUsuario(nombre_usuario: string, contraseña: string) {
+  async validarUsuario(nombre_usuario: string, contrasena: string) {
     const usuario = await this.usuarioRepo.findOne({
       where: { nombre_usuario },
     });
     if (!usuario)
       throw new UnauthorizedException('Usuario o contraseña incorrectos');
 
-    const esValida = await bcrypt.compare(contraseña, usuario.contraseña_hash);
+    const esValida = await bcrypt.compare(contrasena, usuario.contraseña_hash);
     if (!esValida)
       throw new UnauthorizedException('Usuario o contraseña incorrectos');
 
@@ -67,9 +94,9 @@ export class UsuarioService {
     usuario.rol = data.rol;
 
     // Contraseña por defecto "1234" hasheada
-    const contraseñaPorDefecto = "1234";
+    const contrasenaPorDefecto = "1234";
     const salt = await bcrypt.genSalt(10);
-    usuario.contraseña_hash = await bcrypt.hash(contraseñaPorDefecto, salt);
+    usuario.contraseña_hash = await bcrypt.hash(contrasenaPorDefecto, salt);
 
     return this.usuarioRepo.save(usuario);
   }
@@ -104,9 +131,9 @@ export class UsuarioService {
     }
 
     // Reiniciar a "1234"
-    const contraseñaPorDefecto = "1234";
+    const contrasenaPorDefecto = "1234";
     const salt = await bcrypt.genSalt(10);
-    usuario.contraseña_hash = await bcrypt.hash(contraseñaPorDefecto, salt);
+    usuario.contraseña_hash = await bcrypt.hash(contrasenaPorDefecto, salt);
 
     return this.usuarioRepo.save(usuario);
   }
@@ -117,6 +144,56 @@ export class UsuarioService {
 
   usuario.activo = activo; // asigna directamente lo que viene
   return this.usuarioRepo.save(usuario); // guarda en DB y devuelve el usuario actualizado
+}
+
+  async cambiarContrasena(usuarioId: number, dto: ChangePasswordDto) {
+  console.log('🚀 LLEGÓ AL SERVICE - cambiarContrasena');
+  console.log('usuarioId:', usuarioId);
+  console.log('DTO recibido:', dto);
+
+  const { contrasena_actual, nueva_contrasena, confirmar_nueva_contrasena } = dto;
+
+  console.log('contrasena_actual:', contrasena_actual);
+  console.log('nueva_contrasena:', nueva_contrasena);
+  console.log('confirmar_nueva_contrasena:', confirmar_nueva_contrasena);
+
+  if (nueva_contrasena !== confirmar_nueva_contrasena) {
+    console.log('❌ Las contraseñas no coinciden');
+    throw new Error('Las nuevas contraseñas no coinciden');
+  }
+
+  console.log('🔍 Buscando usuario con ID:', usuarioId);
+  const usuario = await this.usuarioRepo.findOne({ where: { id: usuarioId } });
+  
+  if (!usuario) {
+    console.log('❌ Usuario no encontrado');
+    throw new NotFoundException('Usuario no encontrado');
+  }
+
+  console.log('✅ Usuario encontrado:', usuario.id, usuario.nombre_usuario);
+
+  console.log('🔑 Comparando contraseña actual...');
+  const esValida = await bcrypt.compare(contrasena_actual, usuario.contraseña_hash);
+  
+  if (!esValida) {
+    console.log('❌ Contraseña actual incorrecta');
+    throw new Error('La contraseña actual es incorrecta');
+  }
+
+  console.log('✅ Contraseña actual correcta');
+
+  console.log('🔐 Hasheando nueva contraseña...');
+  const salt = await bcrypt.genSalt(10);
+  const nuevoHash = await bcrypt.hash(nueva_contrasena, salt);
+  console.log('Nuevo hash generado');
+
+  usuario.contraseña_hash = nuevoHash;
+  console.log('💾 Guardando en DB...');
+
+  await this.usuarioRepo.save(usuario);
+  console.log('✅ Usuario guardado con nueva contraseña');
+
+  return { mensaje: 'Contraseña actualizada exitosamente' };
 }
 
   async remove(id: number): Promise<void> {

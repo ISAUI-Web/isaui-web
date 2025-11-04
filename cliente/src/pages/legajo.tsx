@@ -3,6 +3,7 @@ import { ProtectedRoute } from "../components/protected-route"
 import { getUserRole, getUser } from "../lib/auth"
 import { RolUsuario } from "../lib/types"
 import { useState, useEffect } from "react"
+import {CustomDialog} from "../components/ui/customDialog"
 import { Card } from "../components/ui/card"
 import { Input } from "../components/ui/input"
 import { Button } from "../components/ui/button"
@@ -29,12 +30,13 @@ import {
   Plus,
   Trash2
 } from "lucide-react";
+import { RotateCcwKey } from "lucide-react";
 import { useNavigate } from "react-router-dom" 
 import logo from "../assets/logo.png"
 import logo2 from "../assets/logo2.png"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs"
 import { GraduationCap, BookOpen } from "lucide-react"
-import { Badge } from "../components/ui/badge"
+import ChangePasswordDialog from '../components/ChangePasswordDialog';
 
 interface EstudianteItem {
   id: number; // ID del Estudiante
@@ -76,12 +78,14 @@ const menuItems = [
   { icon: FolderOpen, label: "LEGAJO DIGITAL", id: "legajo" },
   { icon: FileText, label: "REPORTES", id: "reportes" },
   { icon: Settings, label: "MANTENIMIENTO", id: "mantenimiento" },
+  { icon: RotateCcwKey, label: "GESTIÓN DE CUENTA", id: "cambio-contrasena" },
 ]
 
 export default function AdminMatriculacion() {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("legajo"); // para que el menú marque la sub-sección correcta
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [estudiantes, setEstudiantes] = useState<EstudianteItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,6 +94,16 @@ export default function AdminMatriculacion() {
   const [profesores, setProfesores] = useState<Profesor[]>([]);
   const [loadingProfesores, setLoadingProfesores] = useState(true);
   const [errorProfesores, setErrorProfesores] = useState<string | null>(null);
+const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
+  const [dialogProps, setDialogProps] = useState<{
+    title?: string
+    description?: string
+    variant?: "info" | "error" | "success" | "confirm"
+    onConfirm?: (() => void) | undefined
+    onCancel?: (() => void) | undefined
+    confirmText?: string
+    cancelText?: string
+  }>({})
 
   const currentUser = getUser()
   const userRole = getUserRole()
@@ -110,8 +124,9 @@ export default function AdminMatriculacion() {
   const [filterCarrera, setFilterCarrera] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:3000/estudiante") // <--- CAMBIO: Usamos el nuevo endpoint
-        .then(res => {
+    // Usamos la variable de entorno para la URL base de la API
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/estudiante`)
+      .then(res => {
         if (!res.ok) throw new Error("Error al traer los legajos de estudiantes");
         return res.json();
         })
@@ -127,6 +142,7 @@ export default function AdminMatriculacion() {
     }, []);
 
     useEffect(() => {
+<<<<<<< HEAD
         fetch("http://localhost:3000/docente")
           .then((res) => {
             if (!res.ok) throw new Error("Error al traer los profesores")
@@ -153,6 +169,24 @@ export default function AdminMatriculacion() {
             setLoadingProfesores(false)
           })
       }, [isProfesor, currentUser])
+=======
+  // Usamos la variable de entorno para la URL base de la API
+  fetch(`${import.meta.env.VITE_API_BASE_URL}/docente`)
+    .then(res => {
+      if (!res.ok) throw new Error("Error al traer los profesores");
+      return res.json();
+    })
+    .then(data => {
+      setProfesores(data);
+      setLoadingProfesores(false);
+    })
+    .catch(err => {
+      console.error(err);
+      setErrorProfesores("No se pudo cargar la lista de profesores");
+      setLoadingProfesores(false);
+    });
+}, []);
+>>>>>>> master
 
   const carrerasUnicas = Array.from(new Set(estudiantes.map(e => e.carrera)));
 
@@ -177,8 +211,14 @@ export default function AdminMatriculacion() {
   const handleLogout = () => {
     localStorage.removeItem("adminRemember")
     localStorage.removeItem("adminUser")
-    alert("¡Sesión cerrada exitosamente!")
-    navigate("/login")
+        setDialogProps({
+      title: "Sesión cerrada",
+      description: "Has cerrado sesión exitosamente.",
+      variant: "success",
+      confirmText: "Entendido",
+      onConfirm: () => navigate("/login")
+    })
+    setIsLogoutDialogOpen(true)
   }
 
   const [expandedSubmenu, setExpandedSubmenu] = useState<string | null>(null);
@@ -224,10 +264,29 @@ const handleMenuItemClick = (itemId: string) => {
   }
 
   const handleDeleteEstudiante = async (id: number, nombre: string, apellido: string) => {
-     if (!confirm(`¿Está seguro de que desea desactivar el legajo de ${nombre} ${apellido}?`)) return;
+  const confirmed = await new Promise<boolean>((resolve) => {
+    setDialogProps({
+      title: "Confirmar desactivación",
+      description: `¿Está seguro de que desea desactivar el legajo de ${nombre} ${apellido}?`,
+      variant: "confirm",
+      confirmText: "Sí, desactivar",
+      cancelText: "Cancelar",
+      onConfirm: () => {
+        resolve(true);
+        setIsLogoutDialogOpen(false);
+      },
+      onCancel: () => {
+        resolve(false);
+        setIsLogoutDialogOpen(false);
+      },
+    });
+    setIsLogoutDialogOpen(true);
+  });
+
+  if (!confirmed) return;
 
   try {
-    const response = await fetch(`http://localhost:3000/estudiante/${id}`, {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/estudiante/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ activo: false }), 
@@ -237,7 +296,13 @@ const handleMenuItemClick = (itemId: string) => {
 
      setEstudiantes(prev => prev.filter(e => e.id !== id));
 
-    alert("Legajo desactivado correctamente");
+    setDialogProps({
+      title: "Legajo desactivado",
+      description: "El legajo del aspirante se ha desactivado correctamente.",
+      variant: "success",
+      confirmText: "Entendido",
+    });
+    setIsLogoutDialogOpen(true);
   } catch (error) {
     console.error("Error:", error);
     alert("Error al desactivar el legajo del estudiante");
@@ -245,10 +310,29 @@ const handleMenuItemClick = (itemId: string) => {
   }
   
   const handleDeleteDocente = async (id: number, nombre: string, apellido: string) => {
-  if (!confirm(`¿Está seguro de que desea desactivar el legajo de ${nombre} ${apellido}?`)) return;
+  const confirmed = await new Promise<boolean>((resolve) => {
+    setDialogProps({
+      title: "Confirmar desactivación",
+      description: `¿Está seguro de que desea desactivar el legajo de ${nombre} ${apellido}?`,
+      variant: "confirm",
+      cancelText: "Cancelar",
+      confirmText: "Sí, desactivar",
+      onConfirm: () => {
+        resolve(true);
+        setIsLogoutDialogOpen(false);
+      },
+      onCancel: () => {
+        resolve(false);
+        setIsLogoutDialogOpen(false);
+      },
+    });
+    setIsLogoutDialogOpen(true);
+  });
+
+  if (!confirmed) return;
 
   try {
-    const response = await fetch(`http://localhost:3000/docente/${id}`, {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/docente/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ activo: false }),
@@ -259,7 +343,13 @@ const handleMenuItemClick = (itemId: string) => {
     // Actualizamos el estado para removerlo del listado en el frontend
     setProfesores(prev => prev.filter(d => d.id !== id));
 
-    alert("Legajo desactivado correctamente");
+    setDialogProps({
+      title: "Legajo desactivado",
+      description: "El legajo del aspirante se ha desactivado correctamente.",
+      variant: "success",
+      confirmText: "Entendido",
+    });
+    setIsLogoutDialogOpen(true);
   } catch (error) {
     console.error("Error:", error);
     alert("Error al desactivar el legajo del docente");
@@ -334,6 +424,33 @@ const handleMenuItemClick = (itemId: string) => {
             }
 
             const IconComponent = item.icon;
+            if (item.id === 'cambio-contrasena') {
+              return (
+                <div key={item.id}>
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      setDialogOpen(true);
+                    }}
+                    className={`w-full flex items-center px-6 py-4 text-white hover:bg-[#31546D] transition-colors ${
+                      activeSection === item.id ? 'bg-[#31546D]' : ''
+                    }`}
+                  >
+                    <IconComponent className="w-5 h-5 mr-4" />
+                    <span className="text-sm font-medium tracking-wide">{item.label}</span>
+                  </button>
+
+                  <ChangePasswordDialog
+                    open={dialogOpen}
+                    onOpenChange={(open) => {
+                      setDialogOpen(open);
+                      if (!open) setActiveSection('');
+                    }}
+                  />
+                </div>
+              );
+            }
+
             return (
               <div key={item.id}>
                 <button
@@ -580,6 +697,16 @@ const handleMenuItemClick = (itemId: string) => {
   </Tabs>
 </Card>
     </main>
+    <CustomDialog
+    open={isLogoutDialogOpen}
+    onClose={() => setIsLogoutDialogOpen(false)}
+    title={dialogProps.title ?? ""}
+    description={dialogProps.description ?? ""}
+    confirmLabel={dialogProps.confirmText ?? "Entendido"}
+    cancelLabel={dialogProps.cancelText}
+    onConfirm={dialogProps.onConfirm}
+    showCancel={!!dialogProps.onCancel}
+/>
   </div>
   </ProtectedRoute>
   )

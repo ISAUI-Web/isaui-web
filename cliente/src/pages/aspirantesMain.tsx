@@ -3,6 +3,7 @@ import { ProtectedRoute } from "../components/protected-route"
 import { RolUsuario } from "../lib/types"
 import { getUserRole } from "../lib/auth"
 import { useState, useEffect } from "react"
+import {CustomDialog} from "../components/ui/customDialog"
 import { Card } from "../components/ui/card"
 import { Input } from "../components/ui/input"
 import { Button } from "../components/ui/button"
@@ -25,9 +26,11 @@ import {
   Clock,
   XIcon
 } from "lucide-react";
+import { RotateCcwKey } from "lucide-react";
 import { useNavigate } from "react-router-dom" 
 import logo from "../assets/logo.png"
 import logo2 from "../assets/logo2.png"
+import ChangePasswordDialog from '../components/ChangePasswordDialog';
 
 interface AspiranteItem {
   id: number;
@@ -61,11 +64,15 @@ const menuItems = [
   { icon: FolderOpen, label: "LEGAJO DIGITAL", id: "legajo" },
   { icon: FileText, label: "REPORTES", id: "reportes" },
   { icon: Settings, label: "MANTENIMIENTO", id: "mantenimiento" },
+  { icon: RotateCcwKey, label: "GESTIÓN DE CUENTA", id: "cambio-contrasena" },
 ]
 
 export default function AdminAspirantes() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [activeSection, setActiveSection] = useState("aspirantes")
+  // Separate modal states to avoid collisions
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [aspirantes, setAspirantes] = useState<AspiranteItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -73,10 +80,18 @@ export default function AdminAspirantes() {
   const navigate = useNavigate()
   const [filterCarrera, setFilterCarrera] = useState("");
   const [filterEstado, setFilterEstado] = useState("");
-
+  const [dialogProps, setDialogProps] = useState<{
+    title?: string
+    description?: string
+    variant?: "info" | "error" | "success" | "confirm"
+    onConfirm?: (() => void) | undefined
+    onCancel?: (() => void) | undefined
+    confirmText?: string
+    cancelText?: string
+  }>({})
 
   useEffect(() => {
-    fetch("http://localhost:3000/aspirante")
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/aspirante`)
       .then((res) => {
         if (!res.ok) throw new Error("Error al traer los aspirantes");
         return res.json();
@@ -113,8 +128,16 @@ export default function AdminAspirantes() {
   const handleLogout = () => {
     localStorage.removeItem("adminRemember")
     localStorage.removeItem("adminUser")
-    alert("¡Sesión cerrada exitosamente!")
-    navigate("/login")
+    // Close change password dialog if open, then show logout dialog
+    setIsChangePasswordOpen(false)
+    setDialogProps({
+      title: "Sesión cerrada",
+      description: "Has cerrado sesión exitosamente.",
+      variant: "success",
+      confirmText: "Entendido",
+      onConfirm: () => navigate("/login")
+    })
+    setIsLogoutDialogOpen(true)
   }
 
   const [expandedSubmenu, setExpandedSubmenu] = useState<string | null>(null);
@@ -159,7 +182,7 @@ const handleMenuItemClick = (itemId: string) => {
 // Move handleEstado outside handleMenuItemClick and keep only one definition
 const handleEstado = async (id: number, nuevoEstado: "en espera" | "confirmado" | "rechazado") => {
   try {
-    const res = await fetch(`http://localhost:3000/aspirante/${id}`, {
+    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/aspirante/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json"
@@ -178,7 +201,13 @@ const handleEstado = async (id: number, nuevoEstado: "en espera" | "confirmado" 
         asp.id === id ? { ...asp, ...updatedAspirante } : asp
       )
     );
-    alert("Estado actualizado exitosamente");
+    setDialogProps({
+      title: "Estado actualizado",
+      description: "El estado del aspirante se ha actualizado correctamente.",
+      variant: "success",
+      confirmText: "Entendido",
+    });
+    setIsLogoutDialogOpen(true);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : `No se pudo cambiar el estado a ${nuevoEstado}`;
     console.error(errorMessage);
@@ -253,6 +282,35 @@ const handleEstado = async (id: number, nuevoEstado: "en espera" | "confirmado" 
               return null;
             }
             const IconComponent = item.icon;
+            if (item.id === 'cambio-contrasena') {
+              return (
+                <div key={item.id}>
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      // Open change password dialog exclusively
+                      setIsLogoutDialogOpen(false);
+                      setIsChangePasswordOpen(true);
+                    }}
+                    className={`w-full flex items-center px-6 py-4 text-white hover:bg-[#31546D] transition-colors ${
+                      activeSection === item.id ? 'bg-[#31546D]' : ''
+                    }`}
+                  >
+                    <IconComponent className="w-5 h-5 mr-4" />
+                    <span className="text-sm font-medium tracking-wide">{item.label}</span>
+                  </button>
+
+                  <ChangePasswordDialog
+                    open={isChangePasswordOpen}
+                    onOpenChange={(open) => {
+                      setIsChangePasswordOpen(open);
+                      if (!open) setActiveSection('');
+                    }}
+                  />
+                </div>
+              );
+            }
+
             return (
               <div key={item.id}>
                 <button
@@ -411,10 +469,21 @@ const handleEstado = async (id: number, nuevoEstado: "en espera" | "confirmado" 
           </Card>
         </div>
       </main>
+      <CustomDialog
+    open={isLogoutDialogOpen}
+    onClose={() => setIsLogoutDialogOpen(false)}
+    title={dialogProps.title ?? ""}
+    description={dialogProps.description ?? ""}
+    confirmLabel={dialogProps.confirmText ?? "Entendido"}
+    cancelLabel={dialogProps.cancelText}
+    onConfirm={dialogProps.onConfirm}
+    showCancel={!!dialogProps.onCancel}
+/>
     </div>
+<<<<<<< HEAD
     </ProtectedRoute>
+=======
+  
+>>>>>>> master
   )
 }
-
-
-

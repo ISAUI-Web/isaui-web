@@ -46,14 +46,11 @@ export class AspiranteService {
       ? queryRunner.manager
       : this.aspiranteRepository.manager;
 
-    const carrera = await manager.findOneBy(Carrera, {
-      id: createAspiranteDto.carrera_id,
-    });
-    if (!carrera) throw new NotFoundException('Carrera no encontrada');
+    const carrera = await manager.findOneBy(Carrera, { id: Number(createAspiranteDto.carrera_id) });
+    if (!carrera) throw new BadRequestException(`La carrera con ID ${createAspiranteDto.carrera_id} no es válida.`);
 
     const nuevoAspirante = manager.create(Aspirante, {
       ...createAspiranteDto,
-      carrera: carrera,
     });
 
     const aspiranteGuardado = await manager.save(nuevoAspirante);

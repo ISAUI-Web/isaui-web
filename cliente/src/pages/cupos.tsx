@@ -5,6 +5,7 @@ import { RolUsuario } from "../lib/types"
 import { useState, useEffect } from "react"
 import { Card } from "../components/ui/card"
 import { Progress } from "../components/ui/progress"
+import {CustomDialog} from "../components/ui/customDialog"
 import {
   Menu,
   X,
@@ -16,6 +17,7 @@ import {
   FolderOpen,
   FileText,
   LogOut,
+  RotateCcwKey,
   Settings,
   TrendingUp,
   AlertTriangle,
@@ -24,6 +26,7 @@ import {
   ChevronRight,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
+import ChangePasswordDialog from '../components/ChangePasswordDialog';
 
 // Asegúrate de que las rutas sean correctas según tu estructura de archivos
 import logo from "../assets/logo.png"
@@ -51,23 +54,35 @@ const menuItems: MenuItem[] = [
   { icon: FolderOpen, label: "LEGAJO DIGITAL", id: "legajo" },
   { icon: FileText, label: "REPORTES", id: "reportes" },
   { icon: Settings, label: "MANTENIMIENTO", id: "mantenimiento" },
+  { icon: RotateCcwKey, label: "GESTIÓN DE CUENTA", id: "cambio-contrasena" },
 ]
 
 export default function Cupos() {
 
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [activeSection, setActiveSection] = useState("cupos")
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [expandedSubmenu, setExpandedSubmenu] = useState<string | null>(null)
   const [cupos, setCupos] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const navigate = useNavigate()
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
+  const [dialogProps, setDialogProps] = useState<{
+    title?: string
+    description?: string
+    variant?: "info" | "error" | "success" | "confirm"
+    onConfirm?: (() => void) | undefined
+    onCancel?: (() => void) | undefined
+    confirmText?: string
+    cancelText?: string
+  }>({})
 
   // Cargar datos de cupos desde la API real
   useEffect(() => {
     const fetchCuposData = async () => {
       try {
         setIsLoading(true)
-        const response = await fetch("http://localhost:3000/carrera")
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/carrera`)
         if (!response.ok) throw new Error("Error al cargar los datos de cupos")
         const data = await response.json()
         // Asegura que los campos sean números
@@ -95,8 +110,14 @@ export default function Cupos() {
     const handleLogout = () => {
       localStorage.removeItem("adminRemember")
       localStorage.removeItem("adminUser")
-      alert("¡Sesión cerrada exitosamente!")
-      navigate("/login")
+      setDialogProps({
+      title: "Sesión cerrada",
+      description: "Has cerrado sesión exitosamente.",
+      variant: "success",
+      confirmText: "Entendido",
+      onConfirm: () => navigate("/login")
+    })
+    setIsLogoutDialogOpen(true)
     }
   
 
@@ -209,6 +230,33 @@ export default function Cupos() {
               return null;
             }
             const IconComponent = item.icon;
+            if (item.id === 'cambio-contrasena') {
+              return (
+                <div key={item.id}>
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      setDialogOpen(true);
+                    }}
+                    className={`w-full flex items-center px-6 py-4 text-white hover:bg-[#31546D] transition-colors ${
+                      activeSection === item.id ? 'bg-[#31546D]' : ''
+                    }`}
+                  >
+                    <IconComponent className="w-5 h-5 mr-4" />
+                    <span className="text-sm font-medium tracking-wide">{item.label}</span>
+                  </button>
+
+                  <ChangePasswordDialog
+                    open={dialogOpen}
+                    onOpenChange={(open) => {
+                      setDialogOpen(open);
+                      if (!open) setActiveSection('');
+                    }}
+                  />
+                </div>
+              );
+            }
+
             return (
               <div key={item.id}>
                 <button
@@ -406,6 +454,16 @@ export default function Cupos() {
           </Card>
         </div>
       </main>
+      <CustomDialog
+    open={isLogoutDialogOpen}
+    onClose={() => setIsLogoutDialogOpen(false)}
+    title={dialogProps.title ?? ""}
+    description={dialogProps.description ?? ""}
+    confirmLabel={dialogProps.confirmText ?? "Entendido"}
+    cancelLabel={dialogProps.cancelText}
+    onConfirm={dialogProps.onConfirm}
+    showCancel={!!dialogProps.onCancel}
+/>
     </div>
     </ProtectedRoute>
   )

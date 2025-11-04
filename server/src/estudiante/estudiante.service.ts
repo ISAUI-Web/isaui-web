@@ -87,9 +87,6 @@ export class EstudianteService {
     const aspiranteData = {
       ...aspirante,
       carrera: carreraNombre,
-      // Transformamos el booleano a un string que el frontend espera
-      trabajo: aspirante.trabajo ? 'Sí' : 'No',
-      personas_cargo: aspirante.personas_cargo ? 'Sí' : 'No',
       estado_preinscripcion: preinscripcion?.estado || 'N/A',
       estado_matriculacion: matricula?.estado || 'no matriculado',
       ...documentosMapeados,
@@ -149,24 +146,58 @@ export class EstudianteService {
     return estudianteGuardado;
   }
   async updateActivo(id: number, activo: boolean) {
-    return this.estudianteRepository.update(id, { activo });
-  }
-
-  async update(
-    id: number,
-    updateEstudianteDto: UpdateEstudianteDto,
-  ): Promise<Estudiante> {
     const estudiante = await this.estudianteRepository.findOneBy({ id });
     if (!estudiante) {
       throw new NotFoundException(`Estudiante con ID ${id} no encontrado.`);
     }
+    await this.estudianteRepository.update(id, { activo });
+    return { ...estudiante, activo };
+  }
 
-    // Mezcla los datos del DTO en la entidad existente
-    const updatedEstudiante = this.estudianteRepository.merge(
-      estudiante,
-      updateEstudianteDto,
-    );
+  async update(
+    id: number,
+    updateData: UpdateEstudianteDto,
+    files?: { [fieldname: string]: Express.Multer.File[] },
+  ): Promise<Estudiante> {
+    // Buscamos el estudiante junto con su aspirante relacionado
+    const estudiante = await this.estudianteRepository.findOne({
+      where: { id },
+      relations: ['aspirante'],
+    });
 
-    return this.estudianteRepository.save(updatedEstudiante);
+    if (!estudiante) {
+      throw new NotFoundException(`Estudiante con ID ${id} no encontrado.`);
+    }
+
+    const aspirante = estudiante.aspirante;
+    if (!aspirante) {
+      throw new NotFoundException(
+        `No se encontró el aspirante asociado al estudiante con ID ${id}`,
+      );
+    }
+
+    // --- INICIO DE LA SOLUCIÓN ---
+    // Prevenimos la sobreescritura del ID del aspirante.
+    delete updateData['id'];
+
+    // Actualizamos los datos del aspirante con los datos del formulario
+    // Object.assign es seguro aquí porque los DTOs filtran propiedades no deseadas
+    Object.assign(aspirante, updateData);
+
+    // Actualizamos los datos del estudiante (ej: ciclo_lectivo)
+    Object.assign(estudiante, updateData);
+
+    // Guardamos los cambios en el aspirante y el estudiante
+    await this.estudianteRepository.manager.save(aspirante);
+    await this.estudianteRepository.manager.save(estudiante);
+    // --- FIN DE LA SOLUCIÓN ---
+
+    // Si se subieron archivos, los procesamos
+    // if (files && Object.keys(files).length > 0) {
+    //   await this.documentoService.guardarDocumentos(aspirante, files);
+    // }
+
+    // Devolvemos el estudiante actualizado, recargando las relaciones para obtener las nuevas URLs
+    return this.findByAspiranteId(aspirante.id);
   }
 }
