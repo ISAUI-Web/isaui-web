@@ -10,14 +10,13 @@ import { Card } from "../components/ui/card"
 import { ArrowLeft, User } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
-
 interface LoginForm {
   usuario: string
   contrasena: string
   recordarme: boolean
 }
 
-export default function Login() {
+export default function LoginPage() {
   const [formData, setFormData] = useState<LoginForm>({
     usuario: "",
     contrasena: "",
@@ -27,7 +26,6 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
 
-
   const handleInputChange = (field: keyof LoginForm, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
     // Limpiar error cuando el usuario empiece a escribir
@@ -35,7 +33,6 @@ export default function Login() {
       setErrors((prev) => ({ ...prev, [field]: "" }))
     }
   }
-
 
   //VALIDACIONES: DIEGO LUNA NO TE QUEJES DE LAS VALIDACIONES
   const validateForm = (): boolean => {
@@ -54,57 +51,61 @@ export default function Login() {
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault()
 
-  if (!validateForm()) return;
+    if (!validateForm()) return
 
-  setIsLoading(true);
+    setIsLoading(true)
 
-  try {
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/usuario/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        nombre_usuario: formData.usuario, 
-        contrasena: formData.contrasena,
-      }),
-    });
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/usuario/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          nombre_usuario: formData.usuario,
+          contrasena: formData.contrasena,
+        }),
+      })
 
-    if (!response.ok) {
-      
-      const errorData = await response.json();
-      setErrors({ general: errorData.message || 'Error en el login' });
-      setIsLoading(false);
-      return;
+      if (!response.ok) {
+        const errorData = await response.json()
+        setErrors({ general: errorData.message || "Error en el login" })
+        setIsLoading(false)
+        return
+      }
+
+      const data = await response.json()
+
+      if (data.token) {
+        localStorage.setItem("token", data.token)
+        console.log("[v0] Token guardado:", data.token.substring(0, 20) + "...")
+      }
+
+      if (data.usuario) {
+        localStorage.setItem("usuario", JSON.stringify(data.usuario))
+        console.log("[v0] Usuario guardado:", data.usuario.nombre_usuario)
+      }
+
+      // Guardar "Recuérdame" solo si está marcado
+      if (formData.recordarme) {
+        localStorage.setItem("recordarme", "true")
+      } else {
+        localStorage.removeItem("recordarme")
+      }
+
+      setIsLoading(false)
+
+      setTimeout(() => {
+        navigate("/admin")
+      }, 150)
+    } catch (error) {
+      console.error("[v0] Error en login:", error)
+      setErrors({ general: "Error de conexión con el servidor" })
+      setIsLoading(false)
     }
-
-    const data = await response.json();
-
-
-    // Guardar SIEMPRE el token (para que funcione el cambio de contraseña)
-    if (data.token) {
-      localStorage.setItem('token', data.token);
-    }
-
-    // Guardar usuario solo si "Recuérdame" (opcional, para persistencia)
-    if (formData.recordarme) {
-      localStorage.setItem('usuario', JSON.stringify(data.usuario));
-      // Opcional: guardar recordarme para pre-marcar el checkbox
-      localStorage.setItem('recordarme', 'true');
-    }
-
-    setIsLoading(false);
-    navigate('/admin'); // Redirigimos al panel admin
-
-  } catch (error) {
-    console.error(error);
-    setErrors({ general: 'Error de conexión con el servidor' });
-    setIsLoading(false);
   }
-};
-
 
   const handleBack = () => {
     navigate("/")

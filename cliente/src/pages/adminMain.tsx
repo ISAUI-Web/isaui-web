@@ -1,5 +1,8 @@
 "use client"
-
+import { getUserRole } from "../lib/auth"
+import { ProtectedRoute } from "../components/protected-route"
+import { RolUsuario } from "../lib/types"
+import { logout } from "../lib/auth"
 import { useState } from "react"
 import { Card } from "../components/ui/card"
 import {CustomDialog} from "../components/ui/customDialog"
@@ -93,7 +96,7 @@ export default function AdminMain() {
       description: "Has cerrado sesión exitosamente.",
       variant: "success",
       confirmText: "Entendido",
-      onConfirm: () => navigate("/login")
+      onConfirm: () => logout()
     })
     setIsLogoutDialogOpen(true)
   }
@@ -148,6 +151,7 @@ const handleMenuItemClick = (itemId: string) => {
 }
 
   return (
+    <ProtectedRoute allowedRoles={[RolUsuario.ADMIN_GENERAL, RolUsuario.GESTOR_ACADEMICO, RolUsuario.PROFESOR]}>
     <div className="min-h-screen bg-[#1F6680] from-teal-600 to-teal-800 relative">
       {/* Header */}
       <header className="bg-slate-800 h-16 flex items-center px-4 relative z-50">
@@ -188,6 +192,20 @@ const handleMenuItemClick = (itemId: string) => {
         {/* Menu Items */}
         <div className="flex-1">
           {menuItems.map((item) => {
+            const userRole = getUserRole();
+
+            if (item.id === "mantenimiento" && userRole !== RolUsuario.ADMIN_GENERAL) {
+              return null;
+            }
+            if (item.id === "reportes" && userRole == RolUsuario.PROFESOR) {
+              return null;
+            }
+            if (item.id === "cupos" && userRole == RolUsuario.PROFESOR) {
+              return null;
+            }
+            if (item.id === "aspirantes" && userRole == RolUsuario.PROFESOR) {
+              return null;
+            }
             const IconComponent = item.icon;
             // Special case: render password-change as a Dialog trigger
             if (item.id === 'cambio-contrasena') {
@@ -326,5 +344,6 @@ const handleMenuItemClick = (itemId: string) => {
     showCancel={!!dialogProps.onCancel}
 />
     </div>
+     </ProtectedRoute>
   )
 }
