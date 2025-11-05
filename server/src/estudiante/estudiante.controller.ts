@@ -55,14 +55,6 @@ export class EstudianteController {
     return this.estudianteService.update(id, dto, files);
   }
 
-  @Patch(':id')
-  updateActivo(
-    @Param('id', ParseIntPipe) id: number,
-    @Body('activo') activo: boolean,
-  ) {
-    return this.estudianteService.updateActivo(id, activo);
-  }
-
   // Helper para convertir strings a booleanos y números
   private convertToDto(body: any): UpdateEstudianteDto {
     const dto = new UpdateEstudianteDto();

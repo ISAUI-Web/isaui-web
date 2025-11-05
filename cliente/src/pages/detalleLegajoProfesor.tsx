@@ -1136,24 +1136,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                     <div className="relative group">
                       {docUrl ? (
                         <>
-                          <img
-                            src={abs(docUrl)} // Usar abs para construir la URL
-                            alt={docTitle}
-                            className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                            onClick={() => !isEditing && docUrl && handleViewImage(abs(docUrl))}
-                          />
-                          {/* Overlay para modo vista */}
-                          {!isEditing && (
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
-                              <Button
-                                variant="outline"
-                                onClick={() => handleViewImage(abs(docUrl))}
-                                className="bg-white/90 hover:bg-white text-gray-800 p-2 rounded-full"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          )}
+                          <img src={abs(docUrl)} alt={docTitle} className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md" />
                         </>
                       ) : (
                         // Placeholder si no hay imagen
@@ -1173,20 +1156,20 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                     )}
 
                     <div className="flex gap-2">
-                      {!isEditing ? (
-                        <Button
-                          onClick={() => docUrl && window.open(abs(docUrl), "_blank")}
-                          variant="outline"
-                          className="flex-1 text-sm"
-                          disabled={!docUrl}
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          Ver
-                        </Button>
-                      ) : (
+                      {isEditing && (
                         <Button onClick={() => triggerFileInput(docType)} className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white">
                           <Upload className="w-4 h-4 mr-2" />
                           {docUrl ? "Cambiar" : "Subir"}
+                        </Button>
+                      )}
+                      {docUrl && (
+                        <Button
+                          onClick={() => window.open(abs(docUrl), "_blank")}
+                          variant="outline"
+                          className="flex-1 text-sm"
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          Ver
                         </Button>
                       )}
                     </div>
@@ -1230,7 +1213,6 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                         src={abs(curso.certificadoUrl)}
                         alt={curso.nombre}
                         className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                        onClick={() => !isEditing && handleViewImage(abs(curso.certificadoUrl))}
                       />
                     ) : (
                       <div className="w-full h-48 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
@@ -1241,47 +1223,6 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       </div>
                     )}
 
-                    {/* Overlay para modo edición */}
-                    {isEditing && (
-                      <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                          onClick={() => {
-                            const input = document.createElement('input');
-                            input.type = 'file';
-                            input.accept = 'image/*,application/pdf';
-                            input.onchange = (e: any) => {
-                              const file = e.target.files?.[0] || null;
-                              if (file) {
-                                const newCursos = [...cursos];
-                                const cursoIndex = newCursos.findIndex(c => c.id === curso.id);
-                                if (cursoIndex !== -1) {
-                                  newCursos[cursoIndex].certificadoFile = file;
-                                  newCursos[cursoIndex].certificadoUrl = URL.createObjectURL(file);
-                                  setCursos(newCursos);
-                                }
-                              }
-                            };
-                            input.click();
-                          }}
-                          className="bg-white/90 hover:bg-white text-gray-800 px-4 py-2 rounded-lg flex items-center gap-2"
-                        >
-                          <Upload className="w-4 h-4" />
-                          {curso.certificadoUrl ? "Cambiar imagen" : "Subir imagen"}
-                        </Button>
-                      </div>
-                    )}
-
-                    {/* Overlay para modo vista */}
-                    {!isEditing && curso.certificadoUrl && (
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
-                        <Button variant="outline"
-                          onClick={() => handleViewImage(abs(curso.certificadoUrl))}
-                          className="bg-white/90 hover:bg-white text-gray-800 p-2 rounded-full"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    )}
                   </div>
 
                   {/* Nombre del archivo si existe */}
@@ -1293,7 +1234,7 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
 
                   {/* Botones según el modo */}
                   <div className="flex gap-2">
-                    {isEditing ? (
+                    {isEditing && (
                       <>
                         <Button
                           onClick={() => {
@@ -1329,12 +1270,12 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </>
-                    ) : (
+                    )}
+                    {curso.certificadoUrl && (
                       <Button
                         onClick={() => curso.certificadoUrl && window.open(abs(curso.certificadoUrl), "_blank")}
                         variant="outline"
                         className="flex-1 text-sm"
-                        disabled={!curso.certificadoUrl}
                       >
                         <Eye className="w-4 h-4 mr-2" />
                         Ver

@@ -62,16 +62,6 @@ export class DocenteService {
     });
   }
 
-  async updateActivo(id: number, activo: boolean) {
-    const docente = await this.docenteRepository.findOne({ where: { id } });
-    if (!docente) throw new Error('Docente no encontrado');
-
-    docente.activo = activo;
-    await this.docenteRepository.save(docente);
-
-    return { message: 'Estado actualizado correctamente' };
-  }
-
   async findOne(id: number): Promise<any> {
     const docente = await this.docenteRepository.findOne({
       where: { id },

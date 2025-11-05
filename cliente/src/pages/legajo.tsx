@@ -246,99 +246,6 @@ const handleMenuItemClick = (itemId: string) => {
     navigate(`/detAspirante/${id}`, { state: { from: "/matriculacion" } });
   }
 
-  const handleDeleteEstudiante = async (id: number, nombre: string, apellido: string) => {
-  const confirmed = await new Promise<boolean>((resolve) => {
-    setDialogProps({
-      title: "Confirmar desactivación",
-      description: `¿Está seguro de que desea desactivar el legajo de ${nombre} ${apellido}?`,
-      variant: "confirm",
-      confirmText: "Sí, desactivar",
-      cancelText: "Cancelar",
-      onConfirm: () => {
-        resolve(true);
-        setIsLogoutDialogOpen(false);
-      },
-      onCancel: () => {
-        resolve(false);
-        setIsLogoutDialogOpen(false);
-      },
-    });
-    setIsLogoutDialogOpen(true);
-  });
-
-  if (!confirmed) return;
-
-  try {
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/estudiante/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ activo: false }), 
-    });
-
-    if (!response.ok) throw new Error("Error al desactivar el legajo");
-
-     setEstudiantes(prev => prev.filter(e => e.id !== id));
-
-    setDialogProps({
-      title: "Legajo desactivado",
-      description: "El legajo del aspirante se ha desactivado correctamente.",
-      variant: "success",
-      confirmText: "Entendido",
-    });
-    setIsLogoutDialogOpen(true);
-  } catch (error) {
-    console.error("Error:", error);
-    alert("Error al desactivar el legajo del estudiante");
-  }
-  }
-  
-  const handleDeleteDocente = async (id: number, nombre: string, apellido: string) => {
-  const confirmed = await new Promise<boolean>((resolve) => {
-    setDialogProps({
-      title: "Confirmar desactivación",
-      description: `¿Está seguro de que desea desactivar el legajo de ${nombre} ${apellido}?`,
-      variant: "confirm",
-      cancelText: "Cancelar",
-      confirmText: "Sí, desactivar",
-      onConfirm: () => {
-        resolve(true);
-        setIsLogoutDialogOpen(false);
-      },
-      onCancel: () => {
-        resolve(false);
-        setIsLogoutDialogOpen(false);
-      },
-    });
-    setIsLogoutDialogOpen(true);
-  });
-
-  if (!confirmed) return;
-
-  try {
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/docente/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ activo: false }),
-    });
-
-    if (!response.ok) throw new Error("Error al desactivar el legajo");
-
-    // Actualizamos el estado para removerlo del listado en el frontend
-    setProfesores(prev => prev.filter(d => d.id !== id));
-
-    setDialogProps({
-      title: "Legajo desactivado",
-      description: "El legajo del aspirante se ha desactivado correctamente.",
-      variant: "success",
-      confirmText: "Entendido",
-    });
-    setIsLogoutDialogOpen(true);
-  } catch (error) {
-    console.error("Error:", error);
-    alert("Error al desactivar el legajo del docente");
-  }
-};
-
 
   if (loading) return <p className="text-white">Cargando aspirantes...</p>
   if (error) return <p className="text-red-400">{error}</p>
@@ -594,15 +501,6 @@ const handleMenuItemClick = (itemId: string) => {
                       <Eye className="w-4 h-4" />
                       Ver legajo
                     </Button>
-                    <Button
-                      onClick={() =>
-                       handleDeleteEstudiante(estudiante.id, estudiante.nombre, estudiante.apellido)
-                      }
-                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-                      >
-                      <Trash2 className="w-4 h-4" />
-                      Eliminar
-                      </Button>
                   </div>
                 </td>
               </tr>
@@ -656,17 +554,6 @@ const handleMenuItemClick = (itemId: string) => {
                     <Eye className="w-4 h-4" />
                     Ver legajo
                   </Button>
-                  {!isProfesor && (
-                  <Button
-                    onClick={() =>
-                       handleDeleteDocente(profesor.id, profesor.nombre, profesor.apellido)
-                      }
-                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Eliminar
-                  </Button>
-                  )}
                 </div>
               </td>
             </tr>

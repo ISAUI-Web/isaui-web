@@ -1244,57 +1244,20 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                     </p>
                   )}
 
-                  {/* Overlay para modo edición */}
-                  {isEditing && (
-                    <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center">
-                      <Button
-                        onClick={() => triggerFileInput("dniFrente")}
-                        disabled={isUploadingImage === "dniFrente"}
-                        className="bg-white/90 hover:bg-white text-gray-800 px-4 py-2 rounded-lg flex items-center gap-2"
-                      >
-                        {isUploadingImage === "dniFrente" ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
-                            Subiendo...
-                          </>
-                        ) : (
-                          <>
-                            <Upload className="w-4 h-4" />
-                            {formData.documentos?.dniFrenteUrl ? "Cambiar imagen" : "Subir imagen"}
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  )}
-
-                  {/* Overlay para modo vista */}
-                  {!isEditing && formData.documentos?.dniFrenteUrl && (
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
-                      <Button
-                        onClick={() => handleViewImage(abs(formData.documentos.dniFrenteUrl))}
-                        className="bg-white/90 hover:bg-white text-gray-800 p-2 rounded-full"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  )}
                 </div>
 
                 <div className="flex gap-2">
-                  {isEditing ? (
+                  {isEditing && (
                     <Button
                       onClick={() => triggerFileInput("dniFrente")}
                       disabled={isUploadingImage === "dniFrente"}
                       className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
                     >
                       <Camera className="w-4 h-4 mr-2" />
-                      {isUploadingImage === "dniFrente"
-                        ? "Subiendo..."
-                        : formData.documentos?.dniFrenteUrl
-                          ? "Cambiar"
-                          : "Subir"}
+                      {formData.documentos?.dniFrenteUrl ? "Cambiar" : "Subir"}
                     </Button>
-                  ) : (
+                  )}
+                  {formData.documentos?.dniFrenteUrl && (
                     <Button
                       onClick={() => window.open(abs(formData.documentos.dniFrenteUrl), "_blank")}
                       variant="outline"
@@ -1334,57 +1297,20 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                     </p>
                   )}
 
-                  {/* Overlay para modo edición */}
-                  {isEditing && (
-                    <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center">
-                      <Button
-                        onClick={() => triggerFileInput("dniDorso")}
-                        disabled={isUploadingImage === "dniDorso"}
-                        className="bg-white/90 hover:bg-white text-gray-800 px-4 py-2 rounded-lg flex items-center gap-2"
-                      >
-                        {isUploadingImage === "dniDorso" ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
-                            Subiendo...
-                          </>
-                        ) : (
-                          <>
-                            <Upload className="w-4 h-4" />
-                            {formData.documentos?.dniDorsoUrl ? "Cambiar imagen" : "Subir imagen"}
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  )}
-
-                  {/* Overlay para modo vista */}
-                  {!isEditing && formData.documentos?.dniDorsoUrl && (
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
-                      <Button
-                        onClick={() => handleViewImage(abs(formData.documentos.dniDorsoUrl))}
-                        className="bg-white/90 hover:bg-white text-gray-800 p-2 rounded-full"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  )}
                 </div>
 
                 <div className="flex gap-2">
-                  {isEditing ? (
+                  {isEditing && (
                     <Button
                       onClick={() => triggerFileInput("dniDorso")}
                       disabled={isUploadingImage === "dniDorso"}
                       className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
                     >
                       <Camera className="w-4 h-4 mr-2" />
-                      {isUploadingImage === "dniDorso"
-                        ? "Subiendo..."
-                        : formData.documentos?.dniDorsoUrl
-                          ? "Cambiar"
-                          : "Subir"}
+                      {formData.documentos?.dniDorsoUrl ? "Cambiar" : "Subir"}
                     </Button>
-                  ) : (
+                  )}
+                  {formData.documentos?.dniDorsoUrl && (
                     <Button
                       onClick={() => window.open(abs(formData.documentos.dniDorsoUrl), "_blank")}
                       variant="outline"
@@ -1394,7 +1320,6 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       <Eye className="w-4 h-4 mr-2" />
                       Ver
                     </Button>
-
                   )}
                 </div>
               </div>
@@ -1424,15 +1349,6 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                     </p>
                   )}
                   <div className="flex gap-2">
-                    <Button
-                      onClick={() => window.open(abs(formData.documentos.cusUrl), "_blank")}
-                      variant="outline"
-                      className="flex-1 text-sm"
-                      disabled={!formData.documentos?.cusUrl}
-                    >
-                      <Eye className="w-4 h-4 mr-2" />
-                      Ver
-                    </Button>
                     {isEditing && (
                       <Button
                         onClick={() => triggerFileInput("cus")}
@@ -1440,6 +1356,16 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       >
                         <Camera className="w-4 h-4 mr-2" />
                         {formData.documentos?.cusUrl ? "Cambiar" : "Subir"}
+                      </Button>
+                    )}
+                    {formData.documentos?.cusUrl && (
+                      <Button
+                        onClick={() => window.open(abs(formData.documentos.cusUrl), "_blank")}
+                        variant="outline"
+                        className="flex-1 text-sm"
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        Ver
                       </Button>
                     )}
                   </div>
@@ -1470,15 +1396,6 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                     </p>
                   )}
                   <div className="flex gap-2">
-                    <Button
-                      onClick={() => window.open(abs(formData.documentos.foto_carnetUrl), "_blank")}
-                      variant="outline"
-                      className="flex-1 text-sm"
-                      disabled={!formData.documentos?.foto_carnetUrl}
-                    >
-                      <Eye className="w-4 h-4 mr-2" />
-                      Ver
-                    </Button>
                     {isEditing && (
                       <Button
                         onClick={() => triggerFileInput("foto_carnet")}
@@ -1486,6 +1403,16 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       >
                         <Camera className="w-4 h-4 mr-2" />
                         {formData.documentos?.foto_carnetUrl ? "Cambiar" : "Subir"}
+                      </Button>
+                    )}
+                    {formData.documentos?.foto_carnetUrl && (
+                      <Button
+                        onClick={() => window.open(abs(formData.documentos.foto_carnetUrl), "_blank")}
+                        variant="outline"
+                        className="flex-1 text-sm"
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        Ver
                       </Button>
                     )}
                   </div>
@@ -1516,15 +1443,6 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                     </p>
                   )}
                   <div className="flex gap-2">
-                    <Button
-                      onClick={() => window.open(abs(formData.documentos.isaUrl), "_blank")}
-                      variant="outline"
-                      className="flex-1 text-sm"
-                      disabled={!formData.documentos?.isaUrl}
-                    >
-                      <Eye className="w-4 h-4 mr-2" />
-                      Ver
-                    </Button>
                     {isEditing && (
                       <Button
                         onClick={() => triggerFileInput("isa")}
@@ -1532,6 +1450,16 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       >
                         <Camera className="w-4 h-4 mr-2" />
                         {formData.documentos?.isaUrl ? "Cambiar" : "Subir"}
+                      </Button>
+                    )}
+                    {formData.documentos?.isaUrl && (
+                      <Button
+                        onClick={() => window.open(abs(formData.documentos.isaUrl), "_blank")}
+                        variant="outline"
+                        className="flex-1 text-sm"
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        Ver
                       </Button>
                     )}
                   </div>
@@ -1562,15 +1490,6 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                     </p>
                   )}
                   <div className="flex gap-2">
-                    <Button
-                      onClick={() => window.open(abs(formData.documentos.partida_nacimientoUrl), "_blank")}
-                      variant="outline"
-                      className="flex-1 text-sm"
-                      disabled={!formData.documentos?.partida_nacimientoUrl}
-                    >
-                      <Eye className="w-4 h-4 mr-2" />
-                      Ver
-                    </Button>
                     {isEditing && (
                       <Button
                         onClick={() => triggerFileInput("partida_nacimiento")}
@@ -1578,6 +1497,16 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       >
                         <Camera className="w-4 h-4 mr-2" />
                         {formData.documentos?.partida_nacimientoUrl ? "Cambiar" : "Subir"}
+                      </Button>
+                    )}
+                    {formData.documentos?.partida_nacimientoUrl && (
+                      <Button
+                        onClick={() => window.open(abs(formData.documentos.partida_nacimientoUrl), "_blank")}
+                        variant="outline"
+                        className="flex-1 text-sm"
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        Ver
                       </Button>
                     )}
                   </div>
@@ -1608,15 +1537,6 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                     </p>
                   )}
                   <div className="flex gap-2">
-                    <Button
-                      onClick={() => window.open(abs(formData.documentos.analiticoUrl), "_blank")}
-                      variant="outline"
-                      className="flex-1 text-sm"
-                      disabled={!formData.documentos?.analiticoUrl}
-                    >
-                      <Eye className="w-4 h-4 mr-2" />
-                      Ver
-                    </Button>
                     {isEditing && (
                       <Button
                         onClick={() => triggerFileInput("analitico")}
@@ -1624,6 +1544,16 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       >
                         <Camera className="w-4 h-4 mr-2" />
                         {formData.documentos?.analiticoUrl ? "Cambiar" : "Subir"}
+                      </Button>
+                    )}
+                    {formData.documentos?.analiticoUrl && (
+                      <Button
+                        onClick={() => window.open(abs(formData.documentos.analiticoUrl), "_blank")}
+                        variant="outline"
+                        className="flex-1 text-sm"
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        Ver
                       </Button>
                     )}
                   </div>
@@ -1654,15 +1584,6 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                     </p>
                   )}
                   <div className="flex gap-2">
-                    <Button
-                      onClick={() => window.open(abs(formData.documentos.grupo_sanguineoUrl), "_blank")}
-                      variant="outline"
-                      className="flex-1 text-sm"
-                      disabled={!formData.documentos?.grupo_sanguineoUrl}
-                    >
-                      <Eye className="w-4 h-4 mr-2" />
-                      Ver
-                    </Button>
                     {isEditing && (
                       <Button
                         onClick={() => triggerFileInput("grupo_sanguineo")}
@@ -1670,6 +1591,16 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       >
                         <Camera className="w-4 h-4 mr-2" />
                         {formData.documentos?.grupo_sanguineoUrl ? "Cambiar" : "Subir"}
+                      </Button>
+                    )}
+                    {formData.documentos?.grupo_sanguineoUrl && (
+                      <Button
+                        onClick={() => window.open(abs(formData.documentos.grupo_sanguineoUrl), "_blank")}
+                        variant="outline"
+                        className="flex-1 text-sm"
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        Ver
                       </Button>
                     )}
                   </div>
@@ -1700,15 +1631,6 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                     </p>
                   )}
                   <div className="flex gap-2">
-                    <Button
-                      onClick={() => window.open(abs(formData.documentos.cudUrl), "_blank")}
-                      variant="outline"
-                      className="flex-1 text-sm"
-                      disabled={!formData.documentos?.cudUrl}
-                    >
-                      <Eye className="w-4 h-4 mr-2" />
-                      Ver
-                    </Button>
                     {isEditing && (
                       <Button
                         onClick={() => triggerFileInput("cud")}
@@ -1716,6 +1638,16 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                       >
                         <Camera className="w-4 h-4 mr-2" />
                         {formData.documentos?.cudUrl ? "Cambiar" : "Subir"}
+                      </Button>
+                    )}
+                    {formData.documentos?.cudUrl && (
+                      <Button
+                        onClick={() => window.open(abs(formData.documentos.cudUrl), "_blank")}
+                        variant="outline"
+                        className="flex-1 text-sm"
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        Ver
                       </Button>
                     )}
                   </div>
@@ -1746,15 +1678,25 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                     </p>
                   )}
                   <div className="flex gap-2">
-                    <Button
-                      onClick={() => window.open(abs(formData.documentos.emmacUrl), "_blank")}
-                      variant="outline"
-                      className="flex-1 text-sm"
-                      disabled={!formData.documentos?.emmacUrl}
-                    >
-                      <Eye className="w-4 h-4 mr-2" />
-                      Ver
-                    </Button>
+                    {isEditing && (
+                      <Button
+                        onClick={() => triggerFileInput("emmac")}
+                        className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white"
+                      >
+                        <Camera className="w-4 h-4 mr-2" />
+                        {formData.documentos?.emmacUrl ? "Cambiar" : "Subir"}
+                      </Button>
+                    )}
+                    {formData.documentos?.emmacUrl && (
+                      <Button
+                        onClick={() => window.open(abs(formData.documentos.emmacUrl), "_blank")}
+                        variant="outline"
+                        className="flex-1 text-sm"
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        Ver
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>

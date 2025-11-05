@@ -24,14 +24,6 @@ export class DocenteController {
     return await this.docenteService.findAll();
   }
 
-  @Patch(':id')
-  async updateActivo(
-    @Param('id') id: number,
-    @Body() body: { activo: boolean },
-  ) {
-    return await this.docenteService.updateActivo(id, body.activo);
-  }
-
   @Get(':id')
   async findOne(@Param('id') id: string) {
     try {
