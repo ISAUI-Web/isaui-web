@@ -1,5 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import PDFDocument from 'pdfkit';
+import * as fs from 'fs';
 import * as nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -19,6 +20,7 @@ interface AspiranteData {
 @Injectable()
 export class ConstanciaService {
   private transporter: Transporter;
+  private logoBuffer: Buffer;
 
   constructor(
     @InjectRepository(Aspirante)
@@ -33,6 +35,14 @@ export class ConstanciaService {
         pass: process.env.SMTP_PASS,
       },
     });
+
+    // Cargar el logo en memoria al iniciar el servicio
+    try {
+      this.logoBuffer = fs.readFileSync('assets/logo.png');
+    } catch (error) {
+      console.error('Error al cargar el logo para los PDFs:', error);
+      // Podrías lanzar un error aquí para detener el inicio si el logo es crítico
+    }
   }
 
   async obtenerNumeroRegistroPorDNI(dni: string): Promise<number> {
@@ -53,7 +63,7 @@ export class ConstanciaService {
       });
 
       try {
-        doc.image('assets/logo.png', doc.page.width / 2 - 50, 40, {
+        doc.image(this.logoBuffer, doc.page.width / 2 - 50, 40, {
           width: 100,
         });
         doc.moveDown(5);
@@ -121,7 +131,7 @@ export class ConstanciaService {
       });
 
       try {
-        doc.image('assets/logo.png', doc.page.width / 2 - 50, 40, {
+        doc.image(this.logoBuffer, doc.page.width / 2 - 50, 40, {
           width: 100,
         });
         doc.moveDown(5);
