@@ -1,21 +1,5 @@
 // Utilidades de autenticación para el frontend
-
-export enum RolUsuario {
-  ADMIN_GENERAL = "ADMIN_GENERAL",
-  GESTOR_ACADEMICO = "GESTOR_ACADEMICO",
-  PROFESOR = "PROFESOR",
-}
-
-export interface Usuario {
-  id: number
-  nombre_usuario: string
-  rol: RolUsuario
-}
-
-export interface AuthData {
-  token: string
-  usuario: Usuario
-}
+import type { RolUsuario, Usuario, AuthData } from './types';
 
 export async function login(email: string, password: string): Promise<AuthData> {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
