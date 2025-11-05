@@ -686,6 +686,7 @@ export default function MultiStepForm() {
           onChange={(value) => setFormData({ ...formData, carrera: value })}
           options={carrerasOptions}
           placeholder="..."
+          error={errors.carrera}
           required
         />
       </div>
