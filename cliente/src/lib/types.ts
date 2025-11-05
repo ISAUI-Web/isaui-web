@@ -10,6 +10,7 @@ export interface Usuario {
   id: number
   nombre_usuario: string
   rol: RolUsuario
+  dni: string | null;
   // Agregar más campos según tu backend
 }
 

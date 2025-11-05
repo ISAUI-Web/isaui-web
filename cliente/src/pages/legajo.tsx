@@ -154,7 +154,7 @@ const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
               // Lógica CORREGIDA: Filtrar el legajo del docente por el DNI del usuario logueado.
               const miLegajo = data.filter(
                 (p: Profesor) =>
-                  p.dni === currentUser.dni
+                  currentUser && p.dni === currentUser.dni
               )
               setProfesores(miLegajo)
             } else {

@@ -942,7 +942,7 @@ export default function Mantenimiento() {
                           <Button
                             onClick={() => {
                               setEditingUsuario(null);
-                              setNewUsuario({ usuario: usuario.usuario, rol: usuario.rol });
+                              setNewUsuario({ usuario: usuario.usuario, rol: usuario.rol, dni: "" });
                             }}
                             className="bg-gray-400 hover:bg-gray-500 text-white p-2"
                           >
@@ -954,7 +954,7 @@ export default function Mantenimiento() {
                           <Button
                             onClick={() => {
                               setEditingUsuario(usuario.id);
-                              setNewUsuario({ usuario: usuario.usuario, rol: usuario.rol });
+                              setNewUsuario({ usuario: usuario.usuario, rol: usuario.rol, dni: "" });
                             }}
                             className="bg-blue-500 hover:bg-blue-600 text-white p-2"
                           >
