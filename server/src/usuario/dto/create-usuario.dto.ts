@@ -1,4 +1,4 @@
-import { IsString, IsEnum } from 'class-validator';
+import { IsString, IsEnum, IsOptional, Length } from 'class-validator';
 import { RolUsuario } from '../usuario.entity';
 
 export class CreateUsuarioDto {
@@ -7,4 +7,9 @@ export class CreateUsuarioDto {
 
   @IsEnum(RolUsuario)
   rol: RolUsuario;
+
+  @IsOptional()
+  @IsString()
+  @Length(7, 8)
+  dni?: string;
 }

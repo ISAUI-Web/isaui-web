@@ -133,7 +133,7 @@ export default function Mantenimiento() {
   // Estados para usuarios
   const [usuarios, setUsuarios] = useState(usuariosData)
   const [editingUsuario, setEditingUsuario] = useState<number | null>(null)
-  const [newUsuario, setNewUsuario] = useState({ usuario: "", rol: "" })
+  const [newUsuario, setNewUsuario] = useState({ usuario: "", rol: "", dni: "" })
   const [showNewUsuarioForm, setShowNewUsuarioForm] = useState(false)
 
   useEffect(() => {
@@ -483,6 +483,7 @@ export default function Mantenimiento() {
         body: JSON.stringify({
           nombre_usuario: newUsuario.usuario,
           rol: newUsuario.rol,
+          dni: newUsuario.rol === 'PROFESOR' ? newUsuario.dni : undefined,
         }),
       });
 
@@ -493,7 +494,7 @@ export default function Mantenimiento() {
 
       const creado = await response.json();
       setUsuarios([...usuarios, mapUsuarioFromApi(creado)]);
-      setNewUsuario({ usuario: "", rol: "" });
+      setNewUsuario({ usuario: "", rol: "", dni: "" });
       setShowNewUsuarioForm(false);
       setDialogProps({
         title: "Éxito",
@@ -506,8 +507,8 @@ export default function Mantenimiento() {
       console.error("Error:", error);
       // fallback local (si querés seguir con simulación)
       const nuevoUsuario = { ...newUsuario, id: Date.now(), activo: true };
-      setUsuarios([...usuarios, nuevoUsuario]);
-      setNewUsuario({ usuario: "", rol: "" });
+      setUsuarios([...usuarios, mapUsuarioFromApi(nuevoUsuario)]); // Usar el mapper
+      setNewUsuario({ usuario: "", rol: "", dni: "" });
       setShowNewUsuarioForm(false);
       alert("Usuario creado correctamente (simulado)");
     }
@@ -858,6 +859,16 @@ export default function Mantenimiento() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            {/* Campo DNI condicional */}
+            <div className={`transition-opacity duration-300 ${newUsuario.rol === 'PROFESOR' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+              <Label>DNI del Profesor</Label>
+              <Input
+                value={newUsuario.dni}
+                onChange={(e) => setNewUsuario({ ...newUsuario, dni: e.target.value.replace(/\D/g, '') })}
+                placeholder="DNI (solo números)"
+                disabled={newUsuario.rol !== 'PROFESOR'}
+              />
             </div>
           </div>
           <div className="flex gap-2 mt-4">

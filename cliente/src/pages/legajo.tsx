@@ -151,12 +151,10 @@ const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
           })
           .then((data) => {
             if (isProfesor && currentUser) {
-              // Match by DNI or email to find the professor's record
+              // Lógica CORREGIDA: Filtrar el legajo del docente por el DNI del usuario logueado.
               const miLegajo = data.filter(
                 (p: Profesor) =>
-                  p.dni === currentUser.nombre_usuario ||
-                  // If nombre_usuario is email, we might need additional matching logic
-                  p.id === currentUser.id,
+                  p.dni === currentUser.dni
               )
               setProfesores(miLegajo)
             } else {

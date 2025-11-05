@@ -65,6 +65,7 @@ export class UsuarioService implements OnModuleInit {
         id: usuario.id,
         rol: usuario.rol,
         nombre_usuario: usuario.nombre_usuario,
+        dni: usuario.dni, // Devolvemos el DNI en el login
       },
     };
   }
@@ -86,14 +87,19 @@ export class UsuarioService implements OnModuleInit {
       where: { nombre_usuario: data.nombre_usuario },
     });
     if (existe) {
-      throw new Error(`El usuario "${data.nombre_usuario}" ya existe`);
+      throw new Error(`El nombre de usuario "${data.nombre_usuario}" ya existe`);
     }
 
-    const usuario = new Usuario();
-    usuario.nombre_usuario = data.nombre_usuario;
-    usuario.rol = data.rol;
+    // Creamos la instancia sin el DNI inicialmente para manejarlo explícitamente.
+    const usuario = this.usuarioRepo.create({
+      nombre_usuario: data.nombre_usuario,
+      rol: data.rol,
+    });
 
-    // Contraseña por defecto "1234" hasheada
+    // Asignar DNI solo si el rol es PROFESOR y el DNI fue proporcionado.
+    usuario.dni = data.rol === RolUsuario.PROFESOR ? (data.dni || null) : null;
+
+    // Hashear contraseña por defecto "1234"
     const contrasenaPorDefecto = "1234";
     const salt = await bcrypt.genSalt(10);
     usuario.contraseña_hash = await bcrypt.hash(contrasenaPorDefecto, salt);

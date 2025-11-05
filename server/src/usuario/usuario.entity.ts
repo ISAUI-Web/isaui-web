@@ -23,6 +23,9 @@ export class Usuario {
   })
   rol: RolUsuario;
 
+  @Column({ type: 'varchar', length: 10, nullable: true, unique: true })
+  dni: string | null;
+
    @Column({ default: true })
   activo: boolean;
 }
