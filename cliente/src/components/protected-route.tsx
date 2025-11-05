@@ -3,7 +3,8 @@
 import type React from "react"
 import { useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { type RolUsuario, hasAnyRole, isAuthenticated, getUserRole } from "../lib/auth"
+import { hasAnyRole, isAuthenticated, getUserRole } from "../lib/auth"
+import { type RolUsuario } from "../lib/types"
 
 interface ProtectedRouteProps {
   children: React.ReactNode

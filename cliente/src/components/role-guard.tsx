@@ -2,7 +2,8 @@
 
 import type React from "react"
 
-import { type RolUsuario, hasAnyRole } from "../lib/auth"
+import { hasAnyRole } from "../lib/auth"
+import { type RolUsuario } from "../lib/types"
 
 interface RoleGuardProps {
   children: React.ReactNode
