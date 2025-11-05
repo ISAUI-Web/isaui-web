@@ -2,7 +2,7 @@
 import { ProtectedRoute } from "../components/protected-route"
 import { RolUsuario } from "../lib/types"
 import { useState, useEffect, useRef } from "react"
-import {CustomDialog} from "../components/ui/customDialog"
+import { CustomDialog } from "../components/ui/customDialog"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Button, buttonVariants } from "../components/ui/button"
 import { Input } from "../components/ui/input"
@@ -100,7 +100,6 @@ export default function DetalleLegajoProfesor() {
     certificadoUrl: string;
     certificadoFile: File | null;
   }>>([]);
-  
   const dniFrenteInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
   const dniDorsoInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
   const tituloSecundarioInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
@@ -167,7 +166,13 @@ export default function DetalleLegajoProfesor() {
 
       } catch (error) {
         console.error(error);
-        alert('Error al cargar los datos del profesor.');
+        setDialogProps({
+          title: "Error de Carga",
+          description: "No se pudieron cargar los datos del profesor. Por favor, intente de nuevo más tarde.",
+          variant: "error",
+          confirmText: "Entendido",
+        });
+        setIsLogoutDialogOpen(true);
       } finally {
         setIsLoading(false);
       }
@@ -353,13 +358,25 @@ export default function DetalleLegajoProfesor() {
         throw new Error(errorMessage || 'Error al actualizar el legajo del profesor.');
       }
 
-      alert('Legajo del profesor actualizado con éxito.');
+      setDialogProps({
+        title: "Legajo Actualizado",
+        description: "El legajo del profesor se ha actualizado correctamente.",
+        variant: "success",
+        confirmText: "Entendido",
+      });
+      setIsLogoutDialogOpen(true);
       setIsEditing(false);
       // Opcional: Recargar los datos para mostrar la información actualizada
       // fetchDocente(); 
     } catch (error: any) {
       console.error('Error en la actualización del legajo:', error);
-      alert(`Hubo un problema al actualizar el legajo: ${error.message}`);
+      setDialogProps({
+        title: "Error al Actualizar",
+        description: `Hubo un problema al actualizar el legajo: ${error.message}`,
+        variant: "error",
+        confirmText: "Entendido",
+      });
+      setIsLogoutDialogOpen(true);
     }
   };
   
@@ -579,7 +596,13 @@ export default function DetalleLegajoProfesor() {
       console.log("[v0] PDF Generado correctamente")
     } catch (error: any) {
       console.error("[v0] Error generando PDF:", error)
-      alert(`Hubo un error al generar el PDF: ${error.message}`)
+      setDialogProps({
+        title: "Error al Generar PDF",
+        description: `Hubo un error al generar el PDF: ${error.message}`,
+        variant: "error",
+        confirmText: "Entendido",
+      });
+      setIsLogoutDialogOpen(true);
     }
   }
 

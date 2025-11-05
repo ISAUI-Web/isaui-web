@@ -328,10 +328,12 @@ export default function DetalleAspirante() {
 
     const updatedAspirante = await res.json();
 
+    const formattedDate = updatedAspirante.fecha_nacimiento ? updatedAspirante.fecha_nacimiento.split('T')[0] : "";
+
     setFormData({
       ...updatedAspirante, //campos del aspirante
-      documentos: {
-        // Reconstruimos el objeto anidado que la UI necesita para renderizar las imágenes.
+      fecha_nacimiento: formattedDate,
+      documentos: { // Reconstruimos el objeto anidado que la UI necesita para renderizar las imágenes.
         dniFrenteUrl: updatedAspirante.dniFrenteUrl || null,
         dniDorsoUrl: updatedAspirante.dniDorsoUrl || null,
         dniFrenteNombre: updatedAspirante.dniFrenteUrl?.split('/').pop() || "",

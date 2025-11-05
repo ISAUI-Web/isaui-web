@@ -369,8 +369,8 @@ export default function DetalleLegajo() {
     const updatedLegajo = await res.json();
 
     // Formateamos la fecha que viene del backend
-    const formattedDate = updatedLegajo.fecha_nacimiento
-      ? updatedLegajo.fecha_nacimiento.split('T')[0]
+    const formattedDate = updatedLegajo.aspirante?.fecha_nacimiento
+      ? updatedLegajo.aspirante.fecha_nacimiento.split('T')[0]
       : "";
 
     // Reconstruimos el estado del formulario desde cero con la respuesta del backend
