@@ -1,10 +1,12 @@
+"use client"
+
 import { useState, useEffect } from "react"
 import { ChevronLeft, ChevronRight, Upload, User, GraduationCap, FileText, ArrowLeft } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
-import {CustomDialog} from "../components/ui/customDialog"
+import { CustomDialog } from "../components/ui/customDialog"
 
 interface FormData {
-   // Datos personales
+  // Datos personales
   carrera: string
   nombre: string
   apellido: string
@@ -23,7 +25,7 @@ interface FormData {
   numeroRegistro: string
 
   // Estudios anteriores
-  completo_nivel_medio: string 
+  completo_nivel_medio: string
   anio_ingreso_medio: string
   anio_egreso_medio: string
   provincia_medio: string
@@ -35,12 +37,12 @@ interface FormData {
   anio_ingreso_superior: string
   anio_egreso_superior: string
   // Situación laboral
-  trabajo: string 
+  trabajo: string
   horas_diarias: string
   descripcion_trabajo: string
   // Responsabilidades
-  personas_cargo: string 
-  
+  personas_cargo: string
+
   // Documentación
   estado_preinscripcion: string
   estado_matriculacion: string
@@ -50,7 +52,6 @@ interface FormData {
 }
 
 const initialFormData: FormData = {
-  
   carrera: "",
   nombre: "",
   apellido: "",
@@ -151,22 +152,22 @@ const RadioGroup = ({
 )
 
 type UnifiedOption = {
-  value: string;
-  label: string;
-};
+  value: string
+  label: string
+}
 
 type FormFieldProps = {
-  label: string;
-  id: string;
-  type?: string;
-  value: string;
-  onChange: (value: string) => void;
-  error?: string;
-  placeholder?: string;
-  options?: string[] | UnifiedOption[] | null;
-  required?: boolean;
-  disabled?: boolean;
-};
+  label: string
+  id: string
+  type?: string
+  value: string
+  onChange: (value: string) => void
+  error?: string
+  placeholder?: string
+  options?: string[] | UnifiedOption[] | null
+  required?: boolean
+  disabled?: boolean
+}
 
 const FormField = ({
   label,
@@ -181,10 +182,7 @@ const FormField = ({
   disabled = false,
 }: FormFieldProps) => (
   <div className="bg-slate-700 rounded-lg p-4">
-    <label
-      htmlFor={id}
-      className="block text-white text-sm font-medium mb-3 uppercase tracking-wide"
-    >
+    <label htmlFor={id} className="block text-white text-sm font-medium mb-3 uppercase tracking-wide">
       {label} {required && "*"}
     </label>
     {options ? (
@@ -204,17 +202,16 @@ const FormField = ({
               <option key={option} value={option}>
                 {option}
               </option>
-            );
+            )
           } else {
             // Aquí TypeScript sabe que es UnifiedOption
             return (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
-            );
+            )
           }
         })}
-
       </select>
     ) : type === "textarea" ? (
       <textarea
@@ -243,54 +240,49 @@ const FormField = ({
     )}
     {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
   </div>
-);
-
-
+)
 
 export default function MultiStepForm() {
-
   type Carrera = {
-  id: number;
-  nombre: string;
-  activo: boolean;
-};
+    id: number
+    nombre: string
+    activo: boolean
+  }
 
-const [carreras, setCarreras] = useState<Carrera[]>([]);
-const [carrerasOptions, setCarrerasOptions] = useState<{ value: string; label: string }[]>([]);
-const [dialogOpen, setDialogOpen] = useState(false)
-const [dialogProps, setDialogProps] = useState<{
-  title?: string
-  description?: string
-  variant?: "info"|"error"|"success"|"confirm"
-  onConfirm?: (() => void) | undefined
-  onCancel?: (() => void) | undefined
-  confirmText?: string
-  cancelText?: string
-}>({})
+  const [carreras, setCarreras] = useState<Carrera[]>([])
+  const [carrerasOptions, setCarrerasOptions] = useState<{ value: string; label: string }[]>([])
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [dialogProps, setDialogProps] = useState<{
+    title?: string
+    description?: string
+    variant?: "info" | "error" | "success" | "confirm"
+    onConfirm?: (() => void) | undefined
+    onCancel?: (() => void) | undefined
+    confirmText?: string
+    cancelText?: string
+  }>({})
 
-useEffect(() => {
-  const fetchCarreras = async () => {
-    try {
-      // CORRECCIÓN: Usar la variable de entorno para la URL de la API.
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/carrera`);
-      if (!res.ok) throw new Error('No se pudo conectar al servidor para cargar las carreras.');
-      const data: Carrera[] = await res.json();
+  useEffect(() => {
+    const fetchCarreras = async () => {
+      try {
+        // CORRECCIÓN: Usar la variable de entorno para la URL de la API.
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/carrera`)
+        if (!res.ok) throw new Error("No se pudo conectar al servidor para cargar las carreras.")
+        const data: Carrera[] = await res.json()
 
-      // solo activas
-      const activas = data.filter(c => c.activo);
+        // solo activas
+        const activas = data.filter((c) => c.activo)
 
-      setCarreras(activas);
-      setCarrerasOptions(
-        activas.map(c => ({ value: c.id.toString(), label: c.nombre }))
-      );
-    } catch (err) {
-      console.error("Error al cargar carreras:", err);
-      alert("Error al cargar carreras: No se pudo conectar con el servidor.");
+        setCarreras(activas)
+        setCarrerasOptions(activas.map((c) => ({ value: c.id.toString(), label: c.nombre })))
+      } catch (err) {
+        console.error("Error al cargar carreras:", err)
+        alert("Error al cargar carreras: No se pudo conectar con el servidor.")
+      }
     }
-  };
 
-  fetchCarreras();
-}, []);
+    fetchCarreras()
+  }, [])
 
   const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState<FormData>(initialFormData)
@@ -332,8 +324,8 @@ useEffect(() => {
       }
 
       if (field === "trabajo" && value === "NO") {
-      newData.horas_diarias = "0"; // Guardamos 0 como string para consistencia del input
-      newData.descripcion_trabajo = "";
+        newData.horas_diarias = "0" // Guardamos 0 como string para consistencia del input
+        newData.descripcion_trabajo = ""
       }
 
       return newData
@@ -350,12 +342,14 @@ useEffect(() => {
     }
   }
 
-  const validateStep = (step: number): boolean => {
+  const validateStep = (step: number): { isValid: boolean; hasEmptyFields: boolean } => {
     const newErrors: Record<string, string> = {}
+    let hasEmpty = false
 
     if (step === 1) {
-     if (!formData.nombre) {
-    newErrors.nombre = "El nombre es requerido"
+      if (!formData.nombre) {
+        newErrors.nombre = "El nombre es requerido"
+        hasEmpty = true
       } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.nombre)) {
         newErrors.nombre = "El nombre solo puede contener letras y espacios."
       } else if (formData.nombre.length > 50) {
@@ -363,148 +357,228 @@ useEffect(() => {
       }
       if (!formData.apellido) {
         newErrors.apellido = "El apellido es requerido"
+        hasEmpty = true
       } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.apellido)) {
         newErrors.apellido = "El apellido solo puede contener letras y espacios."
       } else if (formData.apellido.length > 50) {
         newErrors.apellido = "El apellido no puede tener más de 50 caracteres."
       }
-      if (!formData.dni) newErrors.dni = "El DNI es requerido"
-      else if (!/^\d{8}$/.test(formData.dni)) {
+      if (!formData.dni) {
+        newErrors.dni = "El DNI es requerido"
+        hasEmpty = true
+      } else if (!/^\d{8}$/.test(formData.dni)) {
         newErrors.dni = "El DNI debe tener 8 digitos"
       } else if (isNaN(Number(formData.dni))) {
         newErrors.dni = "El DNI debe ser un número"
       }
-      if (!formData.cuil) newErrors.cuil = "El CUIL/CUIT es requerido"
-      else if (!/^\d{11}$/.test(formData.cuil)) {
+      if (!formData.cuil) {
+        newErrors.cuil = "El CUIL/CUIT es requerido"
+        hasEmpty = true
+      } else if (!/^\d{11}$/.test(formData.cuil)) {
         newErrors.cuil = "El CUIL/CUIT debe tener 11 digitos"
       } else if (isNaN(Number(formData.cuil))) {
         newErrors.cuil = "El CUIL/CUIT debe ser un número"
       }
-      if (!formData.domicilio) newErrors.domicilio = "El domicilio es requerido"
-      if (!formData.localidad) newErrors.localidad = "La localidad es requerida"
-      if (!formData.barrio) newErrors.barrio = "El barrio es requerido"
-      if (!formData.codigo_postal) newErrors.codigo_postal = "El código postal es requerido"
-      else if (!/^\d{4}$/.test(formData.codigo_postal)) {
+      if (!formData.domicilio) {
+        newErrors.domicilio = "El domicilio es requerido"
+        hasEmpty = true
+      }
+      if (!formData.localidad) {
+        newErrors.localidad = "La localidad es requerida"
+        hasEmpty = true
+      }
+      if (!formData.barrio) {
+        newErrors.barrio = "El barrio es requerido"
+        hasEmpty = true
+      }
+      if (!formData.codigo_postal) {
+        newErrors.codigo_postal = "El código postal es requerido"
+        hasEmpty = true
+      } else if (!/^\d{4}$/.test(formData.codigo_postal)) {
         newErrors.codigo_postal = "El código postal debe tener 4 digitos"
       } else if (isNaN(Number(formData.codigo_postal))) {
         newErrors.codigo_postal = "El código postal debe ser un número"
       }
-      if (!formData.telefono) newErrors.telefono = "El teléfono es requerido"
-      else if (!/^\d+$/.test(formData.telefono)) {
+      if (!formData.telefono) {
+        newErrors.telefono = "El teléfono es requerido"
+        hasEmpty = true
+      } else if (!/^\d+$/.test(formData.telefono)) {
         newErrors.telefono = "El teléfono solo debe contener números, sin signos (+, -) ni espacios."
       } else if (formData.telefono.length < 10 || formData.telefono.length > 15) {
         newErrors.telefono = "El teléfono debe tener entre 10 y 15 dígitos."
       }
       if (!formData.email) {
         newErrors.email = "El email es requerido"
-      } else if (
-        !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(formData.email)
-      ) {
+        hasEmpty = true
+      } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(formData.email)) {
         newErrors.email = "El email no es válido"
       }
-      if (!formData.fecha_nacimiento) newErrors.fecha_nacimiento = "La fecha de nacimiento es requerida"
-      else {
+      if (!formData.fecha_nacimiento) {
+        newErrors.fecha_nacimiento = "La fecha de nacimiento es requerida"
+        hasEmpty = true
+      } else {
         const today = new Date()
         const birthDate = new Date(formData.fecha_nacimiento)
-        // Asegurarse de que la hora no afecte el cálculo
-        today.setHours(0, 0, 0, 0);
+        today.setHours(0, 0, 0, 0)
 
         if (birthDate >= today) {
           newErrors.fecha_nacimiento = "La fecha de nacimiento no puede ser hoy o en el futuro"
         } else {
-          const birthYear = birthDate.getFullYear();
-          const minYear = today.getFullYear() - 100;
+          const birthYear = birthDate.getFullYear()
+          const minYear = today.getFullYear() - 100
 
           if (birthYear < minYear) {
-            newErrors.fecha_nacimiento = `El año de nacimiento no puede ser anterior a ${minYear}.`;
+            newErrors.fecha_nacimiento = `El año de nacimiento no puede ser anterior a ${minYear}.`
           } else {
-            let age = today.getFullYear() - birthYear;
-            const m = today.getMonth() - birthDate.getMonth();
+            let age = today.getFullYear() - birthYear
+            const m = today.getMonth() - birthDate.getMonth()
             if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-              age--;
+              age--
             }
             if (age < 16) {
-              newErrors.fecha_nacimiento = "Debes tener al menos 16 años para inscribirte.";
+              newErrors.fecha_nacimiento = "Debes tener al menos 16 años para inscribirte."
             }
           }
         }
       }
-      if (!formData.ciudad_nacimiento) newErrors.ciudad_nacimiento = "La ciudad de nacimiento es requerida"
-      if (!formData.provincia_nacimiento) newErrors.provincia_nacimiento = "La provincia es requerida"
-      if (!formData.sexo) newErrors.sexo = "El sexo es requerido"
-      if(!formData.carrera) newErrors.carrera = "La carrera es requerida"
-
+      if (!formData.ciudad_nacimiento) {
+        newErrors.ciudad_nacimiento = "La ciudad de nacimiento es requerida"
+        hasEmpty = true
+      }
+      if (!formData.provincia_nacimiento) {
+        newErrors.provincia_nacimiento = "La provincia es requerida"
+        hasEmpty = true
+      }
+      if (!formData.sexo) {
+        newErrors.sexo = "El sexo es requerido"
+        hasEmpty = true
+      }
+      if (!formData.carrera) {
+        newErrors.carrera = "La carrera es requerida"
+        hasEmpty = true
+      }
     }
 
     if (step === 2) {
-      if (!formData.completo_nivel_medio) newErrors.completo_nivel_medio = "Debe indicar si completó el nivel medio"
+      if (!formData.completo_nivel_medio) {
+        newErrors.completo_nivel_medio = "Debe indicar si completó el nivel medio"
+        hasEmpty = true
+      }
       if (formData.completo_nivel_medio === "SI") {
-        if (!formData.anio_ingreso_medio) newErrors.anio_ingreso_medio = "El año de ingreso es requerido"
-        else if (isNaN(Number(formData.anio_ingreso_medio))) newErrors.anio_ingreso_medio = "El año de ingreso debe ser un número"
-        else if (Number(formData.anio_ingreso_medio) < 1900) newErrors.anio_ingreso_medio = "El año de ingreso debe ser mayor a 1900";
-        if (!formData.anio_egreso_medio) {
-          newErrors.anio_egreso_medio = "El año de egreso es requerido";
-        } else if (isNaN(Number(formData.anio_egreso_medio))) {
-          newErrors.anio_egreso_medio = "El año de egreso debe ser un número";
-        } else if (Number(formData.anio_egreso_medio) < Number(formData.anio_ingreso_medio)) {
-          newErrors.anio_egreso_medio = "El año de egreso no puede ser anterior al de ingreso.";
+        if (!formData.anio_ingreso_medio) {
+          newErrors.anio_ingreso_medio = "El año de ingreso es requerido"
+          hasEmpty = true
+        } else if (isNaN(Number(formData.anio_ingreso_medio))) {
+          newErrors.anio_ingreso_medio = "El año de ingreso debe ser un número"
+        } else if (Number(formData.anio_ingreso_medio) < 1900) {
+          newErrors.anio_ingreso_medio = "El año de ingreso debe ser mayor a 1900"
         }
-        if (!formData.provincia_medio) newErrors.provincia_medio = "La provincia es requerida"
+        if (!formData.anio_egreso_medio) {
+          newErrors.anio_egreso_medio = "El año de egreso es requerido"
+          hasEmpty = true
+        } else if (isNaN(Number(formData.anio_egreso_medio))) {
+          newErrors.anio_egreso_medio = "El año de egreso debe ser un número"
+        } else if (Number(formData.anio_egreso_medio) < Number(formData.anio_ingreso_medio)) {
+          newErrors.anio_egreso_medio = "El año de egreso no puede ser anterior al de ingreso."
+        }
+        if (!formData.provincia_medio) {
+          newErrors.provincia_medio = "La provincia es requerida"
+          hasEmpty = true
+        }
         if (!formData.titulo_medio) {
-          newErrors.titulo_medio = "El título es requerido";
+          newErrors.titulo_medio = "El título es requerido"
+          hasEmpty = true
         } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.titulo_medio)) {
-          newErrors.titulo_medio = "El título solo puede contener letras y espacios.";
+          newErrors.titulo_medio = "El título solo puede contener letras y espacios."
         }
       }
 
-      if (!formData.completo_nivel_superior) newErrors.completo_nivel_superior = "Debe indicar si completó el nivel superior"
+      if (!formData.completo_nivel_superior) {
+        newErrors.completo_nivel_superior = "Debe indicar si completó el nivel superior"
+        hasEmpty = true
+      }
       if (formData.completo_nivel_superior === "COMPLETO" || formData.completo_nivel_superior === "EN_CURSO") {
         if (!formData.carrera_superior) {
-          newErrors.carrera_superior = "La carrera es requerida";
+          newErrors.carrera_superior = "La carrera es requerida"
+          hasEmpty = true
         } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.carrera_superior)) {
-          newErrors.carrera_superior = "La carrera solo puede contener letras y espacios.";
+          newErrors.carrera_superior = "La carrera solo puede contener letras y espacios."
         }
-        if (!formData.institucion_superior) newErrors.institucion_superior = "La institución es requerida";
-        if (!formData.provincia_superior) newErrors.provincia_superior = "La provincia es requerida";
-        if (!formData.anio_ingreso_superior) newErrors.anio_ingreso_superior = "El año de ingreso es requerido";
+        if (!formData.institucion_superior) {
+          newErrors.institucion_superior = "La institución es requerida"
+          hasEmpty = true
+        }
+        if (!formData.provincia_superior) {
+          newErrors.provincia_superior = "La provincia es requerida"
+          hasEmpty = true
+        }
+        if (!formData.anio_ingreso_superior) {
+          newErrors.anio_ingreso_superior = "El año de ingreso es requerido"
+          hasEmpty = true
+        }
       }
       if (formData.completo_nivel_superior === "COMPLETO") {
         if (!formData.anio_egreso_superior) {
-          newErrors.anio_egreso_superior = "El año de egreso es requerido";
+          newErrors.anio_egreso_superior = "El año de egreso es requerido"
+          hasEmpty = true
         } else if (isNaN(Number(formData.anio_egreso_superior))) {
-          newErrors.anio_egreso_superior = "El año de egreso debe ser un número";
+          newErrors.anio_egreso_superior = "El año de egreso debe ser un número"
         } else if (Number(formData.anio_egreso_superior) < Number(formData.anio_ingreso_superior)) {
-          newErrors.anio_egreso_superior = "El año de egreso no puede ser anterior al de ingreso.";
+          newErrors.anio_egreso_superior = "El año de egreso no puede ser anterior al de ingreso."
         }
       }
-      if (!formData.trabajo) newErrors.trabajo = "Debe indicar si trabajo actualmente"
-      if (formData.trabajo === "SI") {
-        if (!formData.horas_diarias) newErrors.horas_diarias = "Las horas diarias son requeridas"
-        if (!formData.descripcion_trabajo) newErrors.descripcion_trabajo = "La descripción del trabajo es requerida"
+      if (!formData.trabajo) {
+        newErrors.trabajo = "Debe indicar si trabajo actualmente"
+        hasEmpty = true
       }
-      if (!formData.personas_cargo) newErrors.personas_cargo = "Debe indicar si tiene personas a cargo"
+      if (formData.trabajo === "SI") {
+        if (!formData.horas_diarias) {
+          newErrors.horas_diarias = "Las horas diarias son requeridas"
+          hasEmpty = true
+        }
+        if (!formData.descripcion_trabajo) {
+          newErrors.descripcion_trabajo = "La descripción del trabajo es requerida"
+          hasEmpty = true
+        }
+      }
+      if (!formData.personas_cargo) {
+        newErrors.personas_cargo = "Debe indicar si tiene personas a cargo"
+        hasEmpty = true
+      }
     }
 
     if (step === 3) {
-      if (!formData.dniFrente) newErrors.dniFrente = "La foto del frente del DNI es requerida"
-      if (!formData.dniDorso) newErrors.dniDorso = "La foto del dorso del DNI es requerida"
+      if (!formData.dniFrente) {
+        newErrors.dniFrente = "La foto del frente del DNI es requerida"
+        hasEmpty = true
+      }
+      if (!formData.dniDorso) {
+        newErrors.dniDorso = "La foto del dorso del DNI es requerida"
+        hasEmpty = true
+      }
     }
 
     setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    return { isValid: Object.keys(newErrors).length === 0, hasEmptyFields: hasEmpty }
   }
 
   const nextStep = () => {
-    if (validateStep(currentStep)) {
-      setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
+    const validation = validateStep(currentStep)
+
+    if (validation.isValid) {
+      setCurrentStep((prev) => Math.min(prev + 1, totalSteps))
     } else {
+      // Si hay campos vacíos, mostrar ese error primero
+      // Si no hay vacíos pero hay errores, mostrar error de formato
       setDialogProps({
-      title: "Datos incompletos",
-      description: "Debes completar todos los campos requeridos antes de avanzar al siguiente paso.",
-      variant: "error",
-      confirmText: "Entendido",
-    })
-    setDialogOpen(true)
+        title: validation.hasEmptyFields ? "Datos incompletos" : "Datos inválidos",
+        description: validation.hasEmptyFields
+          ? "Debes completar todos los campos requeridos antes de avanzar al siguiente paso."
+          : "Debes completar todos los campos requeridos de forma correcta antes de avanzar al siguiente paso.",
+        variant: "error",
+        confirmText: "Entendido",
+      })
+      setDialogOpen(true)
     }
   }
 
@@ -513,111 +587,89 @@ useEffect(() => {
   }
 
   const handleSubmit = async () => {
-  if (!validateStep(currentStep)) return;
+    // Ya no se llama a validateStep aquí, se confía en la validación previa al submit.
+    // Si el usuario llegó hasta aquí, los campos válidos ya fueron validados.
+    // Si bien podría ser redundante, es una capa extra de seguridad.
+    if (!validateStep(currentStep).isValid) return
 
-  try {
-    // --- INICIO DE LA VALIDACIÓN FRONTEND ---
-    // Verificar si ya existe una preinscripción antes de enviar todo el formulario.
-    const verificationResponse = await fetch(
-      `${import.meta.env.VITE_API_BASE_URL}/aspirante/verificar-preinscripcion?dni=${formData.dni}&carreraId=${formData.carrera}`
-    );
+    try {
+      const formPayload = new FormData()
 
-    if (!verificationResponse.ok) {
-      if (verificationResponse.status === 409) { // 409 Conflict
-        const errorData = await verificationResponse.json();
-        setDialogProps({
-          title: "Preinscripción Duplicada",
-          description: errorData.message || "Ya estás preinscripto en esta carrera.",
-          variant: "error",
-          confirmText: "Entendido",
-        });
-        setDialogOpen(true);
-        return; // Detener el envío del formulario
+      // 1: Mapear los datos del formulario al formato que espera el DTO del backend.
+      const backendData = {
+        ...formData,
+        carrera_id: formData.carrera,
+        // Con la entidad actualizada, ahora enviamos los strings directamente.
+        completo_nivel_medio: formData.completo_nivel_medio === "SI" ? "Sí" : "No",
+        completo_nivel_superior:
+          formData.completo_nivel_superior === "COMPLETO"
+            ? "Sí"
+            : formData.completo_nivel_superior === "EN_CURSO"
+              ? "En curso"
+              : "No",
+        trabajo: formData.trabajo === "SI" ? "Sí" : "No",
+        personas_cargo: formData.personas_cargo === "SI" ? "Sí" : "No",
       }
-      // Manejar otros errores de red o servidor si es necesario
-      throw new Error('Error al verificar la preinscripción.');
-    }
-    // --- FIN DE LA VALIDACIÓN FRONTEND ---
 
-    const formPayload = new FormData();
+      // 2: Poblar el FormData con los datos corregidos y listos para el backend.
+      Object.entries(backendData).forEach(([key, value]) => {
+        // Excluimos campos que se manejan por separado (archivos) o que no deben enviarse (lógica de UI).
+        if (
+          key !== "dniFrente" &&
+          key !== "dniDorso" &&
+          key !== "carrera" &&
+          key !== "numeroRegistro" &&
+          key !== "ciclo_lectivo" &&
+          value !== null &&
+          value !== undefined
+        ) {
+          // Ya no hay booleanos que convertir, todos los valores son strings.
+          formPayload.append(key, value as string)
+        }
+      })
 
-    // 1: Mapear los datos del formulario al formato que espera el DTO del backend.
-    const backendData = {
-      ...formData,
-      carrera_id: formData.carrera,
-      // Con la entidad actualizada, ahora enviamos los strings directamente.
-      completo_nivel_medio: formData.completo_nivel_medio === 'SI' ? 'Sí' : 'No',
-      completo_nivel_superior:
-        formData.completo_nivel_superior === 'COMPLETO' ? 'Sí'
-        : formData.completo_nivel_superior === 'EN_CURSO' ? 'En curso'
-        : 'No',
-      trabajo: formData.trabajo === 'SI' ? 'Sí' : 'No',
-      personas_cargo: formData.personas_cargo === 'SI' ? 'Sí' : 'No',
-    };
-
-    // 2: Poblar el FormData con los datos corregidos y listos para el backend.
-    Object.entries(backendData).forEach(([key, value]) => {
-      // Excluimos campos que se manejan por separado (archivos) o que no deben enviarse (lógica de UI).
-      if (key !== 'dniFrente' && key !== 'dniDorso' && key !== 'carrera' && key !== 'numeroRegistro' && key !== 'ciclo_lectivo' && value !== null && value !== undefined) {
-        // Ya no hay booleanos que convertir, todos los valores son strings.
-        formPayload.append(key, value as string);
+      if (formData.dniFrente) {
+        formPayload.append("dniFrente", formData.dniFrente)
       }
-    });
+      if (formData.dniDorso) {
+        formPayload.append("dniDorso", formData.dniDorso)
+      }
 
-    if (formData.dniFrente) {
-      formPayload.append('dniFrente', formData.dniFrente);
-    }
-    if (formData.dniDorso) {
-      formPayload.append('dniDorso', formData.dniDorso);
-    }
+      // 3: Hacer una llamada unica al backend.
+      // El controlador de 'aspirante' ya se encarga de crear la preinscripción y enviar la constancia.
+      // CORRECCIÓN: Usar la variable de entorno para la URL de la API.
+      const aspiranteResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/aspirante`, {
+        method: "POST",
+        body: formPayload,
+      })
 
-    // 3: Hacer una llamada unica al backend.
-    // El controlador de 'aspirante' ya se encarga de crear la preinscripción y enviar la constancia.
-    // CORRECCIÓN: Usar la variable de entorno para la URL de la API.
-    const aspiranteResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/aspirante`, {
-      method: 'POST',
-      body: formPayload,
-    });
-
-    if (!aspiranteResponse.ok) {
-      // **MEJORA EN EL MANEJO DE ERRORES**
-      // NestJS envía un objeto de error con una propiedad 'message'.
-      // Si 'message' es un array (común en errores de validación), lo unimos.
-      // Si es un string, lo usamos directamente.
-      const errorData = await aspiranteResponse.json();
-      const serverMessage = Array.isArray(errorData.message)
-        ? errorData.message.join('\n')
-        : errorData.message || 'Error desconocido del servidor.';
+      if (!aspiranteResponse.ok) {
+        // **MEJORA EN EL MANEJO DE ERRORES**
+        // NestJS envía un objeto de error con una propiedad 'message'.
+        // Si 'message' es un array (común en errores de validación), lo unimos.
+        // Si es un string, lo usamos directamente.
+        const errorData = await aspiranteResponse.json()
+        const serverMessage = Array.isArray(errorData.message)
+          ? errorData.message.join("\n")
+          : errorData.message || "Error desconocido del servidor."
+        alert(`Error del servidor:\n${serverMessage}`)
+        console.error("Error del servidor:", errorData) // Loguear el error completo para depuración.
+        return
+      }
       setDialogProps({
-        title: "Error al enviar",
-        description: serverMessage,
-        variant: "error",
+        title: "Formulario correcto",
+        description:
+          "¡Formulario enviado con éxito! Revisa tu correo electrónico para ver la constancia de preinscripción.",
+        variant: "success",
         confirmText: "Entendido",
-      });
-      setDialogOpen(true);
-      console.error('Error del servidor:', errorData); // Loguear el error completo para depuración.
-      return;
+        onConfirm: () => navigate("/"),
+      })
+      setDialogOpen(true)
+    } catch (error) {
+      console.error(error)
+      alert("Error inesperado al conectar con el servidor.")
     }
-    setDialogProps({
-      title: "Formulario correcto",
-      description: "¡Formulario enviado con éxito! Revisa tu correo electrónico para ver la constancia de preinscripción.",
-      variant: "success",
-      confirmText: "Entendido",
-      onConfirm: () => navigate("/"),
-    })
-    setDialogOpen(true)
-  } catch (error) {
-    console.error("Error inesperado:", error);
-    setDialogProps({
-      title: "Error de Conexión",
-      description: "No se pudo conectar con el servidor. Por favor, inténtalo de nuevo más tarde.",
-      variant: "error",
-      confirmText: "Entendido",
-    });
-    setDialogOpen(true);
   }
-};
-
 
   const renderPersonalData = () => (
     <div className="space-y-6">
@@ -636,8 +688,6 @@ useEffect(() => {
           placeholder="..."
           required
         />
-
-
       </div>
 
       <div className="bg-slate-800 rounded-lg p-4 text-center">
@@ -757,16 +807,15 @@ useEffect(() => {
         />
 
         <FormField
-              label="PROVINCIA DE NACIMIENTO"
-              id="provincia_nacimiento"
-              value={formData.provincia_nacimiento}
-              onChange={(value) => handleInputChange("provincia_nacimiento", value)}
-              options={provincias}
-              placeholder="PROVINCIA..."
-              error={errors.provincia_nacimiento}
-              required
+          label="PROVINCIA DE NACIMIENTO"
+          id="provincia_nacimiento"
+          value={formData.provincia_nacimiento}
+          onChange={(value) => handleInputChange("provincia_nacimiento", value)}
+          options={provincias}
+          placeholder="PROVINCIA..."
+          error={errors.provincia_nacimiento}
+          required
         />
-
 
         <FormField
           label="SEXO"
@@ -783,7 +832,8 @@ useEffect(() => {
 
   const renderEducationData = () => {
     const nivelMedioEnabled = formData.completo_nivel_medio === "SI"
-    const nivelSuperiorEnabled = formData.completo_nivel_superior === "COMPLETO" || formData.completo_nivel_superior === "EN_CURSO"
+    const nivelSuperiorEnabled =
+      formData.completo_nivel_superior === "COMPLETO" || formData.completo_nivel_superior === "EN_CURSO"
     const nivelSuperiorCompleto = formData.completo_nivel_superior === "COMPLETO"
     const trabajaEnabled = formData.trabajo === "SI"
 
@@ -858,7 +908,6 @@ useEffect(() => {
               { value: "COMPLETO", label: "COMPLETO" },
               { value: "NO", label: "NO" },
               { value: "EN_CURSO", label: "EN CURSO" },
-              
             ]}
             value={formData.completo_nivel_superior}
             onChange={(value) => handleInputChange("completo_nivel_superior", value)}
@@ -981,6 +1030,7 @@ useEffect(() => {
       </div>
     )
   }
+
   const renderDocumentation = () => (
     <div className="space-y-6">
       {/* Título de sección */}
@@ -1058,7 +1108,6 @@ useEffect(() => {
     }
   }
 
-
   return (
     <>
       <div style={{ position: "fixed", inset: 0, zIndex: -1, background: "#1F6680" }} />
@@ -1100,10 +1149,10 @@ useEffect(() => {
                         className="w-6 h-6"
                         color={
                           isActive
-                            ? "#274357"      // ícono azul en paso activo
+                            ? "#274357" // ícono azul en paso activo
                             : isCompleted
-                              ? "#fff"       // ícono blanco en paso completado
-                              : "#274357"    // ícono azul en paso pendiente
+                              ? "#fff" // ícono blanco en paso completado
+                              : "#274357" // ícono azul en paso pendiente
                         }
                       />
                     </div>
@@ -1121,7 +1170,9 @@ useEffect(() => {
           </div>
 
           {/* Form Content */}
-          <div className="rounded-2xl p-8" style={{ backgroundColor: "#1F6680" }}>{renderStepContent()}</div>
+          <div className="rounded-2xl p-8" style={{ backgroundColor: "#1F6680" }}>
+            {renderStepContent()}
+          </div>
 
           {/* Navigation */}
           <div className="flex justify-between items-center mt-8">
@@ -1154,16 +1205,16 @@ useEffect(() => {
                 Enviar Formulario
               </button>
             )}
-<CustomDialog
-    open={dialogOpen}
-    onClose={() => setDialogOpen(false)}
-    title={dialogProps.title ?? ""}
-    description={dialogProps.description ?? ""}
-    confirmLabel={dialogProps.confirmText ?? "Entendido"}
-    cancelLabel={dialogProps.cancelText}
-    onConfirm={dialogProps.onConfirm}
-    showCancel={!!dialogProps.onCancel}
-/>
+            <CustomDialog
+              open={dialogOpen}
+              onClose={() => setDialogOpen(false)}
+              title={dialogProps.title ?? ""}
+              description={dialogProps.description ?? ""}
+              confirmLabel={dialogProps.confirmText ?? "Entendido"}
+              cancelLabel={dialogProps.cancelText}
+              onConfirm={dialogProps.onConfirm}
+              showCancel={!!dialogProps.onCancel}
+            />
           </div>
         </div>
       </div>
