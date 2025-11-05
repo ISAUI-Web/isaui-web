@@ -832,6 +832,8 @@ export default function CrearLegajoProfesor() {
       if (curso.certificadoFile) {
         // Adjuntamos el archivo del certificado con un nombre de campo que el backend pueda asociar
         payload.append(`cursoFile_${curso.id}`, curso.certificadoFile);
+        // El backend espera que los archivos de curso tengan un fieldname que empiece con "cursos["
+        payload.append(`cursos[${index}][certificadoFile]`, curso.certificadoFile);
       }
     });
 

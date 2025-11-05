@@ -241,9 +241,9 @@ export class DocenteService {
         for (const cursoExistente of docente.cursos) {
           if (!idsCursosFrontend.includes(cursoExistente.id)) {
             // Opcional: Borrar el archivo de Cloudinary antes de eliminar el curso
-            // if (cursoExistente.certificado_url) {
-            //   await this.documentoService.deleteFromCloudinary(cursoExistente.certificado_url);
-            // }
+            if (cursoExistente.certificado_url) {
+              await this.documentoService.deleteFromCloudinary(cursoExistente.certificado_url);
+            }
             await queryRunner.manager.remove(cursoExistente);
           }
         }

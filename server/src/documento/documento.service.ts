@@ -240,7 +240,7 @@ export class DocumentoService {
         // Si no tiene ID, es un curso nuevo.
         const nuevoCurso = manager.create(Curso, {
           nombre: cursoInfo.nombre,
-          certificado_url: certificadoUrl || undefined, // Será la URL o undefined
+          certificado_url: certificadoUrl, // Asignamos la URL obtenida de Cloudinary
           docente: docente,
         });
         await manager.save(nuevoCurso);
