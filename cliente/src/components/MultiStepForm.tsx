@@ -411,7 +411,7 @@ export default function MultiStepForm() {
         newErrors.email = "El email es requerido"
         hasEmpty = true
       } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(formData.email)) {
-        newErrors.email = "El email no es válido"
+        newErrors.email = "Ingrese un correo válido (ej: usuario@dominio.com)."
       }
       if (!formData.fecha_nacimiento) {
         newErrors.fecha_nacimiento = "La fecha de nacimiento es requerida"
@@ -435,8 +435,8 @@ export default function MultiStepForm() {
             if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
               age--
             }
-            if (age < 16) {
-              newErrors.fecha_nacimiento = "Debes tener al menos 16 años para inscribirte."
+            if (age < 17) {
+              newErrors.fecha_nacimiento = "Debes tener al menos 17 años para inscribirte."
             }
           }
         }
