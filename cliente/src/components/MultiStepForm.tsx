@@ -380,16 +380,34 @@ export default function MultiStepForm() {
         newErrors.cuil = "El CUIL/CUIT debe ser un número"
       }
       if (!formData.domicilio) {
-        newErrors.domicilio = "El domicilio es requerido"
-        hasEmpty = true
+        newErrors.domicilio = "El domicilio es requerido";
+        hasEmpty = true;
+      } else if (formData.domicilio.length > 20) {
+        newErrors.domicilio = "Máximo 20 caracteres";
+        hasEmpty = true;
+      } else if (!/^[a-zA-Z0-9\s]+$/.test(formData.domicilio)) {
+        newErrors.domicilio = "No se permiten caracteres especiales";
+        hasEmpty = true;
       }
       if (!formData.localidad) {
         newErrors.localidad = "La localidad es requerida"
         hasEmpty = true
+      } else if (formData.localidad.length > 20) {
+        newErrors.localidad = "Máximo 20 caracteres";
+        hasEmpty = true;
+      } else if (!/^[a-zA-Z\s]+$/.test(formData.localidad)) {
+        newErrors.localidad = "Solo se permiten letras y espacios";
+        hasEmpty = true;
       }
       if (!formData.barrio) {
         newErrors.barrio = "El barrio es requerido"
         hasEmpty = true
+      } else if (formData.barrio.length > 20) {
+        newErrors.barrio = "Máximo 20 caracteres";
+        hasEmpty = true;
+      } else if (!/^[a-zA-Z\s]+$/.test(formData.barrio)) {
+        newErrors.barrio = "Solo se permiten letras y espacios";
+        hasEmpty = true;
       }
       if (!formData.codigo_postal) {
         newErrors.codigo_postal = "El código postal es requerido"
@@ -444,6 +462,12 @@ export default function MultiStepForm() {
       if (!formData.ciudad_nacimiento) {
         newErrors.ciudad_nacimiento = "La ciudad de nacimiento es requerida"
         hasEmpty = true
+      } else if (formData.ciudad_nacimiento.length > 20) {
+        newErrors.ciudad_nacimiento = "Máximo 20 caracteres";
+        hasEmpty = true;
+      } else if (!/^[a-zA-Z\s]+$/.test(formData.ciudad_nacimiento)) {
+        newErrors.ciudad_nacimiento = "Solo se permiten letras y espacios";
+        hasEmpty = true;
       }
       if (!formData.provincia_nacimiento) {
         newErrors.provincia_nacimiento = "La provincia es requerida"
@@ -515,6 +539,10 @@ export default function MultiStepForm() {
         if (!formData.anio_ingreso_superior) {
           newErrors.anio_ingreso_superior = "El año de ingreso es requerido"
           hasEmpty = true
+        } else if (isNaN(Number(formData.anio_ingreso_superior))) {
+          newErrors.anio_egreso_superior = "El año de egreso debe ser un número"
+        } else if (Number(formData.anio_ingreso_superior) > Number(formData.anio_egreso_superior)) {
+          newErrors.anio_egreso_superior = "El año de ingreso no puede ser mayor al de egreso. "
         }
       }
       if (formData.completo_nivel_superior === "COMPLETO") {
