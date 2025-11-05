@@ -1141,8 +1141,8 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                   docType === 'dniDorso' ? dniDorsoFile :
                   docType === 'titulo_secundario' ? tituloSecundarioFile :
                   docType === 'titulo_terciario' ? tituloTerciarioFile :
-                  docType === 'regimen_de_compatibilidad' ? regimenCompatibilidadFile :
-                  examenPsicofisicoFile;
+                  docType === 'examen_psicofisico' ? examenPsicofisicoFile :
+                  regimenCompatibilidadFile;
 
 
                 const docTitle = 
@@ -1150,8 +1150,8 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
                   docType === 'dniDorso' ? 'DNI - Dorso' :
                   docType === 'titulo_secundario' ? 'Título Nivel Secundario' :
                   docType === 'titulo_terciario' ? 'Título Nivel Terciario/Superior' :
-                  docType === 'regimen_de_compatibilidad' ? 'Régimen de Compatibilidad' :
-                  'Examen Psicofísico';
+                  docType === 'examen_psicofisico' ? 'Examen Psicofísico' :
+                  'Régimen de Compatibilidad';
 
                 return (
                   <div key={docType} className="space-y-3">

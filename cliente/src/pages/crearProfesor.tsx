@@ -823,6 +823,18 @@ export default function CrearLegajoProfesor() {
     if (tituloSecundarioFile) payload.append('titulo_secundario', tituloSecundarioFile);
     if (tituloTerciarioFile) payload.append('titulo_terciario', tituloTerciarioFile);
     if (examenPsicofisicoFile) payload.append('examen_psicofisico', examenPsicofisicoFile);
+    if (regimenCompatibilidadFile) payload.append('regimen_de_compatibilidad', regimenCompatibilidadFile);
+
+    // Adjuntar cursos y sus certificados
+    cursos.forEach((curso, index) => {
+      // Enviamos el nombre y el ID temporal
+      payload.append(`cursos[${index}][id]`, curso.id);
+      payload.append(`cursos[${index}][nombre]`, curso.nombre);
+      if (curso.certificadoFile) {
+        // Adjuntamos el archivo del certificado
+        payload.append(`cursos[${index}][certificadoFile]`, curso.certificadoFile);
+      }
+    });
 
     try {
       const response = await fetch(`${API_BASE}/docente/crear-docente-completo`, {
