@@ -825,14 +825,13 @@ export default function CrearLegajoProfesor() {
     if (examenPsicofisicoFile) payload.append('examen_psicofisico', examenPsicofisicoFile);
     if (regimenCompatibilidadFile) payload.append('regimen_de_compatibilidad', regimenCompatibilidadFile);
 
-    // Adjuntar cursos y sus certificados
+    // Adjuntar cursos como strings JSON y sus certificados por separado
     cursos.forEach((curso, index) => {
-      // Enviamos el nombre y el ID temporal
-      payload.append(`cursos[${index}][id]`, curso.id);
-      payload.append(`cursos[${index}][nombre]`, curso.nombre);
+      // El backend espera un array de strings JSON para los datos del curso
+      payload.append('cursos[]', JSON.stringify({ id: curso.id, nombre: curso.nombre }));
       if (curso.certificadoFile) {
-        // Adjuntamos el archivo del certificado
-        payload.append(`cursos[${index}][certificadoFile]`, curso.certificadoFile);
+        // Adjuntamos el archivo del certificado con un nombre de campo que el backend pueda asociar
+        payload.append(`cursoFile_${curso.id}`, curso.certificadoFile);
       }
     });
 
