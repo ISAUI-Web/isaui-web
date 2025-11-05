@@ -1,6 +1,7 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import PDFDocument from 'pdfkit';
 import * as fs from 'fs';
+import * as path from 'path';
 import * as nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -38,9 +39,13 @@ export class ConstanciaService {
 
     // Cargar el logo en memoria al iniciar el servicio
     try {
-      this.logoBuffer = fs.readFileSync('assets/logo.png');
+      // Construir una ruta absoluta al archivo del logo desde la ubicación actual del script.
+      // __dirname -> server/dist/constancia
+      // path.join sube tres niveles (a server/dist) y luego busca 'assets/logo.png'
+      const logoPath = path.join(__dirname, '..', '..', 'assets', 'logo.png');
+      this.logoBuffer = fs.readFileSync(logoPath);
     } catch (error) {
-      console.error('Error al cargar el logo para los PDFs:', error);
+      console.error('Error crítico al cargar el logo para los PDFs. Asegúrese de que el archivo "assets/logo.png" existe en el directorio raíz del servidor.', error);
       // Podrías lanzar un error aquí para detener el inicio si el logo es crítico
     }
   }
