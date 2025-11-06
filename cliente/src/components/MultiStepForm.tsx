@@ -396,16 +396,16 @@ export default function MultiStepForm() {
         hasEmpty = true
       } else if (formData.localidad.length > 50) {
         newErrors.localidad = "Máximo 50 caracteres"
-      } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.localidad)) {
-        newErrors.localidad = "Solo se permiten letras y espacios"
+      } else if (!/^[a-zA-Z0-9\s]+$/.test(formData.localidad)) {
+        newErrors.localidad = "No se permiten caracteres especiales"
       }
       if (!formData.barrio) {
         newErrors.barrio = "El barrio es requerido"
         hasEmpty = true
       } else if (formData.barrio.length > 50) {
         newErrors.barrio = "Máximo 50 caracteres"
-      } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.barrio)) {
-        newErrors.barrio = "Solo se permiten letras y espacios"
+      } else if (!/^[a-zA-Z0-9\s]+$/.test(formData.barrio)) {
+        newErrors.barrio = "No se permiten caracteres especiales"
       }
       if (!formData.codigo_postal) {
         newErrors.codigo_postal = "El código postal es requerido"
