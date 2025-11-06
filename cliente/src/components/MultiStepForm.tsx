@@ -543,9 +543,9 @@ export default function MultiStepForm() {
           hasEmpty = true
         } else if (formData.institucion_superior.length > 50) {
           newErrors.institucion_superior = "Máximo 50 caracteres"
-        } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.institucion_superior)) {
-          newErrors.institucion_superior = "Solo se permiten letras y espacios"
-        }
+        } else if (!/^[a-zA-Z0-9\s]+$/.test(formData.institucion_superior)) {
+        newErrors.institucion_superior = "No se permiten caracteres especiales"
+      }
         if (!formData.provincia_superior) {
           newErrors.provincia_superior = "La provincia es requerida"
           hasEmpty = true
