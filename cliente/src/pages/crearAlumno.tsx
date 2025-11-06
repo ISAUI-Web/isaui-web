@@ -113,6 +113,33 @@ export default function CrearLegajoAlumno() {
       emmacUrl: '',
     },
   });
+
+  const provincias = [
+  "Buenos Aires",
+  "Catamarca",
+  "Chaco",
+  "Chubut",
+  "Córdoba",
+  "Corrientes",
+  "Entre Ríos",
+  "Formosa",
+  "Jujuy",
+  "La Pampa",
+  "La Rioja",
+  "Mendoza",
+  "Misiones",
+  "Neuquén",
+  "Río Negro",
+  "Salta",
+  "San Juan",
+  "San Luis",
+  "Santa Cruz",
+  "Santa Fe",
+  "Santiago del Estero",
+  "Tierra del Fuego",
+  "Tucumán",
+]
+
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 3;
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -245,9 +272,16 @@ export default function CrearLegajoAlumno() {
         } else if (isNaN(Number(data.horas_diarias)) || Number(data.horas_diarias) <= 0) {
           newErrors.horas_diarias = "Las horas diarias deben ser un número mayor a 0";
         }
-        if (!data.descripcion_trabajo) {
+        if (!formData.descripcion_trabajo) {
           newErrors.descripcion_trabajo = "La descripción del trabajo es requerida";
+        } else if (formData.descripcion_trabajo.length > 100) {
+          newErrors.descripcion_trabajo = "Máximo 100 caracteres";
+        } else if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.descripcion_trabajo)) {
+          newErrors.descripcion_trabajo = "Solo se permiten letras, números y espacios";
         }
+      if (!formData.personas_cargo) {
+        newErrors.personas_cargo = "Debe indicar si tiene personas a cargo"
+      }
       }
     }
 
@@ -490,11 +524,16 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">SEXO</Label>
-              <Input
+              <select
                 value={formData.sexo || ""}
                 onChange={(e) => handleInputChange("sexo", e.target.value)}
-                className="w-full"
-              />
+                className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm focus:ring-teal-500 focus:border-teal-500"
+              >
+                <option value="">Seleccionar sexo</option>
+                <option value="Masculino">Masculino</option>
+                <option value="Femenino">Femenino</option>
+                <option value="Otro">Otro</option>
+              </select>
               {errors.sexo && <div className="text-red-500 text-xs mt-1">{errors.sexo}</div>}
             </div>
             <div>
@@ -588,13 +627,18 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
               />
               {errors.ciudad_nacimiento && <div className="text-red-500 text-xs mt-1">{errors.ciudad_nacimiento}</div>}
             </div>
-            <div>
+           <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">PROVINCIA DE NACIMIENTO</Label>
-              <Input
+              <select
                 value={formData.provincia_nacimiento || ""}
                 onChange={(e) => handleInputChange("provincia_nacimiento", e.target.value)}
-                className="w-full"
-              />
+                className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm focus:ring-teal-500 focus:border-teal-500"
+              >
+                <option value="">Seleccionar provincia</option>
+                {provincias.map((provincia) => (
+                  <option key={provincia} value={provincia}>{provincia}</option>
+                ))}
+              </select>
               {errors.provincia_nacimiento && <div className="text-red-500 text-xs mt-1">{errors.provincia_nacimiento}</div>}
             </div>
             <div>
@@ -615,13 +659,13 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
             </div>
             {/* NUEVO CAMPO PARA CICLO LECTIVO */}
             <div>
-              <Label className="text-sm font-medium text-gray-700 mb-1 block">CICLO LECTIVO</Label>
+              <Label className="text-sm font-medium text-gray-700 mb-1 block">Cohorte</Label>
               <select
                 value={formData.ciclo_lectivo}
                 onChange={(e) => handleInputChange("ciclo_lectivo", e.target.value)}
                 className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
               >
-                <option value="">Seleccionar ciclo lectivo</option>
+                <option value="">Seleccionar cohorte</option>
                 {years.map((year) => (
                   <option key={year} value={year}>{year}</option>
                 ))}
