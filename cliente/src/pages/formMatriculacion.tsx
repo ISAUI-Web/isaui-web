@@ -109,8 +109,8 @@ export default function FormMatriculacion() {
 
       // El backend ahora se encarga de formalizar la matrícula automáticamente.
       setDialogProps({
-      title: "Documentos enviados",
-      description: "Los documentos han sido enviados correctamente.",
+      title: "Matriculación completada",
+      description: "Lá matriculación se ha completado con éxito. Serás redirigido a la página principal.",
       variant: "success",
       confirmText: "Entendido",
       onConfirm: () => navigate("/"),

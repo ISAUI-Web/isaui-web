@@ -67,6 +67,32 @@ export default function DetalleLegajo() {
       emmacUrl: null,
     },
   });
+
+  const provincias = [
+  "Buenos Aires",
+  "Catamarca",
+  "Chaco",
+  "Chubut",
+  "Córdoba",
+  "Corrientes",
+  "Entre Ríos",
+  "Formosa",
+  "Jujuy",
+  "La Pampa",
+  "La Rioja",
+  "Mendoza",
+  "Misiones",
+  "Neuquén",
+  "Río Negro",
+  "Salta",
+  "San Juan",
+  "San Luis",
+  "Santa Cruz",
+  "Santa Fe",
+  "Santiago del Estero",
+  "Tierra del Fuego",
+  "Tucumán",
+]
   const [isLoading, setIsLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(1)
   const totalSteps = 3
@@ -758,11 +784,16 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">SEXO</Label>
               {isEditing ? (
-                <Input
+                <select
                   value={formData.sexo || ""}
                   onChange={(e) => handleInputChange("sexo", e.target.value)}
-                  className="w-full"
-                />
+                  className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm focus:ring-teal-500 focus:border-teal-500"
+                >
+                  <option value="">Seleccionar sexo</option>
+                  <option value="Masculino">Masculino</option>
+                  <option value="Femenino">Femenino</option>
+                  <option value="Otro">Otro</option>
+                </select>
               ) : (
                 <div className="text-blue-600 font-medium">{formData.sexo}</div>
               )}
@@ -900,17 +931,24 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
               {errors.ciudad_nacimiento && <div className="text-red-500 text-xs mt-1">{errors.ciudad_nacimiento}</div>}
             </div>
             <div>
+              <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">PROVINCIA DE NACIMIENTO</Label>
               {isEditing ? (
-                <Input
+                <select
                   value={formData.provincia_nacimiento || ""}
                   onChange={(e) => handleInputChange("provincia_nacimiento", e.target.value)}
-                  className="w-full"
-                />
+                  className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm focus:ring-teal-500 focus:border-teal-500"
+                >
+                  <option value="">Seleccionar provincia</option>
+                  {provincias.map((provincia) => (
+                    <option key={provincia} value={provincia}>{provincia}</option>
+                  ))}
+                </select>
               ) : (
                 <div className="text-blue-600 font-medium">{formData.provincia_nacimiento}</div>
               )}
               {errors.provincia_nacimiento && <div className="text-red-500 text-xs mt-1">{errors.provincia_nacimiento}</div>}
+            </div>
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">CARRERA</Label>
@@ -926,14 +964,14 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
               {errors.carrera && <div className="text-red-500 text-xs mt-1">{errors.carrera}</div>}
             </div>
             <div>
-              <Label className="text-sm font-medium text-gray-700 mb-1 block">CICLO LECTIVO</Label>
+              <Label className="text-sm font-medium text-gray-700 mb-1 block">Cohorte</Label>
               {isEditing ? (
                 <select
                   value={formData.ciclo_lectivo || ""}
                   onChange={(e) => handleInputChange("ciclo_lectivo", e.target.value)}
                   className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
                 >
-                  <option value="">Seleccionar ciclo lectivo</option>
+                  <option value="">Seleccionar cohorte</option>
                   {years.map((year) => (
                     <option key={year} value={year}>{year}</option>
                   ))}
@@ -964,11 +1002,16 @@ const fromMatriculacion = location.state?.from === "/matriculacion";
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">ESTADO DE MATRICULACIÓN</Label>
               {isEditing ? (
-                <Input
+                <select
                   value={formData.estado_matriculacion || ""}
                   onChange={(e) => handleInputChange("estado_matriculacion", e.target.value)}
-                  className="w-full"
-                />
+                  className="w-full p-2 border rounded-md bg-white text-gray-900 focus:ring-teal-500 focus:border-teal-500"
+                >
+                  <option value="pendiente">Pendiente</option>
+                  <option value="en espera">En Espera</option>
+                  <option value="confirmado">Confirmado</option>
+                  <option value="rechazado">Rechazado</option>
+                </select>
               ) : (
                 <div className="text-blue-600 font-medium">{formData.estado_matriculacion}</div>
               )}

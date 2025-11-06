@@ -75,6 +75,32 @@ export default function CrearLegajoProfesor() {
       regimen_de_compatibilidadUrl: '',
     },
   });
+
+  const provincias = [
+  "Buenos Aires",
+  "Catamarca",
+  "Chaco",
+  "Chubut",
+  "Córdoba",
+  "Corrientes",
+  "Entre Ríos",
+  "Formosa",
+  "Jujuy",
+  "La Pampa",
+  "La Rioja",
+  "Mendoza",
+  "Misiones",
+  "Neuquén",
+  "Río Negro",
+  "Salta",
+  "San Juan",
+  "San Luis",
+  "Santa Cruz",
+  "Santa Fe",
+  "Santiago del Estero",
+  "Tierra del Fuego",
+  "Tucumán",
+]
   // Estados para almacenar los archivos (File objects)
   const [dniFrenteFile, setDniFrenteFile] = useState<File | null>(null);
   const [dniDorsoFile, setDniDorsoFile] = useState<File | null>(null);
@@ -308,11 +334,16 @@ export default function CrearLegajoProfesor() {
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">SEXO</Label>
-              <Input
+              <select
                 value={formData.sexo || ""}
                 onChange={(e) => handleInputChange("sexo", e.target.value)}
-                className="w-full"
-              />
+                className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm focus:ring-teal-500 focus:border-teal-500"
+              >
+                <option value="">Seleccionar sexo</option>
+                <option value="Masculino">Masculino</option>
+                <option value="Femenino">Femenino</option>
+                <option value="Otro">Otro</option>
+              </select>
               {errors.sexo && <div className="text-red-500 text-xs mt-1">{errors.sexo}</div>}
             </div>
             <div>
@@ -407,14 +438,19 @@ export default function CrearLegajoProfesor() {
               {errors.ciudad_nacimiento && <div className="text-red-500 text-xs mt-1">{errors.ciudad_nacimiento}</div>}
             </div>
             <div>
-              <Label className="text-sm font-medium text-gray-700 mb-1 block">PROVINCIA DE NACIMIENTO</Label>
-              <Input
-                value={formData.provincia_nacimiento || ""}
-                onChange={(e) => handleInputChange("provincia_nacimiento", e.target.value)}
-                className="w-full"
-              />
-              {errors.provincia_nacimiento && <div className="text-red-500 text-xs mt-1">{errors.provincia_nacimiento}</div>}
-            </div>
+            <Label className="text-sm font-medium text-gray-700 mb-1 block">PROVINCIA DE NACIMIENTO</Label>
+            <select
+              value={formData.provincia_nacimiento || ""}
+              onChange={(e) => handleInputChange("provincia_nacimiento", e.target.value)}
+              className="w-full h-10 px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm focus:ring-teal-500 focus:border-teal-500"
+            >
+              <option value="">Seleccionar provincia</option>
+              {provincias.map((provincia) => (
+                <option key={provincia} value={provincia}>{provincia}</option>
+              ))}
+            </select>
+            {errors.provincia_nacimiento && <div className="text-red-500 text-xs mt-1">{errors.provincia_nacimiento}</div>}
+          </div>
 
           </div>
         );
