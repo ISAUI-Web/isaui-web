@@ -364,20 +364,23 @@ export default function MultiStepForm() {
         newErrors.apellido = "El apellido no puede tener más de 50 caracteres."
       }
       if (!formData.dni) {
-        newErrors.dni = "El DNI es requerido"
-        hasEmpty = true
+        newErrors.dni = "El DNI es requerido";
+        hasEmpty = true;
       } else if (!/^\d{8}$/.test(formData.dni)) {
-        newErrors.dni = "El DNI debe tener 8 digitos"
+        newErrors.dni = "El DNI debe tener 8 dígitos";
       } else if (isNaN(Number(formData.dni))) {
-        newErrors.dni = "El DNI debe ser un número"
+        newErrors.dni = "El DNI debe ser un número";
       }
+
       if (!formData.cuil) {
-        newErrors.cuil = "El CUIL/CUIT es requerido"
-        hasEmpty = true
+        newErrors.cuil = "El CUIL/CUIT es requerido";
+        hasEmpty = true;
       } else if (!/^\d{11}$/.test(formData.cuil)) {
-        newErrors.cuil = "El CUIL/CUIT debe tener 11 digitos"
+        newErrors.cuil = "El CUIL/CUIT debe tener 11 dígitos";
       } else if (isNaN(Number(formData.cuil))) {
-        newErrors.cuil = "El CUIL/CUIT debe ser un número"
+        newErrors.cuil = "El CUIL/CUIT debe ser un número";
+      } else if (!formData.cuil.includes(formData.dni)) {
+        newErrors.cuil = "El CUIL debe contener el número de DNI";
       }
       if (!formData.domicilio) {
         newErrors.domicilio = "El domicilio es requerido";
@@ -490,21 +493,41 @@ export default function MultiStepForm() {
       }
       if (formData.completo_nivel_medio === "SI") {
         if (!formData.anio_ingreso_medio) {
-          newErrors.anio_ingreso_medio = "El año de ingreso es requerido"
-          hasEmpty = true
+          newErrors.anio_ingreso_medio = "El año de ingreso es requerido";
+          hasEmpty = true;
         } else if (isNaN(Number(formData.anio_ingreso_medio))) {
-          newErrors.anio_ingreso_medio = "El año de ingreso debe ser un número"
-        } else if (Number(formData.anio_ingreso_medio) < 1900) {
-          newErrors.anio_ingreso_medio = "El año de ingreso debe ser mayor a 1900"
+          newErrors.anio_ingreso_medio = "El año de ingreso debe ser un número";
+          hasEmpty = true;
+        } else if (formData.anio_ingreso_medio.toString().length > 4) {
+          newErrors.anio_ingreso_medio = "El año de ingreso no puede tener más de 4 dígitos";
+          hasEmpty = true;
+        } else if (Number(formData.anio_ingreso_medio) < 1925) {
+          newErrors.anio_ingreso_medio = "El año de ingreso debe ser mayor a 1925";
+          hasEmpty = true;
         }
         if (!formData.anio_egreso_medio) {
-          newErrors.anio_egreso_medio = "El año de egreso es requerido"
-          hasEmpty = true
+          newErrors.anio_egreso_medio = "El año de egreso es requerido";
+          hasEmpty = true;
         } else if (isNaN(Number(formData.anio_egreso_medio))) {
-          newErrors.anio_egreso_medio = "El año de egreso debe ser un número"
+          newErrors.anio_egreso_medio = "El año de egreso debe ser un número";
+          hasEmpty = true;
+        } else if (formData.anio_egreso_medio.toString().length > 4) {
+          newErrors.anio_egreso_medio = "El año de egreso no puede tener más de 4 dígitos";
+          hasEmpty = true;
+        } else if (Number(formData.anio_egreso_medio) < 1925) {
+          newErrors.anio_egreso_medio = "El año de egreso debe ser mayor a 1925";
+          hasEmpty = true;
         } else if (Number(formData.anio_egreso_medio) < Number(formData.anio_ingreso_medio)) {
-          newErrors.anio_egreso_medio = "El año de egreso no puede ser anterior al de ingreso."
+          newErrors.anio_egreso_medio = "El año de egreso no puede ser anterior al de ingreso";
+          hasEmpty = true;
+        } else {
+          const currentYear = new Date().getFullYear();
+          if (Number(formData.anio_egreso_medio) > currentYear) {
+            newErrors.anio_egreso_medio = "El año de egreso no puede ser mayor al año actual";
+            hasEmpty = true;
+          }
         }
+
         if (!formData.provincia_medio) {
           newErrors.provincia_medio = "La provincia es requerida"
           hasEmpty = true
@@ -531,29 +554,69 @@ export default function MultiStepForm() {
         if (!formData.institucion_superior) {
           newErrors.institucion_superior = "La institución es requerida"
           hasEmpty = true
+        } else if (formData.institucion_superior.length > 20) {
+          newErrors.institucion_superior = "Máximo 20 caracteres";
+          hasEmpty = true;
+        } else if (!/^[a-zA-Z\s]+$/.test(formData.institucion_superior)) {
+          newErrors.institucion_superior = "Solo se permiten letras y espacios";
+          hasEmpty = true;
         }
         if (!formData.provincia_superior) {
           newErrors.provincia_superior = "La provincia es requerida"
           hasEmpty = true
         }
         if (!formData.anio_ingreso_superior) {
-          newErrors.anio_ingreso_superior = "El año de ingreso es requerido"
-          hasEmpty = true
+          newErrors.anio_ingreso_superior = "El año de ingreso es requerido";
+          hasEmpty = true;
         } else if (isNaN(Number(formData.anio_ingreso_superior))) {
-          newErrors.anio_egreso_superior = "El año de egreso debe ser un número"
-        } else if (Number(formData.anio_ingreso_superior) > Number(formData.anio_egreso_superior)) {
-          newErrors.anio_egreso_superior = "El año de ingreso no puede ser mayor al de egreso. "
+          newErrors.anio_ingreso_superior = "El año de ingreso debe ser un número";
+          hasEmpty = true;
+        } else if (formData.anio_ingreso_superior.toString().length > 4) {
+          newErrors.anio_ingreso_superior = "El año de ingreso no puede tener más de 4 dígitos";
+          hasEmpty = true;
+        } else if (Number(formData.anio_ingreso_superior) < 1925) {
+          newErrors.anio_ingreso_superior = "El año de ingreso debe ser mayor a 1925";
+          hasEmpty = true;
+        } else {
+          const currentYear = new Date().getFullYear();
+          if (Number(formData.anio_ingreso_superior) > currentYear) {
+            newErrors.anio_ingreso_superior = "El año de ingreso no puede ser mayor al año actual";
+            hasEmpty = true;
+          } else if (
+            formData.completo_nivel_superior === "COMPLETO" &&
+            formData.anio_egreso_superior &&
+            Number(formData.anio_ingreso_superior) > Number(formData.anio_egreso_superior)
+          ) {
+            newErrors.anio_ingreso_superior = "El año de ingreso no puede ser mayor al de egreso";
+            hasEmpty = true;
+          }
         }
       }
       if (formData.completo_nivel_superior === "COMPLETO") {
         if (!formData.anio_egreso_superior) {
-          newErrors.anio_egreso_superior = "El año de egreso es requerido"
-          hasEmpty = true
+          newErrors.anio_egreso_superior = "El año de egreso es requerido";
+          hasEmpty = true;
         } else if (isNaN(Number(formData.anio_egreso_superior))) {
-          newErrors.anio_egreso_superior = "El año de egreso debe ser un número"
+          newErrors.anio_egreso_superior = "El año de egreso debe ser un número";
+          hasEmpty = true;
+        } else if (formData.anio_egreso_superior.toString().length > 4) {
+          newErrors.anio_egreso_superior = "El año de egreso no puede tener más de 4 dígitos";
+          hasEmpty = true;
+        } else if (Number(formData.anio_egreso_superior) < 1925) {
+          newErrors.anio_egreso_superior = "El año de egreso debe ser mayor a 1925";
+          hasEmpty = true;
         } else if (Number(formData.anio_egreso_superior) < Number(formData.anio_ingreso_superior)) {
-          newErrors.anio_egreso_superior = "El año de egreso no puede ser anterior al de ingreso."
+          newErrors.anio_egreso_superior = "El año de egreso no puede ser anterior al de ingreso";
+          hasEmpty = true;
+        } else {
+          const currentYear = new Date().getFullYear();
+          if (Number(formData.anio_egreso_superior) > currentYear) {
+            newErrors.anio_egreso_superior = "El año de egreso no puede ser mayor al año actual";
+            hasEmpty = true;
+          }
         }
+
+      
       }
       if (!formData.trabajo) {
         newErrors.trabajo = "Debe indicar si trabajo actualmente"
@@ -561,12 +624,21 @@ export default function MultiStepForm() {
       }
       if (formData.trabajo === "SI") {
         if (!formData.horas_diarias) {
-          newErrors.horas_diarias = "Las horas diarias son requeridas"
-          hasEmpty = true
+          newErrors.horas_diarias = "Las horas diarias son requeridas";
+          hasEmpty = true;
+        } else if (Number(formData.horas_diarias) > 24) {
+          newErrors.horas_diarias = "No puede superar las 24 horas";
+          hasEmpty = true;
         }
-        if (!formData.descripcion_trabajo) {
-          newErrors.descripcion_trabajo = "La descripción del trabajo es requerida"
-          hasEmpty = true
+       if (!formData.descripcion_trabajo) {
+          newErrors.descripcion_trabajo = "La descripción del trabajo es requerida";
+          hasEmpty = true;
+        } else if (formData.descripcion_trabajo.length > 100) {
+          newErrors.descripcion_trabajo = "Máximo 100 caracteres";
+          hasEmpty = true;
+        } else if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.descripcion_trabajo)) {
+          newErrors.descripcion_trabajo = "Solo se permiten letras, números y espacios";
+          hasEmpty = true;
         }
       }
       if (!formData.personas_cargo) {
