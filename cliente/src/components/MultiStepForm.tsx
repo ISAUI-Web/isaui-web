@@ -396,7 +396,7 @@ export default function MultiStepForm() {
         hasEmpty = true
       } else if (formData.localidad.length > 20) {
         newErrors.localidad = "Máximo 20 caracteres"
-      } else if (!/^[a-zA-Z\s]+$/.test(formData.localidad)) {
+      } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.localidad)) {
         newErrors.localidad = "Solo se permiten letras y espacios"
       }
       if (!formData.barrio) {
@@ -404,7 +404,7 @@ export default function MultiStepForm() {
         hasEmpty = true
       } else if (formData.barrio.length > 20) {
         newErrors.barrio = "Máximo 20 caracteres"
-      } else if (!/^[a-zA-Z\s]+$/.test(formData.barrio)) {
+      } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.barrio)) {
         newErrors.barrio = "Solo se permiten letras y espacios"
       }
       if (!formData.codigo_postal) {
@@ -462,7 +462,7 @@ export default function MultiStepForm() {
         hasEmpty = true
       } else if (formData.ciudad_nacimiento.length > 20) {
         newErrors.ciudad_nacimiento = "Máximo 20 caracteres"
-      } else if (!/^[a-zA-Z\s]+$/.test(formData.ciudad_nacimiento)) {
+      } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.ciudad_nacimiento)) {
         newErrors.ciudad_nacimiento = "Solo se permiten letras y espacios"
       }
       if (!formData.provincia_nacimiento) {
@@ -541,7 +541,7 @@ export default function MultiStepForm() {
           hasEmpty = true
         } else if (formData.institucion_superior.length > 20) {
           newErrors.institucion_superior = "Máximo 20 caracteres"
-        } else if (!/^[a-zA-Z\s]+$/.test(formData.institucion_superior)) {
+        } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.institucion_superior)) {
           newErrors.institucion_superior = "Solo se permiten letras y espacios"
         }
         if (!formData.provincia_superior) {
