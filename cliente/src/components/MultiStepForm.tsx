@@ -644,7 +644,7 @@ export default function MultiStepForm() {
         title: validation.hasEmptyFields ? "Datos incompletos" : "Datos inválidos",
         description: validation.hasEmptyFields
           ? "Debes completar todos los campos requeridos antes de avanzar al siguiente paso."
-          : "Debes completar todos los campos requeridos de forma correcta antes de avanzar al siguiente paso.",
+          : "Debes completar correctamente todos los campos requeridos antes de avanzar al siguiente paso.",
         variant: "error",
         confirmText: "Entendido",
       })
