@@ -536,6 +536,8 @@ export default function MultiStepForm() {
         } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.carrera_superior)) {
           newErrors.carrera_superior = "La carrera solo puede contener letras y espacios."
         }
+        } else if (formData.carrera_superior.length > 50) {
+        newErrors.carrera_superior = "La carrera no puede tener más de 50 caracteres."
         if (!formData.institucion_superior) {
           newErrors.institucion_superior = "La institución es requerida"
           hasEmpty = true
