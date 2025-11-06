@@ -386,24 +386,24 @@ export default function MultiStepForm() {
       if (!formData.domicilio) {
         newErrors.domicilio = "El domicilio es requerido"
         hasEmpty = true
-      } else if (formData.domicilio.length > 20) {
-        newErrors.domicilio = "Máximo 20 caracteres"
+      } else if (formData.domicilio.length > 50) {
+        newErrors.domicilio = "Máximo 50 caracteres"
       } else if (!/^[a-zA-Z0-9\s]+$/.test(formData.domicilio)) {
         newErrors.domicilio = "No se permiten caracteres especiales"
       }
       if (!formData.localidad) {
         newErrors.localidad = "La localidad es requerida"
         hasEmpty = true
-      } else if (formData.localidad.length > 20) {
-        newErrors.localidad = "Máximo 20 caracteres"
+      } else if (formData.localidad.length > 50) {
+        newErrors.localidad = "Máximo 50 caracteres"
       } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.localidad)) {
         newErrors.localidad = "Solo se permiten letras y espacios"
       }
       if (!formData.barrio) {
         newErrors.barrio = "El barrio es requerido"
         hasEmpty = true
-      } else if (formData.barrio.length > 20) {
-        newErrors.barrio = "Máximo 20 caracteres"
+      } else if (formData.barrio.length > 50) {
+        newErrors.barrio = "Máximo 50 caracteres"
       } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.barrio)) {
         newErrors.barrio = "Solo se permiten letras y espacios"
       }
@@ -460,8 +460,8 @@ export default function MultiStepForm() {
       if (!formData.ciudad_nacimiento) {
         newErrors.ciudad_nacimiento = "La ciudad de nacimiento es requerida"
         hasEmpty = true
-      } else if (formData.ciudad_nacimiento.length > 20) {
-        newErrors.ciudad_nacimiento = "Máximo 20 caracteres"
+      } else if (formData.ciudad_nacimiento.length > 50) {
+        newErrors.ciudad_nacimiento = "Máximo 50 caracteres"
       } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.ciudad_nacimiento)) {
         newErrors.ciudad_nacimiento = "Solo se permiten letras y espacios"
       }
@@ -539,8 +539,8 @@ export default function MultiStepForm() {
         if (!formData.institucion_superior) {
           newErrors.institucion_superior = "La institución es requerida"
           hasEmpty = true
-        } else if (formData.institucion_superior.length > 20) {
-          newErrors.institucion_superior = "Máximo 20 caracteres"
+        } else if (formData.institucion_superior.length > 50) {
+          newErrors.institucion_superior = "Máximo 50 caracteres"
         } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(formData.institucion_superior)) {
           newErrors.institucion_superior = "Solo se permiten letras y espacios"
         }
